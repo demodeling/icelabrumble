@@ -197,7 +197,7 @@ async function wireCoop(page, id, getOther, tally) {
       window.__coopIn = (json, from) => h.onData(JSON.parse(json), from);
       window.__coopPeer = (pid) => h.onPeerJoin(pid);
       return { send: m => window.__coopOut(JSON.stringify(m)), selfId: id, leave() {} };
-    } };
+    }, noRelay: true };
   }, [id]);
 }
 test('co-op: two pages fight the rhino through a room', async ({ browser }) => {
@@ -248,7 +248,68 @@ test('co-op loads the bundled Trystero module and opens a room', async ({ page }
     await expect(page.locator('#select')).toBeVisible({ timeout: 10000 });     // the module imported and joinRoom() ran
     await expect(page.locator('#selCoop')).toContainText('Room KIRUNA');
     await page.waitForTimeout(2000);
-    await expect(page.locator('#selCoop')).toContainText(/relays \d+\/\d+/);   // live relay diagnostics
+    await expect(page.locator('#selCoop')).toContainText(/nostr \d+\/\d+ · relay/);   // live diagnostics: nostr relays + Supabase relay
     expect(errors).toEqual([]);
   } finally { srv.kill(); }
+});
+
+
+// Relay fallback: a fake Supabase Realtime server (Phoenix protocol) shared by two pages, and a P2P transport that
+// never connects. The lobby and the whole round must run through the relay.
+function mockRealtime(hub, tally) {
+  return async page => {
+    await page.routeWebSocket(/realtime\/v1\/websocket/, ws => {
+      const me = { ws, key: null, joined: false, tracked: false };
+      hub.push(me);
+      const send = (c, o) => { try { c.ws.send(JSON.stringify(o)); } catch (e) {} };
+      const others = () => hub.filter(c => c !== me && c.joined);
+      ws.onMessage(raw => {
+        const m = JSON.parse(raw);
+        if (m.event === 'phx_join') {
+          me.key = m.payload.config.presence.key; me.joined = true;
+          send(me, { topic: m.topic, event: 'phx_reply', payload: { status: 'ok', response: {} }, ref: m.ref });
+          const state = {}; hub.filter(c => c !== me && c.tracked).forEach(c => { state[c.key] = { metas: [{ phx_ref: 'x' }] }; });
+          send(me, { topic: m.topic, event: 'presence_state', payload: state, ref: null });
+        } else if (m.event === 'presence') {
+          me.tracked = true;
+          others().forEach(c => send(c, { topic: m.topic, event: 'presence_diff', payload: { joins: { [me.key]: { metas: [{ phx_ref: 'x' }] } }, leaves: {} }, ref: null }));
+        } else if (m.event === 'broadcast') {
+          const t = m.payload.payload.d.t; tally[t] = (tally[t] || 0) + 1;
+          others().forEach(c => send(c, { topic: m.topic, event: 'broadcast', payload: m.payload, ref: null }));
+        } else if (m.topic === 'phoenix') {
+          send(me, { topic: 'phoenix', event: 'phx_reply', payload: { status: 'ok', response: {} }, ref: m.ref });
+        }
+      });
+      ws.onClose(() => { const i = hub.indexOf(me); if (i >= 0) hub.splice(i, 1); hub.forEach(c => send(c, { topic: 'realtime:swebits-rumble:kiruna', event: 'presence_diff', payload: { joins: {}, leaves: { [me.key]: { metas: [] } } }, ref: null })); });
+    });
+  };
+}
+test('co-op falls back to the Supabase relay when P2P never connects', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 1100, height: 720 } });
+  const A = await ctx.newPage(), B = await ctx.newPage();
+  const errors = []; [A, B].forEach(p => p.on('pageerror', e => errors.push(e.message)));
+  const hub = [], tally = {};
+  for (const [p, id] of [[A, 'a'], [B, 'b']]) {
+    await mockRealtime(hub, tally)(p);
+    await p.addInitScript(([id]) => { window.__coopTransport = { join(code, h) { return { send() {}, selfId: id, leave() {} }; } }; }, [id]);   // P2P that never finds anyone
+    await p.route(/\/rest\/v1\//, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await p.goto(URL);
+    await p.click('#btnCoop'); await p.fill('#coopCode', 'kiruna'); await p.click('#btnCoopJoin');
+    await expect(p.locator('#select')).toBeVisible();
+  }
+  await expect(A.locator('#selCoop')).toContainText('via relay');
+  await expect(B.locator('#selCoop')).toContainText('via relay');
+  await expect(A.locator('#selCoop')).toContainText('you are the host');
+  await A.click('.fighter:nth-child(5)'); await A.click('#btnFight');
+  await B.click('.fighter:nth-child(2)'); await B.click('#btnFight');
+  await expect(A.locator('#select')).toBeHidden(); await expect(B.locator('#select')).toBeHidden();
+  for (let i = 0; i < 8; i++) { await B.keyboard.down('ArrowRight'); await B.waitForTimeout(60); await B.keyboard.up('ArrowRight'); await B.keyboard.press('j'); await B.waitForTimeout(100); }
+  await B.waitForTimeout(1200);
+  expect(tally.in).toBeGreaterThan(3);          // guest inputs went through the relay
+  expect(tally.s).toBeGreaterThan(8);           // host snapshots went through the relay
+  await B.keyboard.press('Escape');
+  await expect(B.locator('#title')).toBeVisible();
+  await A.waitForTimeout(300);
+  expect(errors).toEqual([]);
+  await ctx.close();
 });

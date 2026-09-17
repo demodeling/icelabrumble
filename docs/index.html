@@ -151,7 +151,7 @@
       <div class="row"><button class="btn" id="btnStart">CHOOSE YOUR FIGHTER</button><button class="btn secondary" id="btnScores">HIGH SCORES</button><button class="btn secondary" id="btnCoop">CO-OP</button><button class="btn secondary" id="btnIntro">▶ FALSE POSITIVE?</button></div>
       <p class="small" id="titleBest"></p>
       <p class="small">Sound on for the full kung-fu experience. Works on Safari, iPhone and iPad — tap ⛶ FULLSCREEN for a widescreen arena on your phone.</p>
-      <p class="small ver" id="verLine">v1.2.0 · build ae71056</p>
+      <p class="small ver" id="verLine">v1.2.0 · build 3213373</p>
     </div></div>
 
     <div id="select" class="overlay" hidden><div class="panel">
@@ -1459,20 +1459,27 @@ function openScores(){ show('scores'); scene = 'scores'; Scores.load().then(func
 
 // ------------------------------------------------------------ co-op over WebRTC
 // Two players in one room. The peer with the lower id hosts: it runs the whole simulation (both fighters + the rhino)
-// and streams a compact snapshot 30x a second; the guest sends its inputs and draws the snapshot. Trystero does the
-// signalling and the data channel; the bundle in vendor/trystero.js (npm run vendor) is imported only when CO-OP is
-// used. A test can inject window.__coopTransport with the same {join(code, handlers) -> {send, selfId, leave}} shape.
+// and streams a compact snapshot; the guest sends its inputs and draws the snapshot. Two paths: Trystero (WebRTC data
+// channel, Nostr signalling; vendor/trystero.js, imported only when CO-OP is used) and a Supabase Realtime relay
+// (relayTransport). A test can inject window.__coopTransport with the {join(code, handlers) -> {send, selfId, leave}}
+// shape (noRelay: true skips the relay).
 var TRYSTERO_URL = './vendor/trystero.js';
-var TURN_SERVERS = [{urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443', 'turns:openrelay.metered.ca:443'], username: 'openrelayproject', credential: 'openrelayproject'}];
-var Net = {on:false, host:false, me:0, code:'', peer:null, conn:null, id:'', ready:false, peerReady:null, f:null, guestInp:{keys:{}, pressed:{}}, sfxQ:[], frame:0, lastKeys:''};
+var TURN_SERVERS = [];            // optional TURN servers [{urls, username, credential}] for strict NATs
+var TURN_CREDENTIALS_URL = '';    // optional: a URL returning a JSON array of ICE servers (e.g. Metered's turn/credentials), fetched before joining
+var RELAY_URL = SUPA.url.replace(/^http/, 'ws') + '/realtime/v1/websocket?apikey=' + SUPA.key + '&vsn=1.0.0';
+var Net = {on:false, host:false, me:0, code:'', peer:null, rtc:null, rtcUp:false, relay:null, relayPeer:false, id:'', ready:false, peerReady:null, f:null, guestInp:{keys:{}, pressed:{}}, sfxQ:[], frame:0, lastKeys:'', err:'', timer:null};
+function iceServers(){
+  if (!TURN_CREDENTIALS_URL) return Promise.resolve(TURN_SERVERS);
+  return fetch(TURN_CREDENTIALS_URL).then(function(r){ return r.json(); }).then(function(list){ return TURN_SERVERS.concat(list || []); }).catch(function(){ return TURN_SERVERS; });
+}
 function netTransport(){
   if (window.__coopTransport) return Promise.resolve(window.__coopTransport);
-  return import(TRYSTERO_URL).then(function(m){
+  return Promise.all([import(TRYSTERO_URL), iceServers()]).then(function(res){
+    var m = res[0], turn = res[1];
     return {join: function(code, h){
       // Trystero 0.25 API: actions are objects (send / onMessage), peer hooks are properties.
-      // Ten relays instead of the default five (the pick is seeded by the app id, so both peers use the same ten),
-      // and a public TURN server so two phones behind strict NATs can still reach each other.
-      var room = m.joinRoom({appId: 'swebits-rumble', relayConfig: {redundancy: 10}, turnConfig: TURN_SERVERS}, code, {onJoinError: function(err){ h.onError((err && err.error) || String(err)); }});
+      // Ten relays instead of the default five (the pick is seeded by the app id, so both peers use the same ten).
+      var room = m.joinRoom({appId: 'swebits-rumble', relayConfig: {redundancy: 10}, turnConfig: turn}, code, {onJoinError: function(err){ h.onError((err && err.error) || String(err)); }});
       var act = room.makeAction('g');
       act.onMessage = function(data, ctx){ h.onData(data, ctx && ctx.peerId); };
       room.onPeerJoin = function(id){ h.onPeerJoin(id); };
@@ -1482,7 +1489,45 @@ function netTransport(){
     }};
   });
 }
-function sendNet(m){ if (Net.conn && Net.peer){ try { Net.conn.send(m); } catch (e) {} } }
+// Fallback path: Supabase Realtime (broadcast + presence on one WebSocket, Phoenix protocol). It works through any NAT
+// or firewall, so the lobby always runs on it; the game traffic goes P2P when the data channel opens and over the
+// relay otherwise (e.g. on eduroam, where direct peer traffic is blocked).
+function relayTransport(code, h){
+  var topic = 'realtime:swebits-rumble:' + code, ws = null, ref = 0, hb = null, joined = false, peers = {}, closed = false;
+  function raw(o){ if (ws && ws.readyState === 1){ try { ws.send(JSON.stringify(o)); } catch (e) {} } }
+  function msg(event, payload){ raw({topic: topic, event: event, payload: payload, ref: String(++ref)}); }
+  function seen(id){ if (id === Net.id || peers[id]) return; peers[id] = true; h.onPeerJoin(id); }
+  function gone(id){ if (!peers[id]) return; delete peers[id]; h.onPeerLeave(id); }
+  function open(){
+    if (closed) return;
+    try { ws = new WebSocket(RELAY_URL); } catch (e) { return; }
+    ws.onopen = function(){
+      msg('phx_join', {config: {broadcast: {self: false, ack: false}, presence: {key: Net.id}, private: false}});
+      hb = setInterval(function(){ raw({topic: 'phoenix', event: 'heartbeat', payload: {}, ref: String(++ref)}); }, 25000);
+    };
+    ws.onmessage = function(ev){
+      var m; try { m = JSON.parse(ev.data); } catch (e) { return; }
+      if (!m || m.topic !== topic) return;
+      var p = m.payload || {}, k;
+      if (m.event === 'phx_reply'){ if (!joined && p.status === 'ok'){ joined = true; msg('presence', {type: 'presence', event: 'track', payload: {id: Net.id}}); h.onRelay(); } }
+      else if (m.event === 'presence_state'){ for (k in p) seen(k); }
+      else if (m.event === 'presence_diff'){ for (k in (p.joins || {})) seen(k); for (k in (p.leaves || {})) if (!(p.joins || {})[k]) gone(k); }
+      else if (m.event === 'broadcast' && p.event === 'g' && p.payload && p.payload.from !== Net.id){ h.onData(p.payload.d, p.payload.from); }
+    };
+    ws.onerror = function(){};
+    ws.onclose = function(){ if (hb) clearInterval(hb); hb = null; var was = joined; joined = false; for (var q in peers) gone(q); if (!closed) setTimeout(open, 2000); if (was) h.onRelay(); };
+  }
+  open();
+  return {send: function(d){ if (joined) msg('broadcast', {type: 'broadcast', event: 'g', payload: {from: Net.id, d: d}}); }, ok: function(){ return joined; }, leave: function(){ closed = true; if (hb) clearInterval(hb); try { if (ws) ws.close(); } catch (e) {} }};
+}
+// every message carries the sender's id; it goes P2P when the data channel is open, else through the relay
+function sendNet(m){
+  m.from = Net.id;
+  try {
+    if (Net.rtc && Net.rtcUp) Net.rtc.send(m);
+    else if (Net.relay && Net.relay.ok()) Net.relay.send(m);
+  } catch (e) {}
+}
 function coopStatus(t){ $('coopStatus').textContent = t; }
 function coopJoin(){
   var code = ($('coopCode').value || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 24);
@@ -1491,50 +1536,60 @@ function coopJoin(){
   netLeave();
   coopStatus('Connecting to room ' + code.toUpperCase() + '…');
   netTransport().then(function(tr){
-    var conn = tr.join(code, {onPeerJoin: netPeerJoin, onPeerLeave: netPeerLeave, onData: netData, onError: function(msg){ Net.err = msg; updateCoopLine(); }});
-    Net.on = true; Net.code = code; Net.conn = conn; Net.id = String(conn.selfId); Net.peer = null; Net.ready = false; Net.peerReady = null; Net.host = false; Net.me = 0; Net.err = '';
+    var conn = tr.join(code, {onPeerJoin: rtcPeerJoin, onPeerLeave: rtcPeerLeave, onData: netData, onError: function(msg){ Net.err = /could not connect to peer/i.test(msg) ? 'direct P2P blocked on this network — using the relay' : msg; updateCoopLine(); }});
+    Net.on = true; Net.code = code; Net.rtc = conn; Net.rtcUp = false; Net.id = String(conn.selfId); Net.peer = null; Net.relayPeer = false; Net.ready = false; Net.peerReady = null; Net.host = false; Net.me = 0; Net.err = '';
+    Net.relay = (window.__coopTransport && window.__coopTransport.noRelay) ? null : relayTransport(code, {onPeerJoin: relayPeerJoin, onPeerLeave: relayPeerLeave, onData: netData, onRelay: updateCoopLine});
     buildRoster(); show('select'); scene = 'select'; updateCoopLine();
     if (Net.timer) clearInterval(Net.timer);
-    Net.timer = setInterval(function(){ if (!Net.on){ clearInterval(Net.timer); Net.timer = null; return; } if (!Net.peer && scene === 'select') updateCoopLine(); }, 1000);
+    Net.timer = setInterval(function(){ if (!Net.on){ clearInterval(Net.timer); Net.timer = null; return; } if (scene === 'select') updateCoopLine(); }, 1000);
   }).catch(function(e){ Net.on = false; coopStatus('Could not start the multiplayer module: ' + ((e && e.message) || e) + '. Reload the page and try again.'); });
 }
 function netLeave(){
-  if (Net.conn){ try { sendNet({t:'bye'}); Net.conn.leave(); } catch (e) {} }
-  Net.on = false; Net.conn = null; Net.peer = null; Net.ready = false; Net.peerReady = null; Net.host = false; Net.me = 0; Net.f = null;
+  if (Net.on) sendNet({t:'bye'});
+  if (Net.rtc){ try { Net.rtc.leave(); } catch (e) {} }
+  if (Net.relay){ try { Net.relay.leave(); } catch (e) {} }
+  Net.on = false; Net.rtc = null; Net.rtcUp = false; Net.relay = null; Net.relayPeer = false; Net.peer = null; Net.ready = false; Net.peerReady = null; Net.host = false; Net.me = 0; Net.f = null; Net.err = '';
   $('selCoop').hidden = true; $('fightVerb').textContent = 'FIGHT AS';
 }
-function netPeerJoin(id){
-  if (Net.peer && Net.peer !== id) return;          // two is company; a third peer is ignored
-  Net.peer = String(id); Net.host = Net.id < Net.peer; Net.me = Net.host ? 0 : 1;
+function setPeer(id){
+  id = String(id);
+  if (Net.peer === id) return;
+  if (Net.peer) return;                              // two is company; a third player is ignored
+  Net.peer = id; Net.host = Net.id < Net.peer; Net.me = Net.host ? 0 : 1;
   sfx('chime', {f: 1318});
   if (Net.ready) sendNet({t:'ready', f: ROSTER[selected].id});
   updateCoopLine();
 }
-function netPeerLeave(id){
-  if (String(id) !== Net.peer) return;
+function peerGone(){
   Net.peer = null; Net.peerReady = null;
   if (scene === 'fight' && !Net.host){ G = null; show('select'); scene = 'select'; }
   updateCoopLine();
 }
+function rtcPeerJoin(id){ Net.rtcUp = true; sendNet({t:'hello'}); updateCoopLine(); }
+function rtcPeerLeave(id){ Net.rtcUp = false; if (Net.peer && !Net.relayPeer) peerGone(); else updateCoopLine(); }
+function relayPeerJoin(id){ if (Net.peer && Net.peer !== id) return; Net.relayPeer = true; setPeer(id); sendNet({t:'hello'}); }
+function relayPeerLeave(id){ if (Net.peer !== id) return; Net.relayPeer = false; if (!Net.rtcUp) peerGone(); else updateCoopLine(); }
 function netData(d, id){
   if (!d || typeof d !== 'object') return;
-  if (!Net.peer) netPeerJoin(id);
-  if (d.t === 'ready'){ Net.peerReady = d.f; updateCoopLine(); if (Net.host && Net.ready && scene === 'select') coopStart(parseInt($('startLevel').value, 10) || 0); }
+  if (d.from){ if (!Net.peer) setPeer(d.from); else if (Net.peer !== d.from) return; }
+  if (d.t === 'hello'){ /* the sender's id came with the message */ }
+  else if (d.t === 'ready'){ Net.peerReady = d.f; updateCoopLine(); if (Net.host && Net.ready && scene === 'select') coopStart(parseInt($('startLevel').value, 10) || 0); }
   else if (d.t === 'unready'){ Net.peerReady = null; updateCoopLine(); }
   else if (d.t === 'start'){ if (!Net.host){ LEVEL = d.level; Net.f = d.f; beginCoopRound(); } }
   else if (d.t === 'in'){ if (Net.host){ var ko = {}; (d.k || []).forEach(function(k){ ko[k] = true; }); Net.guestInp.keys = ko; (d.p || []).forEach(function(k){ Net.guestInp.pressed[k] = true; }); } }
   else if (d.t === 's'){ if (!Net.host && scene === 'fight') applySnap(d); }
   else if (d.t === 'result'){ if (!Net.host) showResult(); }
-  else if (d.t === 'bye'){ netPeerLeave(id); }
+  else if (d.t === 'bye'){ Net.rtcUp = false; Net.relayPeer = false; peerGone(); }
 }
 function updateCoopLine(){
   var el = $('selCoop'); el.hidden = !Net.on; if (!Net.on) return;
   var room = 'Room ' + Net.code.toUpperCase();
-  var diag = (Net.conn && Net.conn.relays) ? ' · relays ' + Net.conn.relays() : '';
+  var diag = ((Net.rtc && Net.rtc.relays) ? ' · nostr ' + Net.rtc.relays() : '') + ' · relay ' + (Net.relay ? (Net.relay.ok() ? 'on' : 'connecting…') : 'off');
+  var via = ' · via ' + (Net.rtcUp ? 'P2P' : 'relay');
   if (!Net.peer) el.textContent = room + ' · waiting for your friend to type the same code… pick your fighter meanwhile.' + diag + (Net.err ? ' · ' + Net.err : '') + ' · your id ' + Net.id.slice(0, 6);
-  else if (Net.ready && !Net.peerReady) el.textContent = room + ' · you are ready — waiting for your friend to press FIGHT…';
-  else if (Net.ready && Net.peerReady) el.textContent = room + ' · starting…';
-  else el.textContent = room + ' · friend connected' + (Net.host ? ' · you are the host and pick the round' : ' · the host picks the round') + ' · press FIGHT when ready.';
+  else if (Net.ready && !Net.peerReady) el.textContent = room + ' · you are ready — waiting for your friend to press FIGHT…' + via;
+  else if (Net.ready && Net.peerReady) el.textContent = room + ' · starting…' + via;
+  else el.textContent = room + ' · friend connected' + via + (Net.host ? ' · you are the host and pick the round' : ' · the host picks the round') + ' · press FIGHT when ready.';
   $('fightVerb').textContent = Net.on ? 'READY AS' : 'FIGHT AS';
 }
 function coopReady(){
@@ -1556,7 +1611,7 @@ function beginCoopRound(){
 function hostTick(dt){
   if (G && G.p2){ G.p2.inp.keys = Net.guestInp.keys; G.p2.inp.pressed = Net.guestInp.pressed; }
   update(dt);
-  if (G && G.p2){ Net.guestInp.pressed = {}; Net.frame++; if (Net.peer && Net.frame % 2 === 0) sendSnap(); }
+  if (G && G.p2){ Net.guestInp.pressed = {}; Net.frame++; if (Net.peer && Net.frame % (Net.rtcUp ? 2 : 3) === 0) sendSnap(); }   // 30 Hz P2P, 20 Hz over the relay
 }
 function guestTick(dt){
   if (!G) return;
