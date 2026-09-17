@@ -44,6 +44,10 @@ Edit `src/index.html` — everything (CSS, JS, fighters, rhino AI, sound) is in 
 
 Round 1 is the Kiruna snowfield. Beat it and Round 2 opens: the Wasteland, where the reference genome is contaminated — a mutant rhino that feints before charging, leaves radioactive hot spots when it skids, and vents radiation up close. Beat that and Round 3 opens: the Asteroid — low gravity, a helmeted space rhino with a horn laser and a jetpack stomp, drifting into the wrong sample (index hopping). Use *Start at* on the fighter screen to jump straight to any round.
 
+## Co-op
+
+**CO-OP** on the title screen: both players type the same room code (say `kiruna`), pick a fighter and press READY. The two browsers connect directly over WebRTC using [Trystero](https://github.com/dmotz/trystero) (loaded from a CDN only when you use co-op; signalling goes over public Nostr relays, so there is nothing to host). The peer with the lower id hosts: it runs the fight for both and streams snapshots 30 times a second, the guest sends inputs. The rhino goes for whoever is closest; the round is lost only when both are down. The host picks the round and starts rematches.
+
 ## Controls
 
 Keyboard: ← → / A D move · ↑ / W / space jump · ↓ / S duck · **J** punch · **K** kick · **L** special (meter full). Z / X / C also work. Touch devices get on-screen buttons; ⛶ FULLSCREEN gives a widescreen arena on phones.
