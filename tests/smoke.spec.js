@@ -19,12 +19,12 @@ test('game boots and a fight runs', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('all four rounds start', async ({ page }) => {
+test('all five rounds start', async ({ page }) => {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(URL);
   await page.click('#btnStart');
-  for (const lvl of ['0', '1', '2', '3']) {
+  for (const lvl of ['0', '1', '2', '3', '4']) {
     await page.selectOption('#startLevel', lvl);
     await page.click('#btnFight');
     if (lvl !== '0') { await expect(page.locator('#btnLevelGo')).toBeVisible(); await page.click('#btnLevelGo'); }
@@ -55,13 +55,53 @@ test('pacifist ending: outlast the rhino without hitting it', async ({ page }) =
   expect(errors).toEqual([]);
 });
 
+// Round 5: every 30 s the classifier reports again. A species that belongs in a Kiruna sample ends the round;
+// anything else buys another pass, up to four. #reveal=<kind> forces the species so the two paths are testable.
+test('round 5: a species that belongs in the sample ends the round', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL + '#pacifist=2&reveal=reindeer');
+  await page.click('#btnStart');
+  await page.locator('.fighter').nth(4).click();
+  await page.selectOption('#startLevel', '4');
+  await page.click('#btnFight');
+  await expect(page.locator('#btnLevelGo')).toBeVisible();
+  await page.click('#btnLevelGo');
+  for (let i = 0; i < 25; i++) { await page.keyboard.press('ArrowUp'); await page.waitForTimeout(160); }   // dodge only
+  await expect(page.locator('#result')).toBeVisible({ timeout: 20000 });
+  await expect(page.locator('#resBig')).toHaveText('IDENTIFIED');
+  await expect(page.locator('#resReadout')).toContainText('pass 1/4: REINDEER');
+  expect(errors).toEqual([]);
+});
+
+test('round 5: a species that does not belong runs the pipeline again, four times', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL + '#pacifist=1&reveal=camel');
+  await page.click('#btnStart');
+  await page.locator('.fighter').nth(4).click();
+  await page.selectOption('#startLevel', '4');
+  await page.click('#btnFight');
+  await expect(page.locator('#btnLevelGo')).toBeVisible();
+  await page.click('#btnLevelGo');
+  // the first pass reveals a camel and the fight carries on: a second pass starts, no result screen yet
+  await expect.poll(() => page.evaluate(() => { const g = window.__fight(); return g ? g.spawns : 0; }), { timeout: 15000 }).toBeGreaterThan(1);
+  await expect(page.locator('#result')).toBeHidden();
+  expect(await page.evaluate(() => window.__fight().over)).toBe(false);
+  // …until the fourth pass, which stands whatever it says
+  await expect(page.locator('#result')).toBeVisible({ timeout: 40000 });
+  await expect(page.locator('#resBig')).toHaveText('CALL IT');
+  await expect(page.locator('#resReadout')).toContainText('pass 4/4: CAMEL');
+  expect(errors).toEqual([]);
+});
+
 // The shared leaderboard talks to Supabase over REST; the tests mock that endpoint so they never need the network.
 async function mockSupabase(page, rows) {
   const calls = [];
   await page.route(/\/rest\/v1\//, route => {
     const req = route.request(), url = req.url();
     calls.push(req.method() + ' ' + url.replace(/^.*\/rest\/v1\//, ''));
-    if (url.includes('/rpc/report_score')) { const id = req.postDataJSON().score_id; rows = rows.filter(r => r.id !== id); return route.fulfill({ status: 204, body: '' }); }
+    if (url.includes('/rpc/report_icelab_score')) { const id = req.postDataJSON().score_id; rows = rows.filter(r => r.id !== id); return route.fulfill({ status: 204, body: '' }); }
     if (req.method() === 'POST') { const row = Object.assign({ id: 100 + rows.length, created_at: new Date().toISOString() }, req.postDataJSON()); rows.push(row); return route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify([row]) }); }
     const sorted = rows.slice().sort((a, b) => b.score - a.score || a.time_s - b.time_s);
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(sorted) });
@@ -86,7 +126,7 @@ test('shared leaderboard: title best, roster best, report hides an entry', async
   await expect(page.locator('#scoresTable tbody tr').first()).toContainText('Ludde');
   await page.locator('#scoresTable tbody tr').first().locator('button.report').click();
   await expect(page.locator('#scoresTable tbody tr')).toHaveCount(1);
-  expect(calls.some(c => c.startsWith('POST rpc/report_score'))).toBe(true);
+  expect(calls.some(c => c.startsWith('POST rpc/report_icelab_score'))).toBe(true);
   await expect(page.locator('#titleBest')).toContainText('5,120');
   await page.click('#btnScoresBack');
   await page.click('#btnStart');
@@ -110,7 +150,7 @@ test('saving a score posts it to the table and highlights it', async ({ page }) 
   await page.click('#btnSave');
   await expect(page.locator('#scores')).toBeVisible();
   await expect(page.locator('#btnSave')).toHaveText('SAVED');
-  expect(calls.some(c => c.startsWith('POST scores'))).toBe(true);
+  expect(calls.some(c => c.startsWith('POST icelab_scores'))).toBe(true);
   await expect(page.locator('#scoresTable tbody tr')).toHaveCount(3);
   await expect(page.locator('#scoresTable tbody tr.me')).toHaveCount(1);
   await expect(page.locator('#scoresTable tbody tr.me')).toContainText('Tester');

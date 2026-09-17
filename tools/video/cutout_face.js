@@ -5,12 +5,68 @@ var SKINS = ['#f1c9a5', '#f3c8b0', '#f0cdb0', '#f2d0b4', '#efc8ac', '#e9c0a0', '
 var HAIRC = ['#2b2320', '#4a3626', '#6b4a2e', '#8a6a48', '#c9a266', '#a86f45', '#5a5a5e', '#d8d3c8'];
 var HAIRT = ['short', 'long', 'bangs', 'curly', 'buzz'];
 var MOUTHS = ['smile', 'flat', 'open'];
+// The generated look is a hash, not a portrait, so the group leaders and members below have theirs pinned by hand:
+// hair, glasses and beard read off the staff photos on the members page (reference only — no image is stored or
+// shipped anywhere in this project, see the house rules). The affiliated researchers are still on the hash; pin one
+// the same way. Hair: short / long / bangs / curly / buzz / bald (+ big, messy, receding); beard: full / stubble /
+// goatee / mustache; mouth: smile / flat / open.
+var LOOK_FIX = {
+  // Group leaders
+  'kemal-avican':      {skin:'#efc8ac', hair:{type:'short', color:'#2b2320'}, beard:{type:'full', color:'#2b2320'}, glasses:true, mouth:'flat'},
+  'ake-brannstrom':    {skin:'#f3c8b0', hair:{type:'short', color:'#c9a266', receding:true}, beard:null, glasses:true, mouth:'smile'},
+  'laura-carroll':     {skin:'#f0cdb0', hair:{type:'long', color:'#4a3626'}, beard:null, glasses:false, mouth:'smile'},
+  'sebastian-diehl':   {skin:'#f1c9a5', hair:{type:'short', color:'#5a5a5e', messy:true}, beard:null, glasses:false, mouth:'smile'},
+  'eric-libby':        {skin:'#f1c9a5', hair:{type:'short', color:'#4a3626'}, beard:null, glasses:false, mouth:'smile'},
+  'ludvig-lizana':     {skin:'#f3c8b0', hair:{type:'buzz', color:'#2b2320'}, beard:{type:'full', color:'#2b2320'}, glasses:true, mouth:'flat'},
+  'andrew-magee':      {skin:'#f1c9a5', hair:{type:'short', color:'#2b2320'}, beard:{type:'mustache', color:'#2b2320'}, glasses:false, mouth:'flat'},
+  'gerard-rocher-ros': {skin:'#e9c0a0', hair:{type:'short', color:'#2b2320', messy:true}, beard:{type:'full', color:'#2b2320'}, glasses:false, mouth:'smile'},
+  'martin-rosvall':    {skin:'#f1c9a5', hair:{type:'short', color:'#4a3626'}, beard:null, glasses:true, mouth:'smile'},
+  'yanjun-zan':        {skin:'#efc8ac', hair:{type:'short', color:'#2b2320'}, beard:null, glasses:false, mouth:'flat'},
+  // Members
+  'sofia-almirante':   {skin:'#f0cdb0', hair:{type:'long', color:'#4a3626'}, beard:null, glasses:false, mouth:'smile'},
+  'jerome-arnoux':     {skin:'#efc8ac', hair:{type:'short', color:'#2b2320'}, beard:{type:'stubble', color:'#2b2320'}, glasses:false, mouth:'smile'},
+  'gabrielle-beans':   {skin:'#f2d0b4', hair:{type:'long', color:'#c9a266'}, beard:null, glasses:true, mouth:'smile'},
+  'ruben-bernardo-madrid': {skin:'#e9c0a0', hair:{type:'short', color:'#2b2320'}, beard:{type:'stubble', color:'#2b2320'}, glasses:false, mouth:'flat'},
+  'anton-carcedo-martinez': {skin:'#e9c0a0', hair:{type:'short', color:'#2b2320'}, beard:{type:'stubble', color:'#2b2320'}, glasses:false, mouth:'smile'},
+  'oleksandr-sasha-cherednichenko': {skin:'#f3c8b0', hair:{type:'short', color:'#8a6a48'}, beard:null, glasses:false, mouth:'smile'},
+  'sara-culligan':     {skin:'#f2d0b4', hair:{type:'long', color:'#c9a266'}, beard:null, glasses:false, mouth:'smile'},
+  'albertas-dvirnas':  {skin:'#f1c9a5', hair:{type:'short', color:'#6b4a2e'}, beard:{type:'full', color:'#6b4a2e'}, glasses:true, mouth:'smile'},
+  'daniel-edler':      {skin:'#f3c8b0', hair:{type:'bald'}, beard:null, glasses:false, mouth:'smile'},
+  'luis-jose-fernando': {skin:'#c08b62', hair:{type:'long', color:'#2b2320'}, beard:null, glasses:false, mouth:'open'},
+  'corentin-fournier': {skin:'#efc8ac', hair:{type:'short', color:'#2b2320', messy:true}, beard:{type:'full', color:'#2b2320', big:true}, glasses:true, mouth:'flat'},
+  'robert-garvey':     {skin:'#f3c8b0', hair:{type:'short', color:'#8a6a48'}, beard:{type:'stubble', color:'#8a6a48'}, glasses:false, mouth:'flat'},
+  'elsa-gascon':       {skin:'#f0cdb0', hair:{type:'long', color:'#2b2320'}, beard:null, glasses:false, mouth:'smile'},
+  'aswin-gopakumar':   {skin:'#c08b62', hair:{type:'short', color:'#2b2320'}, beard:null, glasses:true, mouth:'smile'},
+  'ying-ke-hou':       {skin:'#f0cdb0', hair:{type:'long', color:'#2b2320'}, beard:null, glasses:true, mouth:'smile'},
+  'noor-ul-huda':      {skin:'#e8bfa0', hair:{type:'long', color:'#2b2320'}, beard:null, glasses:false, mouth:'flat'},
+  'mohammad-ilyas':    {skin:'#d8a882', hair:{type:'short', color:'#2b2320'}, beard:null, glasses:false, mouth:'smile'},
+  'yun-ting-jang':     {skin:'#f0cdb0', hair:{type:'long', color:'#2b2320'}, beard:null, glasses:false, mouth:'flat'},
+  'henrik-hoiberg-jessen': {skin:'#f3c8b0', hair:{type:'bald'}, beard:{type:'full', color:'#a86f45', big:true}, glasses:false, mouth:'flat'},
+  'lei-liang':         {skin:'#efc8ac', hair:{type:'short', color:'#2b2320'}, beard:null, glasses:false, mouth:'flat'},
+  'maja-lindstrom':    {skin:'#f2d0b4', hair:{type:'long', color:'#c9a266'}, beard:null, glasses:false, mouth:'smile'},
+  'lea-maheux':        {skin:'#d8a882', hair:{type:'long', color:'#4a3626'}, beard:null, glasses:false, mouth:'smile'},
+  'magnus-neuman':     {skin:'#f1c9a5', hair:{type:'short', color:'#6b4a2e', messy:true}, beard:{type:'full', color:'#6b4a2e'}, glasses:false, mouth:'flat'},
+  'anna-nordstrom':    {skin:'#f0cdb0', hair:{type:'long', color:'#2b2320'}, beard:null, glasses:false, mouth:'smile'},
+  'defne-platturk':    {skin:'#f0cdb0', hair:{type:'curly', color:'#a86f45', big:true}, beard:null, glasses:false, mouth:'smile'},
+  'abigail-rec':       {skin:'#f2d0b4', hair:{type:'long', color:'#8a6a48'}, beard:null, glasses:false, mouth:'open'},
+  'jelena-smiljanic':  {skin:'#f2d0b4', hair:{type:'long', color:'#c9a266'}, beard:null, glasses:false, mouth:'flat'},
+  'josephine-solowiej-wedderburn': {skin:'#f3c8b0', hair:{type:'curly', color:'#a86f45', big:true}, beard:null, glasses:false, mouth:'smile'},
+  'sena-gizem-suer':   {skin:'#f0cdb0', hair:{type:'long', color:'#4a3626'}, beard:null, glasses:true, mouth:'smile'},
+  'suvam-roy':         {skin:'#c08b62', hair:{type:'short', color:'#2b2320'}, beard:{type:'stubble', color:'#2b2320'}, glasses:false, mouth:'smile'},
+  'jyoti-verma':       {skin:'#d8a882', hair:{type:'long', color:'#2b2320'}, beard:null, glasses:false, mouth:'smile'},
+  'sarah-vollert':     {skin:'#f2d0b4', hair:{type:'long', color:'#8a6a48'}, beard:null, glasses:false, mouth:'smile'},
+  'ying-wang':         {skin:'#f0cdb0', hair:{type:'long', color:'#2b2320'}, beard:null, glasses:false, mouth:'flat'},
+  'seong-gyu-yang':    {skin:'#efc8ac', hair:{type:'short', color:'#2b2320'}, beard:null, glasses:true, mouth:'smile'}
+};
 function lookFor(id){
   var h = hashOf(id + '-look'), t = HAIRT[h % HAIRT.length];
-  return {skin: SKINS[(h >>> 3) % SKINS.length],
+  var look = {skin: SKINS[(h >>> 3) % SKINS.length],
           hair: {type: t, color: HAIRC[(h >>> 7) % HAIRC.length], big: ((h >>> 11) & 1) === 1, messy: ((h >>> 12) & 1) === 1, receding: t === 'short' && ((h >>> 13) & 3) === 0},
           beard: null, glasses: ((h >>> 17) % 3) === 0, mouth: MOUTHS[(h >>> 19) % MOUTHS.length],
           brow: ((h >>> 23) & 3) === 0};
+  var fix = LOOK_FIX[id];
+  if (fix) for (var k in fix) if (Object.prototype.hasOwnProperty.call(fix, k)) look[k] = fix[k];
+  return look;
 }
 function drawCutoutFace(c, cx, cy, S, look, fac, opt){
   // S = head width. Big round head, big oval eyes, thick paper-cut outline.
