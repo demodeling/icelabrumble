@@ -4,3 +4,4 @@ test-results/
 playwright-report/
 tools/video/frames_*/
 .DS_Store
+tools/video/frames_intro/

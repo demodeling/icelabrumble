@@ -164,3 +164,17 @@ test('Esc and the MENU button return to the main menu', async ({ page }) => {
   await page.waitForTimeout(400);
   expect(errors).toEqual([]);
 });
+
+test('the menu has the false-positive clip', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  await expect(page.locator('#btnIntro')).toBeVisible();
+  await page.click('#btnIntro');
+  await expect(page.locator('#videoBox')).toBeVisible();
+  const src = await page.evaluate(() => document.getElementById('theVideo').getAttribute('src') || '');
+  expect(src).toContain('intro');
+  await page.click('#btnVideoClose');
+  await expect(page.locator('#title')).toBeVisible();
+  expect(errors).toEqual([]);
+});
