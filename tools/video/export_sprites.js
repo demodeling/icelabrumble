@@ -1,11 +1,11 @@
 const { chromium } = require('playwright');
 const fs = require('fs');
 (async () => {
-  const browser = await chromium.launch();
+  const browser = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
   const page = await browser.newPage();
   await page.setContent('<canvas id="c" width="700" height="760"></canvas>');
   await page.evaluate(fs.readFileSync('cutout_face.js', 'utf8'));
-  const names = ['albertas','bjorn','bea','annamia','per','marco','jose','mike','daniel'];
+  const names = ['albertas','bjorn','bea','annamia','per','marco','jose','mike','daniel','henrik','anton'];
   for (const n of names) for (const mouth of ['flat', 'open', 'smile']) {
     const data = await page.evaluate(([n, m]) => {
       const cv = document.getElementById('c'); const c = cv.getContext('2d'); c.clearRect(0, 0, cv.width, cv.height);

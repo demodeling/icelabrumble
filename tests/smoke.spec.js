@@ -9,7 +9,7 @@ test('game boots and a fight runs', async ({ page }) => {
   await page.goto(URL);
   await expect(page.locator('#btnStart')).toBeVisible();
   await page.click('#btnStart');
-  await expect(page.locator('.fighter')).toHaveCount(9);
+  await expect(page.locator('.fighter')).toHaveCount(11);
   await page.click('.fighter:nth-child(5)');          // Per (not pre-selected, so one click only selects)
   await page.click('#btnFight');
   await page.waitForTimeout(1500);
@@ -23,8 +23,8 @@ test('every fighter has a video', async ({ page }) => {
   await page.goto(URL);
   await page.click('#btnStart');
   const fighters = page.locator('.fighter');
-  await expect(fighters).toHaveCount(9);
-  for (let i = 0; i < 9; i++) {
+  await expect(fighters).toHaveCount(11);
+  for (let i = 0; i < 11; i++) {
     const f = fighters.nth(i);
     // clicking an already-selected fighter starts the fight, so only click when it is not selected yet
     if (!(await f.evaluate(el => el.classList.contains('sel')))) await f.click();
@@ -177,4 +177,58 @@ test('the menu has the false-positive clip', async ({ page }) => {
   await page.click('#btnVideoClose');
   await expect(page.locator('#title')).toBeVisible();
   expect(errors).toEqual([]);
+});
+
+test('the title screen shows the version', async ({ page }) => {
+  await page.goto(URL);
+  await expect(page.locator('#verLine')).toHaveText(/^v\d+\.\d+\.\d+ · build \S+$/);
+});
+
+// Co-op: two pages joined through a fake room (the real one is Trystero over WebRTC, which needs the network).
+// Messages a page sends go through Node to the other page, and we count them by type.
+async function wireCoop(page, id, getOther, tally) {
+  await page.exposeFunction('__coopOut', async (json) => {
+    const m = JSON.parse(json); tally[m.t] = (tally[m.t] || 0) + 1;
+    const other = getOther(); if (other) await other.evaluate(([j, from]) => window.__coopIn(j, from), [json, id]).catch(() => {});
+  });
+  await page.addInitScript(([id]) => {
+    window.__coopTransport = { join(code, h) {
+      window.__coopIn = (json, from) => h.onData(JSON.parse(json), from);
+      window.__coopPeer = (pid) => h.onPeerJoin(pid);
+      return { send: m => window.__coopOut(JSON.stringify(m)), selfId: id, leave() {} };
+    } };
+  }, [id]);
+}
+test('co-op: two pages fight the rhino through a room', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 1100, height: 720 } });
+  const A = await ctx.newPage(), B = await ctx.newPage();
+  const errors = []; [A, B].forEach(p => p.on('pageerror', e => errors.push(e.message)));
+  const sentA = {}, sentB = {};
+  await wireCoop(A, 'a', () => B, sentA);            // 'a' < 'b', so A hosts
+  await wireCoop(B, 'b', () => A, sentB);
+  for (const p of [A, B]) {
+    await p.route(/\/rest\/v1\//, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await p.goto(URL);
+    await p.click('#btnCoop'); await p.fill('#coopCode', 'Kiruna'); await p.click('#btnCoopJoin');
+    await expect(p.locator('#select')).toBeVisible();
+    await expect(p.locator('#selCoop')).toContainText('waiting for your friend');
+  }
+  await A.evaluate(() => window.__coopPeer('b')); await B.evaluate(() => window.__coopPeer('a'));
+  await expect(A.locator('#selCoop')).toContainText('you are the host');
+  await expect(B.locator('#selCoop')).toContainText('the host picks the round');
+  await A.click('.fighter:nth-child(5)'); await A.click('#btnFight');      // Per, host ready first
+  await expect(A.locator('#selCoop')).toContainText('waiting for your friend to press');
+  await B.click('.fighter:nth-child(2)'); await B.click('#btnFight');      // Björn
+  await expect(A.locator('#select')).toBeHidden(); await expect(B.locator('#select')).toBeHidden();
+  // the guest plays: its inputs travel to the host, snapshots come back
+  for (let i = 0; i < 8; i++) { await B.keyboard.down('ArrowRight'); await B.waitForTimeout(60); await B.keyboard.up('ArrowRight'); await B.keyboard.press('j'); await B.waitForTimeout(100); }
+  await A.keyboard.press('ArrowUp'); await A.keyboard.press('k');
+  await B.waitForTimeout(1200);
+  expect(sentB.in).toBeGreaterThan(3);
+  expect(sentA.s).toBeGreaterThan(10);
+  await B.keyboard.press('Escape');                                        // guest leaves; host keeps playing
+  await expect(B.locator('#title')).toBeVisible();
+  await A.waitForTimeout(300);
+  expect(errors).toEqual([]);
+  await ctx.close();
 });

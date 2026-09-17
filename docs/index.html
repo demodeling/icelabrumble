@@ -80,6 +80,8 @@
   .readout b{color:var(--gold);font-weight:400;}
   .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
   .small{font-size:clamp(11px,1.3vw,13px);color:var(--muted);margin:0;}
+  .small.ver{font-size:11px;opacity:.6;letter-spacing:.06em;font-variant-numeric:tabular-nums;}
+  .small.coop{color:var(--aurora);font-weight:700;}
   #topBtns{position:absolute;top:8px;right:8px;z-index:5;display:flex;gap:6px;}
   #fsBtn,#menuBtn{font-family:var(--display);font-size:14px;letter-spacing:.06em;color:var(--snow);
          background:rgba(20,26,52,.7);border:2px solid rgba(255,255,255,.35);border-radius:8px;padding:4px 10px;cursor:pointer;}
@@ -146,18 +148,20 @@
     <div id="title" class="overlay"><div class="panel">
       <h1>SWEBITS<br>RUMBLE</h1>
       <p class="sub">An airborne eDNA sampler in Kiruna reported a rhino. One read, 98.7% match. Somebody has to remove it from the dataset by hand.</p>
-      <div class="row"><button class="btn" id="btnStart">CHOOSE YOUR FIGHTER</button><button class="btn secondary" id="btnScores">HIGH SCORES</button><button class="btn secondary" id="btnIntro">▶ FALSE POSITIVE?</button></div>
+      <div class="row"><button class="btn" id="btnStart">CHOOSE YOUR FIGHTER</button><button class="btn secondary" id="btnScores">HIGH SCORES</button><button class="btn secondary" id="btnCoop">CO-OP</button><button class="btn secondary" id="btnIntro">▶ FALSE POSITIVE?</button></div>
       <p class="small" id="titleBest"></p>
       <p class="small">Sound on for the full kung-fu experience. Works on Safari, iPhone and iPad — tap ⛶ FULLSCREEN for a widescreen arena on your phone.</p>
+      <p class="small ver" id="verLine">v1.1.0 · build 8180a40</p>
     </div></div>
 
     <div id="select" class="overlay" hidden><div class="panel">
       <h2>CHOOSE YOUR FIGHTER</h2>
       <div class="row" style="align-items:center">
-        <button class="btn" id="btnFight">FIGHT AS <span id="selName">ALBERTAS</span>!</button>
+        <button class="btn" id="btnFight"><span id="fightVerb">FIGHT AS</span> <span id="selName">ALBERTAS</span>!</button>
         <button class="btn secondary" id="btnVideo">SHOW ME <span id="selName2">ALBERTAS</span>’S VIDEO</button>
       </div>
       <p class="small">Tap a fighter to select — tap again to fight.</p>
+      <p class="small coop" id="selCoop" hidden></p>
       <label class="check">Start at <select id="startLevel"><option value="0">Round 1 — Kiruna</option><option value="1">Round 2 — The Wasteland</option><option value="2">Round 3 — The Asteroid</option></select></label>
       <div class="roster" id="roster"></div>
       <div class="controls" id="ctrlHelp"><kbd>←</kbd><kbd>→</kbd> move · <kbd>↑</kbd>/<kbd>space</kbd> jump · <kbd>↓</kbd> duck · <kbd>J</kbd> punch · <kbd>K</kbd> kick · <kbd>L</kbd> special (when the meter is full) · <kbd>Esc</kbd> menu</div>
@@ -166,6 +170,14 @@
     <div id="levelCard" class="overlay" hidden><div class="panel">
       <div class="term" id="termText"></div>
       <div class="row"><button class="btn rad" id="btnLevelGo">FIGHT ROUND 2</button><button class="btn secondary" id="btnLevelBack">BACK</button></div>
+    </div></div>
+
+    <div id="coop" class="overlay" hidden><div class="panel">
+      <h2>CO-OP</h2>
+      <p class="small">Two crew members, one rhino. Both of you type the <b>same room code</b> (for example <b>kiruna</b>), then pick a fighter. Peer-to-peer over WebRTC — nothing to host.</p>
+      <div class="namebox"><label for="coopCode" class="small">Room code</label><input id="coopCode" maxlength="24" autocomplete="off" autocapitalize="off" placeholder="kiruna"><button class="btn" id="btnCoopJoin">JOIN ROOM</button></div>
+      <p class="small" id="coopStatus"></p>
+      <div class="row"><button class="btn secondary" id="btnCoopBack">BACK</button></div>
     </div></div>
 
     <div id="scores" class="overlay" hidden><div class="panel">
@@ -181,6 +193,7 @@
       <p class="scoreline" id="scoreLine" hidden></p>
       <div class="namebox" id="nameBox" hidden><label for="playerName" class="small">Your name</label><input id="playerName" maxlength="16" autocomplete="nickname" placeholder="Name"><button class="btn secondary" id="btnSave">SAVE SCORE</button></div>
       <div class="readout" id="resReadout"></div>
+      <p class="small coop" id="resCoop" hidden></p>
       <div class="row">
         <button class="btn rad" id="btnNext" hidden>NEXT ROUND: THE WASTELAND</button>
         <button class="btn" id="btnAgain">REMATCH</button>
@@ -214,7 +227,11 @@ var ROSTER = [
   {id:'mike', name:'Mike', face:'mike', shirt:'#1f1f26', pants:'#33384e', hp:100, speed:1.15, power:1.05, jump:1.1,
    special:{name:'Finger Guns', kind:'combo', dmg:11, hits:4, desc:'Pew pew pew pew. Somehow it works.'}},
   {id:'daniel', name:'Daniel', face:'daniel', shirt:'#1f3d34', pants:'#33384e', hp:100, speed:1.05, power:1.1, jump:1.0,
-   special:{name:'Significance Strike', kind:'dash', dmg:38, desc:'p < 0.05. Null rhino rejected.'}}
+   special:{name:'Significance Strike', kind:'dash', dmg:38, desc:'p < 0.05. Null rhino rejected.'}},
+  {id:'henrik', name:'Henrik', face:'henrik', shirt:'#3b5fa8', pants:'#2c3048', hp:120, speed:0.34, power:2.0, jump:0.85,
+   special:{name:'Timber Slam', kind:'slam', dmg:70, desc:'Slow as a glacier. Hits like one too.'}},
+  {id:'anton', name:'Anton', face:'anton', shirt:'#6e3a3a', pants:'#33384e', hp:50, speed:1.15, power:1.0, jump:1.1, prop:'stick',
+   special:{name:'Innebandy Slapshot', kind:'dash', dmg:36, desc:'Full swing. The rhino is the ball.'}}
 ];
 var faceImgs = {};
 // ------------------------------------------------------------ cutout-style faces (construction-paper look)
@@ -227,7 +244,9 @@ var LOOK = {
   marco:   {skin:'#e9c0a0', hair:{type:'curly', color:'#2b2320', big:true}, beard:{type:'mustache', color:'#2b2320'}, mouth:'smile'},
   jose:    {skin:'#e8bfa0', hair:{type:'buzz', color:'#2f2620'}, beard:{type:'full', color:'#2a221e', big:true}, mouth:'smile'},
   mike:    {skin:'#f0c7a8', hair:{type:'short', color:'#8a6a48', messy:true}, beard:{type:'full', color:'#a86f45'}, mouth:'open'},
-  daniel:  {skin:'#f1c9ad', hair:{type:'short', color:'#4a3a2e', receding:true}, beard:null, glasses:true, mouth:'smile', chain:true}
+  daniel:  {skin:'#f1c9ad', hair:{type:'short', color:'#4a3a2e', receding:true}, beard:null, glasses:true, mouth:'smile', chain:true},
+  henrik:  {skin:'#f2c9ae', hair:{type:'bald'}, beard:{type:'full', color:'#c4652e', big:true}, mouth:'flat', brow:true},
+  anton:   {skin:'#f0c8ae', hair:{type:'short', color:'#5a3d26', messy:true}, beard:{type:'goatee', color:'#7a5236'}, mouth:'smile'}
 };
 function drawCutoutFace(c, cx, cy, S, look, fac, opt){
   // S = head width. Big round head, big oval eyes, thick paper-cut outline.
@@ -282,6 +301,11 @@ function drawCutoutFace(c, cx, cy, S, look, fac, opt){
   c.fillStyle = INKC; [-1, 1].forEach(function(sd){ c.beginPath(); c.arc(sd * ex * .95 + sh + S * .05, eyy + S * .02, S * .04, 0, 6.283); c.fill(); });
   if (look.brow || opt.angry){ c.lineWidth = lw; [-1, 1].forEach(function(sd){ c.beginPath(); c.moveTo(sd * ex * 1.7 + sh, eyy - ey * 1.05 + (opt.angry ? sd * -S * .03 : 0)); c.lineTo(sd * ex * .3 + sh, eyy - ey * 1.25 + (opt.angry ? S * .04 : 0)); c.stroke(); }); }
   if (look.glasses){ c.lineWidth = lw * .7; c.strokeStyle = '#3a2f2a'; [-1, 1].forEach(function(sd){ c.beginPath(); c.ellipse(sd * ex * .95 + sh, eyy, ex * 1.12, ey * 1.1, 0, 0, 6.283); c.stroke(); }); c.beginPath(); c.moveTo(sh - ex * .05, eyy - ey * .3); c.lineTo(sh + ex * .05, eyy - ey * .3); c.stroke(); }
+  // goatee: a chin patch (drawn before the mouth) + a thin mustache
+  if (bd && bd.type === 'goatee'){
+    outlined(bd.color, function(){ c.moveTo(-S * .2, S * .3); c.quadraticCurveTo(-S * .2, ry * 1.12, S * .04, ry * 1.14); c.quadraticCurveTo(S * .28, ry * 1.12, S * .28, S * .3); c.quadraticCurveTo(S * .04, S * .36, -S * .2, S * .3); });
+    outlined(bd.color, function(){ c.moveTo(-S * .16, S * .21); c.quadraticCurveTo(S * .04, S * .14, S * .24, S * .21); c.quadraticCurveTo(S * .14, S * .25, S * .04, S * .23); c.quadraticCurveTo(-S * .06, S * .25, -S * .16, S * .21); });
+  }
   // mustache
   if (bd && bd.type === 'mustache'){ outlined(bd.color, function(){ c.moveTo(-S * .2, S * .2); c.quadraticCurveTo(0, S * .1, S * .2, S * .2); c.quadraticCurveTo(S * .1, S * .28, 0, S * .24); c.quadraticCurveTo(-S * .1, S * .28, -S * .2, S * .2); }); }
   // mouth
@@ -356,6 +380,7 @@ function noiseBuf(a, dur){
   return b;
 }
 function sfx(kind, opt){
+  if (Net.on && Net.host && Net.peer && Net.sfxQ.length < 12) Net.sfxQ.push(kind);
   var a = audio(); if (!a || a.state !== 'running') return;
   opt = opt || {};
   var t = a.currentTime, g = a.createGain(); g.connect(a.destination);
@@ -792,6 +817,19 @@ function fighterDrawInner(f, t){
     ctx.beginPath(); ctx.moveTo(hcnt[0] - 10, hcnt[1] - 1); ctx.lineTo(hcnt[0] + 10, hcnt[1] - 1); ctx.lineTo(hcnt[0], hcnt[1] + 10); ctx.closePath(); ctx.fill();
   }
   seg(armNear, armw, shirt); hand(armNear[2], true);
+  f.stickPt = null;
+  if (f.def.prop === 'stick'){
+    // innebandy stick: shaft from the near hand, blade at the end; swings forward while attacking
+    var hp3 = armNear[2], swing = (f.state === 'punch' || f.state === 'special') ? .12 : (f.state === 'kick' ? .5 : .95);
+    var sl = .5 * Hm, tipx = hp3[0] + fac * Math.cos(swing) * sl, tipy = hp3[1] + Math.sin(swing) * sl;
+    var bx = tipx + fac * 20 * Math.cos(swing - 1.1), by = tipy + 20 * Math.sin(swing - 1.1);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = ink; ctx.lineWidth = 9; ctx.beginPath(); ctx.moveTo(hp3[0], hp3[1]); ctx.lineTo(tipx, tipy); ctx.lineTo(bx, by); ctx.stroke();
+    ctx.strokeStyle = f.flash > 0 ? '#fff' : '#f4f4f0'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(hp3[0], hp3[1]); ctx.lineTo(tipx, tipy); ctx.stroke();
+    ctx.strokeStyle = '#2a7de1'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(hp3[0], hp3[1]); ctx.lineTo(hp3[0] + fac * Math.cos(swing) * sl * .28, hp3[1] + Math.sin(swing) * sl * .28); ctx.stroke();
+    ctx.strokeStyle = '#1c1c22'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(tipx, tipy); ctx.lineTo(bx, by); ctx.stroke();
+    f.stickPt = [bx, by];
+  }
   if (babysit){
     // baby bottle in the near hand
     var hp2 = armNear[2]; ctx.save(); ctx.translate(hp2[0], hp2[1]); ctx.rotate(fac * -.5);
@@ -823,11 +861,14 @@ var scene = 'title';
 var selected = 0;
 var particles = [], fx = [], dna = [], puffs = [], shake = 0, flashA = 0, slowmo = 0, impactFrame = 0;
 
-function newFight(def){
-  var p = {def:def, x:200, y:0, vy:0, facing:1, hp:def.hp, maxhp:def.hp, meter:0, state:'idle', st:0, pose:POSE.guard, inv:0, flash:0, combo:0, hitsLanded:0, handPt:[0,0], footPt:[0,0], headPt:[0,0], attackHit:false, dashDir:1, specialHits:0, scale:1};
+function mkPlayer(def, x){
+  return {def:def, x:x, y:0, vy:0, facing:1, hp:def.hp, maxhp:def.hp, meter:0, state:'idle', st:0, pose:POSE.guard, inv:0, flash:0, combo:0, hitsLanded:0, handPt:[0,0], footPt:[0,0], headPt:[0,0], attackHit:false, dashDir:1, specialHits:0, scale:1, inp:{keys:{}, pressed:{}}};
+}
+function newFight(def, def2){
+  var p = mkPlayer(def, def2 ? 150 : 200), p2 = def2 ? mkPlayer(def2, 290) : null;
   var lv = LEVELS[LEVEL];
   var r = {x:720, facing:-1, hp:lv.rhino.hp, maxhp:lv.rhino.hp, mutant:lv.rhino.mutant, space:!!lv.rhino.space, glow:0, willFeint:false, targetX:0, state:'idle', st:0, timer:1.4, run:0, phase:0, tilt:0, head:0, jump:0, squash:0, tail:0, flash:0, angry:false, rage:0, dir:-1, chargeHit:false, vx:0};
-  G = {p:p, r:r, t:0, over:false, won:false, elapsed:0, koT:0, pacifist:false};
+  G = {p:p, p2:p2, players: p2 ? [p, p2] : [p], r:r, t:0, over:false, won:false, elapsed:0, koT:0, pacifist:false};
   particles = []; fx = []; dna = []; puffs = []; hot = []; rings = []; bolts = []; shake = 0; flashA = 0; slowmo = 0; impactFrame = 0;
 }
 
@@ -856,19 +897,28 @@ function hitRhino(pt, dmg, big, label){
   if (r.state === 'sleep'){ r.x -= r.facing * 6; }
   if (r.hp <= 0) rhinoKO();
 }
-function hitPlayer(dmg, label, knock){
-  var p = G.p; if (p.inv > 0 || G.over) return;
+function alivePlayers(){ return G.players.filter(function(q){ return q.state !== 'ko'; }); }
+function rhinoTarget(){
+  // the rhino goes for the nearest fighter still standing
+  var r = G.r, best = null, bd = 1e9;
+  G.players.forEach(function(q){ if (q.state === 'ko') return; var d = Math.abs(q.x - r.x); if (d < bd){ bd = d; best = q; } });
+  return best || G.p;
+}
+function hitPlayer(p, dmg, label, knock){
+  if (p.inv > 0 || G.over || p.state === 'ko') return;
   p.hp = Math.max(0, p.hp - dmg); p.inv = 1.0; p.flash = 0.15; p.state = 'hurt'; p.st = 0; p.vy = 260; p.y = Math.max(p.y, 1); p.kx = knock;
   fx.push({x: p.headPt[0], y: p.headPt[1] - 20, t: 0, life: .5, r: 60, label: label, big: false, red: true});
   shake = Math.max(shake, 12); sfx('hurt'); sfx('hit');
-  if (p.hp <= 0) playerKO();
+  if (p.hp <= 0) playerKO(p);
 }
-function playerKO(){
-  var p = G.p; if (G.over) return;
-  G.over = true; G.won = false; p.state = 'ko'; p.st = 0; setTimeout(showResult, 1800); sfx('gong', {f: 70, v: .6});
+function playerKO(p){
+  if (G.over || p.state === 'ko') return;
+  p.state = 'ko'; p.st = 0; sfx('gong', {f: 70, v: .6});
+  if (!alivePlayers().length){ G.over = true; G.won = false; setTimeout(showResult, 1800); }
 }
 function rhinoKO(){
-  var r = G.r; r.state = 'ko'; r.st = 0; G.over = true; G.won = true; G.p.state = 'win'; G.p.st = 0; G.koT = 0;
+  var r = G.r; r.state = 'ko'; r.st = 0; G.over = true; G.won = true; G.koT = 0;
+  alivePlayers().forEach(function(q){ q.state = 'win'; q.st = 0; });
   sfx('bighit'); sfx('gong', {f: 70, v: .7});
   setTimeout(function(){ explodeRhino(); }, 1500);
   setTimeout(showResult, 5200);
@@ -877,10 +927,11 @@ function rhinoKO(){
 var PACIFIST_DEBUG = parseFloat((location.hash.match(/pacifist=(\d+(?:\.\d+)?)/) || [])[1]);
 function pacifistTime(){ return PACIFIST_DEBUG > 0 ? PACIFIST_DEBUG : 60 + 30 * LEVEL; }
 function rhinoReveal(){
-  var r = G.r, p = G.p; if (G.over) return;
+  var r = G.r, p = rhinoTarget(); if (G.over) return;
   var kinds = ['tapir', 'horse', 'zebra']; r.morph = kinds[Math.floor(Math.random() * kinds.length)]; r.revealed = false;
   r.state = 'morph'; r.st = 0; r.run = 0; r.jump = 0; r.glow = 0; r.angry = false; r.chargeHit = true; bolts = [];
-  G.over = true; G.won = true; G.pacifist = true; p.state = 'win'; p.st = 0; G.koT = 0;
+  G.over = true; G.won = true; G.pacifist = true; G.koT = 0;
+  alivePlayers().forEach(function(q){ q.state = 'win'; q.st = 0; });
   sfx('gong', {f: 96, v: .5}); sfx('drum');
   setTimeout(showResult, 6200);
 }
@@ -899,8 +950,8 @@ function explodeRhino(){
 }
 
 // ------------------------------------------------------------ update
-function updatePlayer(dt){
-  var p = G.p, r = G.r, def = p.def;
+function updatePlayer(p, dt){
+  var r = G.r, def = p.def, keys = p.inp.keys, pressed = p.inp.pressed;
   p.st += dt; if (p.inv > 0) p.inv -= dt; if (p.flash > 0) p.flash -= dt;
   var busy = p.state === 'punch' || p.state === 'kick' || p.state === 'special' || p.state === 'hurt' || p.state === 'ko' || p.state === 'win';
   var speed = 300 * def.speed;
@@ -928,7 +979,7 @@ function updatePlayer(dt){
   else if (p.state === 'punch'){
     var k = p.alt ? POSE.punch : POSE.punch2; var u = p.st < .1 ? p.st / .1 : 1 - smooth(.18, .32, p.st);
     pose = mixPose(POSE.guard, k, u);
-    if (p.st > .06 && p.st < .2 && !p.attackHit){ var hp = p.alt ? p.handPt : p.handPt; if (inRect(hp, rhinoRect(r), 14)){ p.attackHit = true; hitRhino(hp, 7, false); } }
+    if (p.st > .06 && p.st < .2 && !p.attackHit){ var hp = p.stickPt || p.handPt; if (inRect(hp, rhinoRect(r), 14)){ p.attackHit = true; hitRhino(hp, 7, false); } }
     if (p.st > .32) p.state = 'idle';
   } else if (p.state === 'kick'){
     var u2 = p.st < .12 ? 0 : (p.st < .22 ? (p.st - .12) / .1 : 1 - smooth(.34, .5, p.st));
@@ -948,14 +999,14 @@ function updatePlayer(dt){
   p.pose = pose;
   p.ducking = keys.down && onGround && !busy;
   // radioactive hot spots (round 2)
-  if (!G.over && p.y <= 0 && hot.length){
+  if (!G.over && p.state !== 'ko' && p.y <= 0 && hot.length){
     var inHot = false;
     for (var hi = 0; hi < hot.length; hi++){ if (Math.abs(p.x - hot[hi].x) < hot[hi].r) inHot = true; }
     if (inHot){
       p.hp = Math.max(0, p.hp - 9 * dt); p.radT = (p.radT || 0) + dt;
       if (p.radT > .18){ p.radT = 0; sfx('geiger'); }
       if (!p.radLabel){ p.radLabel = true; fx.push({x: p.headPt[0], y: p.headPt[1] - 30, t: 0, life: .6, r: 40, label: 'RADS!', big: false, red: true}); }
-      if (p.hp <= 0) playerKO();
+      if (p.hp <= 0) playerKO(p);
     } else p.radLabel = false;
   }
 }
@@ -964,7 +1015,7 @@ function specialUpdate(p, r, dt){
   if (kind === 'dash' || kind === 'grab'){
     var dur = kind === 'dash' ? .55 : .7, spd = kind === 'dash' ? 900 : 520;
     if (st < .12) pose = mixPose(POSE.guard, POSE.kickWind, st / .12);
-    else if (st < dur - .15){ p.x += p.dashDir * spd * dt; pose = kind === 'dash' ? POSE.punch : POSE.grab; if (!p.attackHit && inRect(kind === 'dash' ? p.handPt : p.headPt, rhinoRect(r), kind === 'dash' ? 20 : 40)){ p.attackHit = true; hitRhino(p.handPt, sp.dmg, true, kind === 'grab' ? 'SUPLEX!' : 'PURGED!'); if (kind === 'grab'){ r.jump = 60; r.tilt = -.6; } } }
+    else if (st < dur - .15){ p.x += p.dashDir * spd * dt; pose = kind === 'dash' ? POSE.punch : POSE.grab; if (!p.attackHit && inRect(kind === 'dash' ? (p.stickPt || p.handPt) : p.headPt, rhinoRect(r), kind === 'dash' ? 20 : 40)){ p.attackHit = true; hitRhino(p.handPt, sp.dmg, true, kind === 'grab' ? 'SUPLEX!' : 'PURGED!'); if (kind === 'grab'){ r.jump = 60; r.tilt = -.6; } } }
     else pose = mixPose(POSE.punch, POSE.guard, smooth(dur - .15, dur, st));
     if (st > dur) p.state = 'idle';
   } else if (kind === 'fly' || kind === 'upper'){
@@ -1024,7 +1075,7 @@ function specialUpdate(p, r, dt){
   return pose;
 }
 function updateRhino(dt){
-  var r = G.r, p = G.p;
+  var r = G.r, p = rhinoTarget();
   r.st += dt; if (r.flash > 0) r.flash -= dt;
   r.tail = .12 * Math.sin(G.t * 1.4);
   if (r.jump > 0 && r.state !== 'jetstomp'){ r.jump = Math.max(0, r.jump - 140 * dt); }
@@ -1068,7 +1119,7 @@ function updateRhino(dt){
     var pw = Math.max(0, Math.sin(r.st * 6.28 * 1.4)); r.tilt = .03 * pw; r.head = -.12 * pw;
     if (r.st > .15 && Math.floor(r.st * 10) % 3 === 0 && Math.random() < .5) puffs.push({x: r.x + r.facing * 95 + rnd(-20, 20), y: GROUND - rnd(0, 20), t: 0, r: rnd(5, 10)});
     if (r.willFeint && r.st > .45){ r.willFeint = false; r.state = 'feint'; r.st = 0; r.dir = r.facing; sfx('drum'); }
-    else if (r.st > (r.angry ? .55 : .85)){ r.state = 'charge'; r.st = 0; r.dir = r.facing; r.chargeHit = false; sfx('drum'); sfx('whoosh'); }
+    else if (r.st > (r.angry ? .55 : .85)){ r.state = 'charge'; r.st = 0; r.dir = r.facing; r.chargeHit = false; G.players.forEach(function(q){ q.trampled = false; }); sfx('drum'); sfx('whoosh'); }
   } else if (r.state === 'feint'){
     // fake start: lurches forward, then stops and paws again
     r.x += r.dir * 380 * dt * (1 - r.st / .3); r.run = 1; r.phase += dt * 20; r.tilt = .06;
@@ -1091,13 +1142,13 @@ function updateRhino(dt){
       if (r.st >= 1.38 && !r.chargeHit){ r.chargeHit = true; shake = Math.max(shake, 22); sfx('bighit'); sfx('drum'); impactFrame = 2;
         for (var pk = 0; pk < 14; pk++) puffs.push({x: r.x + rnd(-200, 200), y: GROUND - rnd(0, 20), t: 0, r: rnd(8, 20)});
         rings.push({x: r.x, t: 0, grey: true});
-        if (Math.abs(p.x - r.x) < 190 && p.y < 45) hitPlayer(20, 'STOMPED!', Math.sign(p.x - r.x || 1) * 420); }
+        G.players.forEach(function(q){ if (Math.abs(q.x - r.x) < 190 && q.y < 45) hitPlayer(q, 20, 'STOMPED!', Math.sign(q.x - r.x || 1) * 420); }); }
     } else { r.jump = 0; r.tilt = 0; if (r.st > 1.9){ r.state = 'idle'; r.st = 0; r.timer = .8; r.chargeHit = false; } }
   } else if (r.state === 'burst'){
     r.run = 0; r.glow = Math.min(1, r.st / .6); r.squash = .04 * Math.sin(r.st * 40) * r.glow;
     if (r.st >= .6 && !r.chargeHit){
       r.chargeHit = true; sfx('burst'); rings.push({x: r.x, t: 0}); shake = Math.max(shake, 10);
-      if (Math.abs(p.x - r.x) < 250 && p.y < 70) hitPlayer(18, 'IRRADIATED!', Math.sign(p.x - r.x || 1) * 320);
+      G.players.forEach(function(q){ if (Math.abs(q.x - r.x) < 250 && q.y < 70) hitPlayer(q, 18, 'IRRADIATED!', Math.sign(q.x - r.x || 1) * 320); });
     }
     if (r.st > 1.1){ r.state = 'idle'; r.st = 0; r.timer = .8; r.glow = 0; r.squash = 0; r.chargeHit = false; }
   } else if (r.state === 'charge'){
@@ -1105,8 +1156,7 @@ function updateRhino(dt){
     r.x += r.dir * sp * dt; r.run = 1; r.phase += dt * 20; r.tilt = .06 + .03 * Math.sin(r.phase); r.head = -.15;
     if (Math.random() < .6) puffs.push({x: r.x - r.dir * rnd(60, 150), y: GROUND - rnd(0, 30), t: 0, r: rnd(6, 14)});
     // hit the player?
-    var pr = p.y, tooLow = pr < 84;
-    if (!r.chargeHit && Math.abs(p.x - (r.x + r.dir * 120)) < 110 && tooLow && p.inv <= 0 && !(p.state === 'special' && (p.def.special.kind === 'dash'))){ r.chargeHit = true; hitPlayer(r.angry ? 26 : 20, 'TRAMPLED!', r.dir * 520); }
+    G.players.forEach(function(q){ if (!q.trampled && Math.abs(q.x - (r.x + r.dir * 120)) < 110 && q.y < 84 && q.inv <= 0 && !(q.state === 'special' && (q.def.special.kind === 'dash'))){ q.trampled = true; hitPlayer(q, r.angry ? 26 : 20, 'TRAMPLED!', r.dir * 520); } });
     if ((r.dir > 0 && r.x > LW - 120) || (r.dir < 0 && r.x < 120)){ r.state = 'skid'; r.st = 0; r.x = clamp(r.x, 120, LW - 120); sfx('whoosh'); for (var i = 0; i < 10; i++) puffs.push({x: r.x + r.dir * rnd(-40, 100), y: GROUND - rnd(0, 30), t: 0, r: rnd(10, 22)});
       if (r.mutant){ for (var hk = 0; hk < 3; hk++) hot.push({x: clamp(r.x - r.dir * (90 + hk * 120), 60, LW - 60), r: rnd(48, 70), t: 0, life: 9}); if (hot.length > 6) hot.splice(0, hot.length - 6); } }
   } else if (r.state === 'skid'){
@@ -1116,7 +1166,7 @@ function updateRhino(dt){
     r.facing = dist > 0 ? 1 : -1;
     if (r.st < .45){ r.head = -.25 * (r.st / .45); r.tilt = .04 * (r.st / .45); }
     else if (r.st < .75){ var u = (r.st - .45) / .3; r.head = -.25 + 1.2 * Math.sin(u * 3.14); r.tilt = .04 - .12 * Math.sin(u * 3.14); r.x += r.facing * 140 * dt;
-      if (!r.chargeHit && u > .2 && u < .8){ var front = r.x + r.facing * 2.4 * RS; if (Math.abs(p.x - front) < 110 && Math.sign(p.x - r.x) === r.facing && !p.ducking && p.y < 60){ r.chargeHit = true; hitPlayer(15, 'HORNED!', r.facing * 380); } }
+      if (!r.chargeHit && u > .2 && u < .8){ var front = r.x + r.facing * 2.4 * RS; G.players.forEach(function(q){ if (!r.chargeHit && Math.abs(q.x - front) < 110 && Math.sign(q.x - r.x) === r.facing && !q.ducking && q.y < 60){ r.chargeHit = true; hitPlayer(q, 15, 'HORNED!', r.facing * 380); } }); }
     } else { r.head *= Math.pow(.02, dt); r.tilt *= Math.pow(.02, dt); if (r.st > 1.2){ r.state = 'idle'; r.st = 0; r.timer = r.angry ? .6 : 1.0; r.chargeHit = false; } }
   } else if (r.state === 'sleep'){
     r.run = 0; r.tilt = lerp(r.tilt, .05, Math.min(1, dt * 3)); r.head = lerp(r.head, -.35, Math.min(1, dt * 3)); r.squash = .03 * Math.sin(r.st * 2.5);
@@ -1132,12 +1182,13 @@ function update(dt){
   var ts = slowmo > 0 ? .3 : 1;
   G.t += dt * ts; if (!G.over) G.elapsed += dt;
   if (slowmo > 0) slowmo -= dt;
-  updatePlayer(dt * ts); updateRhino(dt * ts);
-  if (!G.over && G.p.hitsLanded === 0 && G.elapsed >= pacifistTime()) rhinoReveal();
+  G.p.inp.keys = keys; G.p.inp.pressed = pressed;   // player 1 is always the local keyboard / touch pads
+  G.players.forEach(function(q){ updatePlayer(q, dt * ts); }); updateRhino(dt * ts);
+  var hitsTotal = 0; G.players.forEach(function(q){ hitsTotal += q.hitsLanded; });
+  if (!G.over && hitsTotal === 0 && G.elapsed >= pacifistTime()) rhinoReveal();
   // effects
   for (var i = fx.length - 1; i >= 0; i--){ fx[i].t += dt; if (fx[i].t > fx[i].life) fx.splice(i, 1); }
-  for (var j = puffs.length - 1; j >= 0; j--){ puffs[j].t += dt; if (puffs[j].t > .55) puffs.splice(j, 1); }
-  for (var k = 0; k < dna.length; k++){ var d = dna[k]; d.t += dt; d.x += d.vx * dt; d.y += d.vy * dt; d.vx *= Math.pow(.35, dt); d.vy = d.vy * Math.pow(.4, dt) - 25 * dt; d.rot += d.rv * dt; d.tw += d.tv * dt; }
+  tickAmbient(dt);
   if (shake > 0) shake = Math.max(0, shake - 60 * dt);
   if (flashA > 0) flashA = Math.max(0, flashA - 3 * dt);
   if (impactFrame > 0) impactFrame--;
@@ -1145,9 +1196,15 @@ function update(dt){
   for (var rg = rings.length - 1; rg >= 0; rg--){ rings[rg].t += dt; if (rings[rg].t > .6) rings.splice(rg, 1); }
   for (var bi = bolts.length - 1; bi >= 0; bi--){
     var bo = bolts[bi]; bo.t += dt; bo.x += bo.dir * 720 * dt;
-    if (!G.over && !bo.hit && Math.abs(bo.x - G.p.x) < 34 && G.p.y < 60 && !G.p.ducking && G.p.inv <= 0){ bo.hit = true; hitPlayer(14, 'ZAPPED!', bo.dir * 300); }
+    if (!G.over && !bo.hit){ G.players.forEach(function(q){ if (!bo.hit && Math.abs(bo.x - q.x) < 34 && q.y < 60 && !q.ducking && q.inv <= 0){ bo.hit = true; hitPlayer(q, 14, 'ZAPPED!', bo.dir * 300); } }); }
     if (bo.x < -60 || bo.x > LW + 60 || bo.hit) bolts.splice(bi, 1);
   }
+  pressed = {};
+}
+// cosmetic motion that both the host and a co-op guest run locally: snow puffs, DNA bits, the weather
+function tickAmbient(dt){
+  for (var j = puffs.length - 1; j >= 0; j--){ puffs[j].t += dt; if (puffs[j].t > .55) puffs.splice(j, 1); }
+  for (var k = 0; k < dna.length; k++){ var d = dna[k]; d.t += dt; d.x += d.vx * dt; d.y += d.vy * dt; d.vx *= Math.pow(.35, dt); d.vy = d.vy * Math.pow(.4, dt) - 25 * dt; d.rot += d.rv * dt; d.tw += d.tv * dt; }
   if (LEVELS[LEVEL].theme === 'space'){
     for (var f3 = 0; f3 < flakes.length; f3++){ var fl3 = flakes[f3]; fl3.x -= (20 + fl3.v) * dt; if (fl3.x < -5) { fl3.x = LW + 5; fl3.y = Math.random() * LH; } }
   } else if (LEVELS[LEVEL].theme === 'wasteland'){
@@ -1155,21 +1212,23 @@ function update(dt){
   } else {
     for (var f = 0; f < flakes.length; f++){ var fl = flakes[f]; fl.y += fl.v * dt; fl.x += 6 * dt + Math.sin(G.t + fl.p) * 10 * dt; if (fl.y > LH) { fl.y = -5; fl.x = Math.random() * LW; } }
   }
-  pressed = {};
 }
 
 // ------------------------------------------------------------ draw
 function drawHUD(){
   var p = G.p, r = G.r;
   ctx.font = '700 15px ' + 'Nunito, sans-serif'; ctx.textBaseline = 'top';
-  // player bar
-  bar(24, 22, 330, 20, p.hp / p.maxhp, '#6fe3a0', '#c8262c', p.def.name.toUpperCase(), 'left');
+  // one bar + special meter per fighter (the second one below the first)
+  G.players.forEach(function(q, i){
+    var oy = i * 72, mine = !Net.on || !Net.peer || i === Net.me;
+    bar(24, 22 + oy, i ? 260 : 330, i ? 16 : 20, q.hp / q.maxhp, q.state === 'ko' ? '#8a8fa3' : '#6fe3a0', '#c8262c', q.def.name.toUpperCase() + (G.players.length > 1 && mine ? ' (YOU)' : ''), 'left');
+    ctx.fillStyle = 'rgba(10,14,30,.55)'; roundRect(24, 66 + oy, 200, 10, 5); ctx.fill();
+    ctx.fillStyle = q.meter >= 100 ? '#6fe3a0' : '#93a0bf'; roundRect(24, 66 + oy, 200 * q.meter / 100, 10, 5); ctx.fill();
+    ctx.fillStyle = q.meter >= 100 ? '#6fe3a0' : '#c9d3e6'; ctx.font = '900 11px Nunito, sans-serif';
+    ctx.fillText(q.meter >= 100 ? 'SPECIAL READY — ' + q.def.special.name.toUpperCase() : 'SPECIAL ' + Math.floor(q.meter) + '%', 232, 63 + oy);
+    ctx.font = '700 15px Nunito, sans-serif';
+  });
   bar(LW - 354, 22, 330, 20, r.hp / r.maxhp, r.space ? (r.angry ? '#ff8ad0' : '#7fe7ff') : r.mutant ? (r.angry ? '#ccff66' : '#8dff5a') : (r.angry ? '#ff5a3c' : '#f2c56b'), '#c8262c', (r.morph && r.revealed) ? ANIMALS[r.morph].label : LEVELS[LEVEL].hud, 'right');
-  // special meter
-  ctx.fillStyle = 'rgba(10,14,30,.55)'; roundRect(24, 66, 200, 10, 5); ctx.fill();
-  ctx.fillStyle = p.meter >= 100 ? '#6fe3a0' : '#93a0bf'; roundRect(24, 66, 200 * p.meter / 100, 10, 5); ctx.fill();
-  ctx.fillStyle = p.meter >= 100 ? '#6fe3a0' : '#c9d3e6'; ctx.font = '900 11px Nunito, sans-serif';
-  ctx.fillText(p.meter >= 100 ? 'SPECIAL READY — ' + p.def.special.name.toUpperCase() : 'SPECIAL ' + Math.floor(p.meter) + '%', 232, 63);
   // timer
   ctx.textAlign = 'center'; ctx.font = '400 30px Bangers, Impact, sans-serif'; ctx.fillStyle = '#eef2f8'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 4;
   var s = Math.floor(G.elapsed); var tt = (s < 10 ? '0' : '') + s;
@@ -1236,7 +1295,7 @@ function draw(){
     // shadows
     ctx.fillStyle = 'rgba(70,80,120,.28)';
     if (rr.state !== 'gone'){ var rc = rhinoRect(rr); ctx.beginPath(); ctx.ellipse((rc.x0 + rc.x1) / 2, GROUND, (rc.x1 - rc.x0) / 2, 12, 0, 0, 6.283); ctx.fill(); }
-    var js = 1 - Math.min(1, p.y / 220), pscl = (p.state === 'special' && p.scale) ? p.scale : 1; ctx.beginPath(); ctx.ellipse(p.x, GROUND, (40 * js + 8) * pscl, 8 * pscl, 0, 0, 6.283); ctx.fill();
+    G.players.forEach(function(q){ var js = 1 - Math.min(1, q.y / 220), pscl = (q.state === 'special' && q.scale) ? q.scale : 1; ctx.beginPath(); ctx.ellipse(q.x, GROUND, (40 * js + 8) * pscl, 8 * pscl, 0, 0, 6.283); ctx.fill(); });
     // radioactive hot spots
     for (var hh = 0; hh < hot.length; hh++){
       var hs = hot[hh], ha = Math.min(1, hs.t * 3) * (1 - smooth(hs.life - 1.5, hs.life, hs.t)) * (.75 + .25 * Math.sin(G.t * 6 + hh));
@@ -1273,10 +1332,12 @@ function draw(){
       for (var zi = 0; zi < 3; zi++){ var zt = (G.t * .7 + zi * .33) % 1; var zx = rr.x + rr.facing * 1.6 * RS + zi * 12 + zt * 30, zy = GROUND - 2.0 * RS - zt * 80; ctx.globalAlpha = 1 - zt; ctx.strokeText('z', zx, zy); ctx.fillText('z', zx, zy); }
       ctx.globalAlpha = 1;
     }
-    if (p.inv > 0 && p.state !== 'ko' && p.state !== 'special' && Math.floor(G.t * 20) % 2 === 0) ctx.globalAlpha = .4;
-    fighterDraw(p, t); ctx.globalAlpha = 1;
+    for (var pi = G.players.length - 1; pi >= 0; pi--){ var q2 = G.players[pi];
+      if (q2.inv > 0 && q2.state !== 'ko' && q2.state !== 'special' && Math.floor(G.t * 20) % 2 === 0) ctx.globalAlpha = .4;
+      fighterDraw(q2, t); ctx.globalAlpha = 1; }
     // speed lines during charge / fly
-    if (rr.state === 'charge' || (p.state === 'special' && p.def.special.kind === 'fly')){
+    var anyFly = G.players.some(function(q){ return q.state === 'special' && q.def.special.kind === 'fly'; });
+    if (rr.state === 'charge' || anyFly){
       ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 2;
       for (var i = 0; i < 9; i++){ var y = 120 + i * 40 + (i * 37) % 23, x0 = ((i * 211 + G.t * 900) % (LW + 200)) - 100; ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + 80 + i * 10, y); ctx.stroke(); }
     }
@@ -1359,7 +1420,8 @@ var Scores = (function(){
   }
   return {load: load, add: add, report: report, mode: function(){ return mode; }};
 })();
-function scoreFor(g){ var p = g.p; return Math.round(1000 + p.hp * 10 + Math.max(0, 120 - g.elapsed) * 20 + p.hitsLanded * 5 + LEVEL * 1500 + (g.pacifist ? 2500 : 0)); }
+function scoreFor(g){ var hp = 0, hits = 0; g.players.forEach(function(q){ hp += q.hp; hits += q.hitsLanded; }); hp /= g.players.length; return Math.round(1000 + hp * 10 + Math.max(0, 120 - g.elapsed) * 20 + hits * 5 + LEVEL * 1500 + (g.pacifist ? 2500 : 0)); }
+function teamName(g){ return g.players.map(function(q){ return q.def.name; }).join(' + '); }
 var lastEntry = null, board = [];   // board: the last leaderboard we saw, for the title screen and roster cards
 function isMine(e){ return !!lastEntry && ((lastEntry.id && e.id === lastEntry.id) || (e.name === lastEntry.name && e.score === lastEntry.score && e.t === lastEntry.t)); }
 function fmtScore(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
@@ -1395,15 +1457,151 @@ function renderBest(){
 function refreshBoard(){ return Scores.load().then(function(list){ board = list; renderBest(); return list; }); }
 function openScores(){ show('scores'); scene = 'scores'; Scores.load().then(function(list){ renderScores(list); renderBest(); }); }
 
+// ------------------------------------------------------------ co-op over WebRTC
+// Two players in one room. The peer with the lower id hosts: it runs the whole simulation (both fighters + the rhino)
+// and streams a compact snapshot 30x a second; the guest sends its inputs and draws the snapshot. Trystero does the
+// signalling and the data channel; it is loaded from a CDN only when CO-OP is used. A test can inject
+// window.__coopTransport with the same {join(code, handlers) -> {send, selfId, leave}} shape.
+var TRYSTERO_URL = 'https://cdn.jsdelivr.net/npm/trystero@0.25.4/+esm';
+var Net = {on:false, host:false, me:0, code:'', peer:null, conn:null, id:'', ready:false, peerReady:null, f:null, guestInp:{keys:{}, pressed:{}}, sfxQ:[], frame:0, lastKeys:''};
+function netTransport(){
+  if (window.__coopTransport) return Promise.resolve(window.__coopTransport);
+  return import(TRYSTERO_URL).then(function(m){
+    return {join: function(code, h){
+      var room = m.joinRoom({appId: 'swebits-rumble'}, code);
+      var act = room.makeAction('g'), send = act[0], get = act[1];
+      get(function(data, id){ h.onData(data, id); });
+      room.onPeerJoin(function(id){ h.onPeerJoin(id); });
+      room.onPeerLeave(function(id){ h.onPeerLeave(id); });
+      return {send: send, selfId: m.selfId, leave: function(){ try { room.leave(); } catch (e) {} }};
+    }};
+  });
+}
+function sendNet(m){ if (Net.conn && Net.peer){ try { Net.conn.send(m); } catch (e) {} } }
+function coopStatus(t){ $('coopStatus').textContent = t; }
+function coopJoin(){
+  var code = ($('coopCode').value || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 24);
+  if (!code){ coopStatus('Type a room code first — any word you both agree on.'); return; }
+  try { localStorage.setItem('swebits_room', code); } catch (e) {}
+  netLeave();
+  coopStatus('Connecting to room ' + code.toUpperCase() + '…');
+  netTransport().then(function(tr){
+    var conn = tr.join(code, {onPeerJoin: netPeerJoin, onPeerLeave: netPeerLeave, onData: netData});
+    Net.on = true; Net.code = code; Net.conn = conn; Net.id = String(conn.selfId); Net.peer = null; Net.ready = false; Net.peerReady = null; Net.host = false; Net.me = 0;
+    buildRoster(); show('select'); scene = 'select'; updateCoopLine();
+  }).catch(function(){ coopStatus('Could not load the multiplayer library. Are you online? Try again.'); });
+}
+function netLeave(){
+  if (Net.conn){ try { sendNet({t:'bye'}); Net.conn.leave(); } catch (e) {} }
+  Net.on = false; Net.conn = null; Net.peer = null; Net.ready = false; Net.peerReady = null; Net.host = false; Net.me = 0; Net.f = null;
+  $('selCoop').hidden = true; $('fightVerb').textContent = 'FIGHT AS';
+}
+function netPeerJoin(id){
+  if (Net.peer && Net.peer !== id) return;          // two is company; a third peer is ignored
+  Net.peer = String(id); Net.host = Net.id < Net.peer; Net.me = Net.host ? 0 : 1;
+  sfx('chime', {f: 1318});
+  if (Net.ready) sendNet({t:'ready', f: ROSTER[selected].id});
+  updateCoopLine();
+}
+function netPeerLeave(id){
+  if (String(id) !== Net.peer) return;
+  Net.peer = null; Net.peerReady = null;
+  if (scene === 'fight' && !Net.host){ G = null; show('select'); scene = 'select'; }
+  updateCoopLine();
+}
+function netData(d, id){
+  if (!d || typeof d !== 'object') return;
+  if (!Net.peer) netPeerJoin(id);
+  if (d.t === 'ready'){ Net.peerReady = d.f; updateCoopLine(); if (Net.host && Net.ready && scene === 'select') coopStart(parseInt($('startLevel').value, 10) || 0); }
+  else if (d.t === 'unready'){ Net.peerReady = null; updateCoopLine(); }
+  else if (d.t === 'start'){ if (!Net.host){ LEVEL = d.level; Net.f = d.f; beginCoopRound(); } }
+  else if (d.t === 'in'){ if (Net.host){ var ko = {}; (d.k || []).forEach(function(k){ ko[k] = true; }); Net.guestInp.keys = ko; (d.p || []).forEach(function(k){ Net.guestInp.pressed[k] = true; }); } }
+  else if (d.t === 's'){ if (!Net.host && scene === 'fight') applySnap(d); }
+  else if (d.t === 'result'){ if (!Net.host) showResult(); }
+  else if (d.t === 'bye'){ netPeerLeave(id); }
+}
+function updateCoopLine(){
+  var el = $('selCoop'); el.hidden = !Net.on; if (!Net.on) return;
+  var room = 'Room ' + Net.code.toUpperCase();
+  if (!Net.peer) el.textContent = room + ' · waiting for your friend to type the same code… pick your fighter meanwhile.';
+  else if (Net.ready && !Net.peerReady) el.textContent = room + ' · you are ready — waiting for your friend to press FIGHT…';
+  else if (Net.ready && Net.peerReady) el.textContent = room + ' · starting…';
+  else el.textContent = room + ' · friend connected' + (Net.host ? ' · you are the host and pick the round' : ' · the host picks the round') + ' · press FIGHT when ready.';
+  $('fightVerb').textContent = Net.on ? 'READY AS' : 'FIGHT AS';
+}
+function coopReady(){
+  Net.ready = true; sendNet({t:'ready', f: ROSTER[selected].id}); updateCoopLine();
+  if (Net.host && Net.peerReady) coopStart(parseInt($('startLevel').value, 10) || 0);
+}
+function coopStart(level){
+  // host only: same fighters again (rematch / next round) or the freshly picked pair
+  if (!Net.host || !Net.peer) return;
+  LEVEL = level; Net.f = [ROSTER[selected].id, Net.peerReady || (Net.f && Net.f[1]) || 'albertas'];
+  sendNet({t:'start', f: Net.f, level: LEVEL}); beginCoopRound();
+}
+function defById(id){ for (var i = 0; i < ROSTER.length; i++) if (ROSTER[i].id === id) return ROSTER[i]; return ROSTER[0]; }
+function beginCoopRound(){
+  newFight(defById(Net.f[0]), defById(Net.f[1])); scene = 'fight'; show(null);
+  Net.guestInp = {keys:{}, pressed:{}}; Net.sfxQ = []; Net.frame = 0; Net.lastKeys = '';
+  unlockAudio(); sfx('gong', {f: LEVEL ? 70 : 96, v: .6}); setTimeout(function(){ sfx('drum'); }, 800);
+}
+function hostTick(dt){
+  if (G && G.p2){ G.p2.inp.keys = Net.guestInp.keys; G.p2.inp.pressed = Net.guestInp.pressed; }
+  update(dt);
+  if (G && G.p2){ Net.guestInp.pressed = {}; Net.frame++; if (Net.peer && Net.frame % 2 === 0) sendSnap(); }
+}
+function guestTick(dt){
+  if (!G) return;
+  tickAmbient(dt);
+  if (G.r.state === 'charge' && Math.random() < .6) puffs.push({x: G.r.x - G.r.dir * rnd(60, 150), y: GROUND - rnd(0, 30), t: 0, r: rnd(6, 14)});
+  var kl = [], pl = [], k;
+  for (k in keys) if (keys[k]) kl.push(k);
+  for (k in pressed) if (pressed[k]) pl.push(k);
+  var sig = kl.join(','); Net.frame++;
+  if (pl.length || sig !== Net.lastKeys || Net.frame % 6 === 0){ Net.lastKeys = sig; sendNet({t:'in', k: kl, p: pl}); }
+  pressed = {};
+}
+var POSE_KEYS = ['crouch', 'lean', 'lh', 'lk', 'rh', 'rk', 'la', 'le', 'ra', 're'];
+function r1(v){ return Math.round((v || 0) * 10) / 10; }
+function r2(v){ return Math.round((v || 0) * 100) / 100; }
+function packP(p){ return [r1(p.x), r1(p.y), p.facing, r1(p.hp), p.meter | 0, p.state, r2(p.st), r2(p.inv), r2(p.flash), r2(p.scale || 1), p.ducking ? 1 : 0, POSE_KEYS.map(function(k){ return r2(p.pose[k]); }), p.alt ? 1 : 0, p.hitsLanded]; }
+function unpackP(p, a){ p.x = a[0]; p.y = a[1]; p.facing = a[2]; p.hp = a[3]; p.meter = a[4]; p.state = a[5]; p.st = a[6]; p.inv = a[7]; p.flash = a[8]; p.scale = a[9]; p.ducking = !!a[10]; var o = {}; POSE_KEYS.forEach(function(k, i){ o[k] = a[11][i]; }); p.pose = o; p.alt = !!a[12]; p.hitsLanded = a[13]; }
+function packR(r){ return [r1(r.x), r.facing, r.hp, r.state, r2(r.st), r1(r.jump), r2(r.tilt), r2(r.head), r2(r.squash), r2(r.run), r2(r.phase), r2(r.tail), r2(r.flash), r2(r.glow), r.angry ? 1 : 0, r.dir, r1(r.targetX), r.morph || '', r.revealed ? 1 : 0, r.willFeint ? 1 : 0]; }
+function unpackR(r, a){ r.x = a[0]; r.facing = a[1]; r.hp = a[2]; r.state = a[3]; r.st = a[4]; r.jump = a[5]; r.tilt = a[6]; r.head = a[7]; r.squash = a[8]; r.run = a[9]; r.phase = a[10]; r.tail = a[11]; r.flash = a[12]; r.glow = a[13]; r.angry = !!a[14]; r.dir = a[15]; r.targetX = a[16]; r.morph = a[17] || null; r.revealed = !!a[18]; r.willFeint = !!a[19]; }
+function sendSnap(){
+  var snap = {t:'s', T: r2(G.t), e: r2(G.elapsed), o: G.over ? 1 : 0, w: G.won ? 1 : 0, pf: G.pacifist ? 1 : 0,
+    P: G.players.map(packP), R: packR(G.r),
+    fx: fx.map(function(e){ return [r1(e.x), r1(e.y), r2(e.t), e.life, e.r, e.label, e.big ? 1 : 0, e.red ? 1 : 0]; }),
+    hot: hot.map(function(h){ return [r1(h.x), r1(h.r), r2(h.t), h.life]; }),
+    rg: rings.map(function(g){ return [r1(g.x), r2(g.t), g.grey ? 1 : 0]; }),
+    bo: bolts.map(function(b){ return [r1(b.x), b.dir, r2(b.t)]; }),
+    sh: r1(shake), fl: r2(flashA), sm: r2(slowmo), imf: impactFrame, sx: Net.sfxQ};
+  Net.sfxQ = []; sendNet(snap);
+}
+function applySnap(d){
+  if (!G || !d.P) return;
+  G.t = d.T; G.elapsed = d.e; G.over = !!d.o; G.won = !!d.w; G.pacifist = !!d.pf;
+  for (var i = 0; i < G.players.length && i < d.P.length; i++) unpackP(G.players[i], d.P[i]);
+  var r = G.r, wasGone = r.state === 'gone'; unpackR(r, d.R);
+  if (r.state === 'gone' && !wasGone){ r.state = 'ko'; explodeRhino(); }   // the DNA burst is local
+  fx = d.fx.map(function(a){ return {x: a[0], y: a[1], t: a[2], life: a[3], r: a[4], label: a[5], big: !!a[6], red: !!a[7]}; });
+  hot = d.hot.map(function(a){ return {x: a[0], r: a[1], t: a[2], life: a[3]}; });
+  rings = d.rg.map(function(a){ return {x: a[0], t: a[1], grey: !!a[2]}; });
+  bolts = d.bo.map(function(a){ return {x: a[0], dir: a[1], t: a[2]}; });
+  shake = d.sh; flashA = Math.max(flashA, d.fl); slowmo = d.sm; impactFrame = d.imf;
+  (d.sx || []).forEach(function(k){ sfx(k); });
+}
+
 // ------------------------------------------------------------ screens
 var $ = function(id){ return document.getElementById(id); };
-function show(id){ ['title', 'select', 'result', 'scores', 'levelCard'].forEach(function(s){ $(s).hidden = s !== id; }); $('menuBtn').hidden = id === 'title'; $('topBtns').classList.toggle('compact', id === null); }
+function show(id){ ['title', 'select', 'result', 'scores', 'levelCard', 'coop'].forEach(function(s){ $(s).hidden = s !== id; }); $('menuBtn').hidden = id === 'title'; $('topBtns').classList.toggle('compact', id === null); }
 // back to the main menu from anywhere (Esc, or the ☰ MENU button): abandons a running fight
 function goMenu(){
   if (scene === 'title') return;
   if (termTimer){ clearInterval(termTimer); termTimer = null; }
   if (!$('videoBox').hidden) closeVideo();
   G = null; keys = {}; pressed = {}; slowmo = 0; shake = 0; flashA = 0;
+  netLeave();
   show('title'); scene = 'title'; refreshBoard();
 }
 function buildRoster(){
@@ -1412,7 +1610,7 @@ function buildRoster(){
     var el = document.createElement('button'); el.className = 'fighter' + (i === selected ? ' sel' : ''); el.type = 'button'; el.setAttribute('aria-label', d.name);
     el.innerHTML = '<img alt="" src="' + FACES[d.face] + '"><div class="name">' + d.name + '</div><div class="move">' + d.special.name + '</div>' +
       '<div class="best">' + (function(){ var bb = bestFor(d.name); return bb ? 'BEST ' + fmtScore(bb.score) + ' · ' + bb.name : ''; })() + '</div>' +
-      '<div class="stats"><span>PWR</span><div class="bar"><i style="width:' + Math.round(d.power * 70) + '%"></i></div><span>SPD</span><div class="bar"><i style="width:' + Math.round(d.speed * 70) + '%"></i></div><span>HP</span><div class="bar"><i style="width:' + Math.round(d.hp / 1.4) + '%"></i></div></div>';
+      '<div class="stats"><span>PWR</span><div class="bar"><i style="width:' + Math.min(100, Math.round(d.power * 70)) + '%"></i></div><span>SPD</span><div class="bar"><i style="width:' + Math.min(100, Math.round(d.speed * 70)) + '%"></i></div><span>HP</span><div class="bar"><i style="width:' + Math.min(100, Math.round(d.hp / 1.4)) + '%"></i></div></div>';
     el.addEventListener('click', function(){
       unlockAudio();
       if (selected === i && el.classList.contains('sel')){ startFight(); return; }
@@ -1442,35 +1640,40 @@ function showLevelCard(){
   $('btnLevelGo').textContent = 'FIGHT ' + lv.name; el.classList.toggle('blue', !!lv.blue); $('btnLevelGo').classList.toggle('blue', !!lv.blue); $('btnLevelGo').classList.toggle('rad', !lv.blue);
 }
 function startFight(){
+  if (Net.on){ coopReady(); return; }
   LEVEL = parseInt($('startLevel').value, 10) || 0;
   if (LEVELS[LEVEL].card) showLevelCard(); else beginRound();
 }
 function showResult(){
   if (!G || scene !== 'fight') return;   // the fight was abandoned via the menu
-  var p = G.p, r = G.r;
+  if (Net.on && Net.host && Net.peer) sendNet({t:'result'});
+  var p = G.players[(Net.on && Net.peer) ? Net.me : 0] || G.p, r = G.r, coop = G.players.length > 1;
+  $('resCoop').hidden = !coop;
+  if (coop){ $('resCoop').textContent = Net.host ? 'Co-op: you are the host — REMATCH or NEXT ROUND starts it for both of you.' : 'Co-op: waiting for the host to pick REMATCH or NEXT ROUND…'; }
   $('scoreLine').hidden = !G.won; $('nameBox').hidden = !G.won; $('btnSave').disabled = false; $('btnSave').textContent = 'SAVE SCORE';
   var hasNext = G.won && LEVEL < LEVELS.length - 1;
-  $('btnNext').hidden = !hasNext; $('btnNext').textContent = hasNext ? LEVELS[LEVEL + 1].next : '';
+  $('btnNext').hidden = !hasNext || (coop && !Net.host); $('btnNext').textContent = hasNext ? LEVELS[LEVEL + 1].next : '';
+  $('btnAgain').hidden = coop && !Net.host;
   if (G.won){
     var sc = scoreFor(G); $('scoreLine').textContent = 'SCORE ' + sc.toLocaleString();
     try { $('playerName').value = localStorage.getItem('swebits_name') || ''; } catch (e) {}
     if (G.pacifist){
       var an = ANIMALS[r.morph], readLabel = 'Rhinoceros' + (LEVEL === 2 ? ' (wrong sample)' : LEVEL ? ' (contaminant match)' : ' (98.7%)');
       $('resBig').textContent = 'PEACE'; $('resTitle').textContent = 'FALSE POSITIVE RECLASSIFIED';
-      $('resReadout').innerHTML = '> read: <b>' + readLabel + '</b> — status: <b>RECLASSIFIED → ' + an.name + '</b><br>> fighter: <b>' + p.def.name + '</b> · waited <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>0</b> · pacifist bonus: <b>+2500</b><br>> lesson: you never had to hit it. Look at the alignment long enough and the rhino is a ' + an.name + ' — a related sequence that scored high, not a rhino. Never was.' + (LEVEL < LEVELS.length - 1 ? '<br>> next: round ' + (LEVEL + 2) + '.' : '<br>> dataset clean. The crew can go home.');
+      $('resReadout').innerHTML = '> read: <b>' + readLabel + '</b> — status: <b>RECLASSIFIED → ' + an.name + '</b><br>> fighter: <b>' + teamName(G) + '</b> · waited <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>0</b> · pacifist bonus: <b>+2500</b><br>> lesson: you never had to hit it. Look at the alignment long enough and the rhino is a ' + an.name + ' — a related sequence that scored high, not a rhino. Never was.' + (LEVEL < LEVELS.length - 1 ? '<br>> next: round ' + (LEVEL + 2) + '.' : '<br>> dataset clean. The crew can go home.');
     } else if (LEVEL === 0){
       $('resBig').textContent = 'K.O.!'; $('resTitle').textContent = 'FALSE POSITIVE REMOVED';
-      $('resReadout').innerHTML = '> read: <b>Rhinoceros (98.7%)</b> — status: <b>REMOVED</b><br>> fighter: <b>' + p.def.name + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · finisher: <b>' + p.def.special.name + '</b><br>> no rhinos were harmed. It was one short read that looked like a horse.<br>> next: the reference genome itself is <b>contaminated</b>. Round 2.';
+      $('resReadout').innerHTML = '> read: <b>Rhinoceros (98.7%)</b> — status: <b>REMOVED</b><br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · finisher: <b>' + p.def.special.name + '</b><br>> no rhinos were harmed. It was one short read that looked like a horse.<br>> next: the reference genome itself is <b>contaminated</b>. Round 2.';
     } else if (LEVEL === 2){
       $('resBig').textContent = 'CLEAN'; $('resTitle').textContent = 'BARCODE CORRECTED';
-      $('resReadout').innerHTML = '> hopped read: <b>Rhinoceros (wrong sample)</b> — status: <b>SENT HOME</b><br>> fighter: <b>' + p.def.name + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · round bonus: <b>+3000</b><br>> lesson: one read can hop onto another sample\'s barcode during sequencing and appear where it never was. Dataset clean. The crew can go home.';
+      $('resReadout').innerHTML = '> hopped read: <b>Rhinoceros (wrong sample)</b> — status: <b>SENT HOME</b><br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · round bonus: <b>+3000</b><br>> lesson: one read can hop onto another sample\'s barcode during sequencing and appear where it never was. Dataset clean. The crew can go home.';
     } else {
       $('resBig').textContent = 'CLEAN'; $('resTitle').textContent = 'REFERENCE DECONTAMINATED';
-      $('resReadout').innerHTML = '> mutant read: <b>Rhinoceros (contaminant match)</b> — status: <b>REMOVED</b><br>> fighter: <b>' + p.def.name + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · round bonus: <b>+1500</b><br>> lesson: a read can match a contaminant inside a reference genome, not the species the genome is named after.<br>> next: the read is on the move. Round 3.';
+      $('resReadout').innerHTML = '> mutant read: <b>Rhinoceros (contaminant match)</b> — status: <b>REMOVED</b><br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · round bonus: <b>+1500</b><br>> lesson: a read can match a contaminant inside a reference genome, not the species the genome is named after.<br>> next: the read is on the move. Round 3.';
     }
   } else {
     $('resBig').textContent = 'TRAMPLED'; $('resTitle').textContent = 'THE RHINO STAYS IN THE DATASET';
-    $('resReadout').innerHTML = '> read: <b>Rhinoceros' + (LEVEL === 2 ? ' (wrong sample)' : LEVEL ? ' (contaminant match)' : ' (98.7%)') + '</b> — status: <b>still there</b><br>> fighter: <b>' + p.def.name + '</b> · survived <b>' + G.elapsed.toFixed(1) + ' s</b> · rhino HP left: <b>' + r.hp + '</b><br>> tip: jump the charge when you see the <b>!</b>, duck the horn sweep, and hit it while it skids (or sleeps).';
+    $('resReadout').innerHTML = '> read: <b>Rhinoceros' + (LEVEL === 2 ? ' (wrong sample)' : LEVEL ? ' (contaminant match)' : ' (98.7%)') + '</b> — status: <b>still there</b><br>> fighter: <b>' + teamName(G) + '</b> · survived <b>' + G.elapsed.toFixed(1) + ' s</b> · rhino HP left: <b>' + r.hp + '</b><br>> tip: jump the charge when you see the <b>!</b>, duck the horn sweep, and hit it while it skids (or sleeps).';
   }
   show('result'); scene = 'result';
 }
@@ -1501,19 +1704,24 @@ $('btnScores').addEventListener('click', function(){ unlockAudio(); openScores()
 $('btnScoresBack').addEventListener('click', function(){ show('title'); scene = 'title'; });
 $('btnSave').addEventListener('click', function(){
   if (!G || !G.won) return;
-  var name = ($('playerName').value || G.p.def.name).replace(/[\u0000-\u001f\u007f]/g, '').replace(/\s+/g, ' ').trim().slice(0, 16) || G.p.def.name;
+  var mine = G.players[(Net.on && Net.peer) ? Net.me : 0] || G.p;
+  var name = ($('playerName').value || mine.def.name).replace(/[\u0000-\u001f\u007f]/g, '').replace(/\s+/g, ' ').trim().slice(0, 16) || mine.def.name;
   try { localStorage.setItem('swebits_name', name); } catch (e) {}
-  lastEntry = {name: name, fighter: G.p.def.name, score: scoreFor(G), time: Math.round(G.elapsed * 10) / 10, level: LEVEL + 1, t: Date.now()};
+  lastEntry = {name: name, fighter: teamName(G).slice(0, 24), score: scoreFor(G), time: Math.round(G.elapsed * 10) / 10, level: LEVEL + 1, t: Date.now()};
   $('btnSave').disabled = true; $('btnSave').textContent = 'SAVING…';
   Scores.add(lastEntry).then(function(list){ $('btnSave').textContent = 'SAVED'; sfx('chime', {f: 2093}); renderScores(list); renderBest(); show('scores'); scene = 'scores'; });
 });
 $('btnStart').addEventListener('click', function(){ unlockAudio(); sfx('gong', {f: 120, v: .4}); buildRoster(); show('select'); scene = 'select'; });
 $('btnFight').addEventListener('click', startFight);
-$('btnAgain').addEventListener('click', function(){ if (LEVELS[LEVEL].card) showLevelCard(); else beginRound(); });
-$('btnNext').addEventListener('click', function(){ unlockAudio(); LEVEL = Math.min(LEVELS.length - 1, LEVEL + 1); showLevelCard(); });
+$('btnAgain').addEventListener('click', function(){ if (Net.on && Net.peer){ coopStart(LEVEL); return; } if (LEVELS[LEVEL].card) showLevelCard(); else beginRound(); });
+$('btnNext').addEventListener('click', function(){ unlockAudio(); LEVEL = Math.min(LEVELS.length - 1, LEVEL + 1); if (Net.on && Net.peer){ coopStart(LEVEL); return; } showLevelCard(); });
+$('btnCoop').addEventListener('click', function(){ unlockAudio(); show('coop'); scene = 'coop'; $('coopStatus').textContent = ''; try { $('coopCode').value = localStorage.getItem('swebits_room') || ''; } catch (e) {} });
+$('btnCoopJoin').addEventListener('click', function(){ unlockAudio(); coopJoin(); });
+$('coopCode').addEventListener('keydown', function(e){ if (e.key === 'Enter') coopJoin(); });
+$('btnCoopBack').addEventListener('click', function(){ netLeave(); show('title'); scene = 'title'; });
 $('btnLevelGo').addEventListener('click', function(){ unlockAudio(); if (termTimer){ clearInterval(termTimer); termTimer = null; } beginRound(); });
 $('btnLevelBack').addEventListener('click', function(){ if (termTimer){ clearInterval(termTimer); termTimer = null; } buildRoster(); show('select'); scene = 'select'; });
-$('btnChoose').addEventListener('click', function(){ buildRoster(); show('select'); scene = 'select'; G = null; });
+$('btnChoose').addEventListener('click', function(){ buildRoster(); show('select'); scene = 'select'; G = null; if (Net.on){ Net.ready = false; sendNet({t:'unready'}); updateCoopLine(); } });
 
 refreshBoard();
 
@@ -1521,7 +1729,7 @@ refreshBoard();
 var last = performance.now();
 function frame(now){
   var dt = Math.min(.05, (now - last) / 1000); last = now;
-  if (scene === 'fight') update(dt); else pressed = {};
+  if (scene === 'fight'){ if (Net.on && Net.peer && !Net.host) guestTick(dt); else hostTick(dt); } else pressed = {};
   draw();
   requestAnimationFrame(frame);
 }
