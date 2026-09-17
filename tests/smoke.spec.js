@@ -19,12 +19,12 @@ test('game boots and a fight runs', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('all six rounds start', async ({ page }) => {
+test('all seven rounds start', async ({ page }) => {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(URL);
   await page.click('#btnStart');
-  for (const lvl of ['0', '1', '2', '3', '4', '5']) {
+  for (const lvl of ['0', '1', '2', '3', '4', '5', '6']) {
     await page.selectOption('#startLevel', lvl);
     await page.click('#btnFight');
     if (lvl !== '0') { await expect(page.locator('#btnLevelGo')).toBeVisible(); await page.click('#btnLevelGo'); }
@@ -116,6 +116,37 @@ test('round 6: the rhino goes down the z axis, out of reach, and comes back', as
   await page.waitForFunction(() => { const g = window.__fight(); return g && g.z === 0 && g.rstate !== 'zaim'; }, null, { timeout: 30000 });
   for (let i = 0; i < 6; i++) { await page.keyboard.press('j'); await page.waitForTimeout(110); }
   expect(await page.evaluate(() => window.__fight().rhp)).toBeLessThan(hpBefore);
+  expect(errors).toEqual([]);
+});
+
+// Round 7 is a plane, not a line: both of you move in x and z on an island five times the size of the old arena.
+test('round 7: the island is a plane you walk around, and reach depends on depth', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  await page.click('#btnStart');
+  await page.locator('.fighter').nth(4).click();
+  await page.selectOption('#startLevel', '6');
+  await page.click('#btnFight');
+  await expect(page.locator('#btnLevelGo')).toBeVisible();
+  await page.click('#btnLevelGo');
+  const st = () => page.evaluate(() => window.__fight());
+  const start = await st();
+  // up and down walk into and out of the screen
+  await page.keyboard.down('ArrowUp'); await page.waitForTimeout(500); await page.keyboard.up('ArrowUp');
+  const far = await st();
+  expect(far.pz).toBeGreaterThan(start.pz);
+  await page.keyboard.down('ArrowDown'); await page.waitForTimeout(400); await page.keyboard.up('ArrowDown');
+  expect((await st()).pz).toBeLessThan(far.pz);
+  // swinging from another line of the island does nothing, however close in x
+  await page.evaluate(() => { const g = window.__isle(); g.p.x = g.r.x; g.p.z = g.r.z + 400; });
+  const hp0 = (await st()).rhp;
+  for (let i = 0; i < 4; i++) { await page.keyboard.press('j'); await page.waitForTimeout(110); }
+  expect((await st()).rhp).toBe(hp0);
+  // step onto its line and the same punch lands
+  await page.evaluate(() => { const g = window.__isle(); g.p.x = g.r.x - 120; g.p.z = g.r.z; g.p.facing = 1; });
+  for (let i = 0; i < 6; i++) { await page.keyboard.press('j'); await page.waitForTimeout(130); }
+  expect((await st()).rhp).toBeLessThan(hp0);
   expect(errors).toEqual([]);
 });
 

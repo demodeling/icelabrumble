@@ -46,6 +46,9 @@
   .btn:active{transform:translateY(4px);box-shadow:0 1px 0 #a9822f;}
   .btn.secondary{background:var(--snow2);box-shadow:0 5px 0 #8b97b3,0 10px 22px rgba(0,0,0,.4);}
   .btn:focus-visible{outline:3px solid var(--aurora);outline-offset:3px;}
+  .tb.iso{display:none;}
+  body[data-arena="island"] .tb.iso{display:flex;}
+  body[data-arena="island"] .tb.flat{display:none;}
   .roster{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;width:min(100%,900px);}
   @media (max-width:640px){.roster{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}}
   .rgroup{grid-column:1/-1;font-family:var(--display);letter-spacing:.06em;font-size:clamp(14px,2vw,20px);color:var(--gold);text-align:left;margin-top:6px;}
@@ -135,11 +138,14 @@
       <div class="pad left">
         <div class="tb big" data-k="left">◀</div>
         <div class="tb big" data-k="right">▶</div>
-        <div class="tb" data-k="down">DUCK</div>
+        <div class="tb flat" data-k="down">DUCK</div>
+        <div class="tb iso" data-k="jump">▲</div>
+        <div class="tb iso" data-k="down">▼</div>
       </div>
       <div class="pad right">
         <div class="tb sp" data-k="special">SPC</div>
-        <div class="tb big" data-k="jump">JUMP</div>
+        <div class="tb big flat" data-k="jump">JUMP</div>
+        <div class="tb big iso" data-k="hop">JUMP</div>
         <div class="tb big" data-k="punch">PUNCH</div>
         <div class="tb big" data-k="kick">KICK</div>
       </div>
@@ -157,7 +163,7 @@
       <p class="small" id="titleBest"></p>
       <p class="small">Sound on for the full kung-fu experience. Works on Safari, iPhone and iPad — tap ⛶ FULLSCREEN for a widescreen arena on your phone.</p>
       <p class="small" id="iosHint" hidden>iPhone: for a real full screen, tap Share → <b>Add to Home Screen</b> and open the game from there (no Safari bars at all).</p>
-      <p class="small ver" id="verLine">v1.5.0 · build 7614bec</p>
+      <p class="small ver" id="verLine">v1.6.0 · build bb97b46</p>
     </div></div>
 
     <div id="select" class="overlay" hidden><div class="panel">
@@ -167,7 +173,7 @@
       </div>
       <p class="small">Tap a fighter to select — tap again to fight.</p>
       <p class="small coop" id="selCoop" hidden></p>
-      <label class="check">Start at <select id="startLevel"><option value="0">Round 1 — Kiruna</option><option value="1">Round 2 — The Wasteland</option><option value="2">Round 3 — The Asteroid</option><option value="3">Round 4 — The Duplicates</option><option value="4">Round 5 — The Rerun</option><option value="5">Round 6 — The Third Dimension</option></select></label>
+      <label class="check">Start at <select id="startLevel"><option value="0">Round 1 — Kiruna</option><option value="1">Round 2 — The Wasteland</option><option value="2">Round 3 — The Asteroid</option><option value="3">Round 4 — The Duplicates</option><option value="4">Round 5 — The Rerun</option><option value="5">Round 6 — The Third Dimension</option><option value="6">Round 7 — The Island</option></select></label>
       <div class="roster" id="roster"></div>
       <div class="controls" id="ctrlHelp"><kbd>←</kbd><kbd>→</kbd> move · <kbd>↑</kbd>/<kbd>space</kbd> jump · <kbd>↓</kbd> duck · <kbd>J</kbd> punch · <kbd>K</kbd> kick · <kbd>L</kbd> special (when the meter is full) · <kbd>Esc</kbd> menu</div>
     </div></div>
@@ -203,7 +209,7 @@
       <p class="small" id="credRoster"></p>
       <p class="small">Every face is drawn by the game itself: a paper-cutout avatar whose hair, glasses and beard follow the staff photos on the members page, and whose everything else is generated from the person’s name. They are cartoons, not portraits, and no photograph of anyone is stored or shipped anywhere in this project.</p>
       <p class="small">The rhino is a false positive. No rhinos were harmed; it was one short read that looked like a horse.</p>
-      <p class="small ver">Built with Claude · v1.5.0 · <a href="https://www.umu.se/en/icelab/" target="_blank" rel="noopener">umu.se/en/icelab</a></p>
+      <p class="small ver">Built with Claude · v1.6.0 · <a href="https://www.umu.se/en/icelab/" target="_blank" rel="noopener">umu.se/en/icelab</a></p>
       <div class="row"><button class="btn secondary" id="btnCreditsBack">BACK</button></div>
     </div></div>
 
@@ -669,7 +675,7 @@ function outroMelody(){
 
 // ------------------------------------------------------------ input
 var keys = {};
-var KEYMAP = {ArrowLeft:'left', a:'left', A:'left', ArrowRight:'right', d:'right', D:'right', ArrowUp:'jump', w:'jump', W:'jump', ' ':'jump',
+var KEYMAP = {ArrowLeft:'left', a:'left', A:'left', ArrowRight:'right', d:'right', D:'right', ArrowUp:'jump', w:'jump', W:'jump', ' ':'hop',
               ArrowDown:'down', s:'down', S:'down', j:'punch', J:'punch', z:'punch', Z:'punch', k:'kick', K:'kick', x:'kick', X:'kick', l:'special', L:'special', c:'special', C:'special'};
 var pressed = {};   // edge-triggered
 window.addEventListener('keydown', function(e){ if (e.target && e.target.tagName === 'INPUT') return; if (e.key === 'Escape' || e.key === 'Esc'){ goMenu(); return; } var k = KEYMAP[e.key]; if (k){ if (!keys[k]) pressed[k] = true; keys[k] = true; e.preventDefault(); } });
@@ -774,6 +780,7 @@ function drawSpace(t){
 function drawBackground(t){
   if (LEVELS[LEVEL].theme === 'space'){ drawSpace(t); return; }
   if (LEVELS[LEVEL].theme === 'wasteland'){ drawWasteland(t); return; }
+  if (LEVELS[LEVEL].theme === 'island'){ drawIslandSky(t); return; }
   if (!skyGrad){ skyGrad = ctx.createLinearGradient(0, 0, 0, 360); skyGrad.addColorStop(0, '#0c1434'); skyGrad.addColorStop(.6, '#425a96'); skyGrad.addColorStop(1, '#f0b282'); }
   ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, LW, 360);
   // sun glow
@@ -1041,7 +1048,10 @@ var LEVELS = [
   {name: 'ROUND 5', theme: 'kiruna', rhino: {hp: 420, mutant: false}, reruns: 4, hud: 'THE UNKNOWN READ · re-running', next: 'NEXT ROUND: THE RERUN',
    card: "> ROUND 5 — THE RERUN\n> read: <b>UNASSIGNED</b>\n\nSame read, new reference database. Every <b>30 s</b> the classifier reports again — and every pass calls a different species.\n\nIf it lands on something that belongs in a Kiruna sample, you have identified it and the run is over. If it comes back as something that has never been within 8,000 km of Kiruna, it is still a false positive: the pipeline runs again and so do you.\n\n> never hit it — hits end the re-runs and you are back to a plain fight\n> dodge for 30 s per pass\n> <b>four</b> passes, then the call stands"},
   {name: 'ROUND 6', theme: 'kiruna', depth: true, rhino: {hp: 560, mutant: false}, hud: 'THE RHINO · wrong fold', next: 'NEXT ROUND: THE THIRD DIMENSION',
-   card: "> ROUND 6 — THE THIRD DIMENSION\n> alignment: <b>2D</b> — structure: <b>?</b>\n\nA sequence match is a flat comparison: letters in a row. Fold both molecules and you get shapes, and shapes can disagree where strings agreed.\n\nSo the arena has a <b>z axis</b> now, and the rhino found it first. It backs away down the floor grid where nothing you throw can reach it, lines up, and comes <b>straight at the screen</b>.\n\n> the red lane on the floor is where it is going to arrive\n> step out of the lane — or jump it\n> it is only hittable on the front plane, so punish the skid"}
+   card: "> ROUND 6 — THE THIRD DIMENSION\n> alignment: <b>2D</b> — structure: <b>?</b>\n\nA sequence match is a flat comparison: letters in a row. Fold both molecules and you get shapes, and shapes can disagree where strings agreed.\n\nSo the arena has a <b>z axis</b> now, and the rhino found it first. It backs away down the floor grid where nothing you throw can reach it, lines up, and comes <b>straight at the screen</b>.\n\n> the red lane on the floor is where it is going to arrive\n> step out of the lane — or jump it\n> it is only hittable on the front plane, so punish the skid"},
+  {name: 'ROUND 7', theme: 'island', island: true, rhino: {hp: 700, mutant: false}, hud: 'THE RHINO · loose on the island',
+   next: 'NEXT ROUND: THE ISLAND',
+   card: "> ROUND 7 — THE ISLAND\n> sampling site: <b>the whole island</b>\n\nOne air filter on a post never sampled a line — it sampled a place. So here is the place: an island five times the size of every arena so far, and the two of you somewhere on it.\n\nYou both move on the <b>plane</b> now, not the line. It can only hurt you from your own line of the island, and you can only reach it from its.\n\n> ← → across, ↑ ↓ into and out of the screen\n> <b>space</b> jumps (the JUMP pad on a phone)\n> get onto its line before you swing"}
 ];
 var bolts = [];
 var LEVEL = 0, hot = [], rings = [];
@@ -1051,7 +1061,7 @@ var selected = 0;
 var particles = [], fx = [], dna = [], puffs = [], shake = 0, flashA = 0, slowmo = 0, impactFrame = 0;
 
 function mkPlayer(def, x){
-  return {def:def, x:x, y:0, vy:0, facing:1, hp:def.hp, maxhp:def.hp, meter:0, state:'idle', st:0, pose:POSE.guard, inv:0, flash:0, combo:0, hitsLanded:0, handPt:[0,0], footPt:[0,0], headPt:[0,0], attackHit:false, dashDir:1, specialHits:0, scale:1, inp:{keys:{}, pressed:{}}};
+  return {def:def, x:x, y:0, z:0, vy:0, facing:1, hp:def.hp, maxhp:def.hp, meter:0, state:'idle', st:0, pose:POSE.guard, inv:0, flash:0, combo:0, hitsLanded:0, handPt:[0,0], footPt:[0,0], headPt:[0,0], attackHit:false, dashDir:1, specialHits:0, scale:1, inp:{keys:{}, pressed:{}}};
 }
 function newFight(def, def2){
   var p = mkPlayer(def, def2 ? 150 : 200), p2 = def2 ? mkPlayer(def2, 290) : null;
@@ -1060,6 +1070,10 @@ function newFight(def, def2){
   var rhinos = [], n = lv.rhinos || 1;
   for (var ri = 0; ri < n; ri++) rhinos.push({x: 720 + ri * (AW - 1140) / Math.max(1, n - 1), facing:-1, hp:lv.rhino.hp, maxhp:lv.rhino.hp, mutant:lv.rhino.mutant, space:!!lv.rhino.space, glow:0, willFeint:false, targetX:0, state:'idle', st:0, timer:1.4 + ri * .9, run:0, phase:0, tilt:0, head:0, jump:0, squash:0, tail:0, flash:0, angry:false, rage:0, dir:-1, chargeHit:false, vx:0, trampled:{}, z:0, zTarget:0});
   G = {p:p, p2:p2, players: p2 ? [p, p2] : [p], r:rhinos[0], rhinos:rhinos, t:0, over:false, won:false, elapsed:0, stageT:0, spawns:0, identified:false, koT:0, pacifist:false};
+  if (lv.island){
+    G.players.forEach(function(q, qi){ q.x = -200 + qi * 400; q.z = 420; });
+    rhinos.forEach(function(r0, ri2){ r0.x = -300 + ri2 * 600; r0.z = ISLE.d - 700; r0.facing = -1; });
+  }
   camX = clamp(p.x - LW / 2, 0, AW - LW);
   particles = []; fx = []; dna = []; puffs = []; hot = []; rings = []; bolts = []; shake = 0; flashA = 0; slowmo = 0; impactFrame = 0;
 }
@@ -1121,14 +1135,164 @@ function drawLane3D(r){
   ctx.fillStyle = g; ctx.fill();
   ctx.strokeStyle = 'rgba(255,120,80,' + (.85 * a).toFixed(3) + ')'; ctx.lineWidth = 3; ctx.stroke();
 }
+// ---------------------------------------------------------------- round 7: the island (a plane, not a line)
+// A pinhole camera looking down at an island five times the size of the old arena, so the fighters come out five
+// times smaller. World coordinates are (x, z): x across, z into the screen. Every rig is still the same flat
+// drawing, billboarded — a rig standing at (x, z) is scaled by foc/(z + camd) about its feet, which IS the
+// perspective divide, jump heights included (a height h above the plane is exactly h * scale up the screen).
+var ISLE = {w: 4800, d: 2600, foc: 322, camd: 1400, camh: 1733, hz: 162, spd: 3, rx: 2180, rz: 1120};
+function isleOn(){ var lv = LEVELS[LEVEL]; return !!(lv && lv.island); }
+function isleScale(z){ return ISLE.foc / (Math.max(-ISLE.camd + 60, z || 0) + ISLE.camd); }
+function isleAt(x, z){ var sc = isleScale(z); return [LW / 2 + x * sc, ISLE.hz + ISLE.camh * sc, sc]; }
+function withIsle(x, z, fn){
+  var pr = isleAt(x, z);
+  ctx.save(); ctx.translate(pr[0], pr[1]); ctx.scale(pr[2], pr[2]); ctx.translate(-x, -GROUND); fn(); ctx.restore();
+}
+function isleClamp(e){
+  // keep everyone on the land: an ellipse inside the island outline
+  var cz = ISLE.d / 2, dx = e.x / ISLE.rx, dz = (e.z - cz) / ISLE.rz, d = Math.sqrt(dx * dx + dz * dz);
+  if (d > 1){ e.x = e.x / d; e.z = cz + (e.z - cz) / d; }
+}
+function isleOutline(wob){
+  // the shoreline: an ellipse with a fixed wobble, in world coordinates
+  var pts = [], cz = ISLE.d / 2;
+  for (var i = 0; i < 48; i++){
+    var a = 6.283 * i / 48, w = 1 + wob * (.14 * Math.sin(a * 3 + 1.1) + .09 * Math.sin(a * 5 - .6) + .05 * Math.sin(a * 8 + 2.2));
+    pts.push([Math.cos(a) * ISLE.rx * 1.14 * w, cz + Math.sin(a) * ISLE.rz * 1.14 * w]);
+  }
+  return pts;
+}
+function islePoly(pts, close){
+  ctx.beginPath();
+  for (var i = 0; i < pts.length; i++){ var q = isleAt(pts[i][0], pts[i][1]); if (i === 0) ctx.moveTo(q[0], q[1]); else ctx.lineTo(q[0], q[1]); }
+  if (close !== false) ctx.closePath();
+}
+var ISLE_PROPS = null;
+function isleProps(){
+  if (ISLE_PROPS) return ISLE_PROPS;
+  // pines and boulders scattered on the land, deterministic so the island is the same island every time
+  var out = [], h = 12345, cz = ISLE.d / 2;
+  function rand(){ h = (h * 1103515245 + 12345) & 0x7fffffff; return h / 0x7fffffff; }
+  for (var i = 0; i < 46; i++){
+    var a = rand() * 6.283, rr = .45 + rand() * .62, x = Math.cos(a) * ISLE.rx * rr, z = cz + Math.sin(a) * ISLE.rz * rr;
+    var edge = Math.sqrt(Math.pow(x / ISLE.rx, 2) + Math.pow((z - cz) / ISLE.rz, 2));
+    out.push({x: x, z: z, kind: (edge > .8 || rand() < .3) ? 'rock' : 'pine', h: 120 + rand() * 150, w: .7 + rand() * .7});
+  }
+  ISLE_PROPS = out; return out;
+}
+function drawIsleProp(o){
+  withIsle(o.x, o.z, function(){
+    var x = o.x, g = GROUND;
+    ctx.fillStyle = 'rgba(70,80,120,.25)'; ctx.beginPath(); ctx.ellipse(x, g, 26 * o.w, 8 * o.w, 0, 0, 6.283); ctx.fill();
+    if (o.kind === 'pine'){
+      ctx.fillStyle = '#4a3a2c'; ctx.fillRect(x - 5 * o.w, g - o.h * .22, 10 * o.w, o.h * .22);
+      for (var t = 0; t < 3; t++){
+        var top = g - o.h + t * o.h * .26, w = (34 + t * 16) * o.w;
+        ctx.fillStyle = t === 0 ? '#23543f' : (t === 1 ? '#1e4a38' : '#1a4030');
+        ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x + w, top + o.h * .34); ctx.lineTo(x - w, top + o.h * .34); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = 'rgba(246,249,255,.75)'; ctx.beginPath(); ctx.moveTo(x, top + 4); ctx.lineTo(x + w * .5, top + o.h * .2); ctx.lineTo(x - w * .5, top + o.h * .2); ctx.closePath(); ctx.fill();
+      }
+    } else {
+      var rh = o.h * .35, rw = o.h * .5 * o.w;
+      ctx.fillStyle = '#6a6e7c'; ctx.beginPath(); ctx.ellipse(x, g - rh * .4, rw, rh, 0, 0, 6.283); ctx.fill();
+      ctx.fillStyle = '#878c9c'; ctx.beginPath(); ctx.ellipse(x - rw * .22, g - rh * .7, rw * .55, rh * .5, -.3, 0, 6.283); ctx.fill();
+      ctx.fillStyle = 'rgba(246,249,255,.8)'; ctx.beginPath(); ctx.ellipse(x - rw * .1, g - rh * .95, rw * .62, rh * .3, -.15, 0, 6.283); ctx.fill();
+    }
+  });
+}
+function drawIslandSky(t){
+  var sg2 = ctx.createLinearGradient(0, 0, 0, ISLE.hz + 30);
+  sg2.addColorStop(0, '#0a1230'); sg2.addColorStop(.55, '#2d4478'); sg2.addColorStop(1, '#8fa6cf');
+  ctx.fillStyle = sg2; ctx.fillRect(0, 0, LW, ISLE.hz + 30);
+  var sun = ctx.createRadialGradient(700, ISLE.hz - 6, 4, 700, ISLE.hz - 6, 210);
+  sun.addColorStop(0, 'rgba(255,228,180,.9)'); sun.addColorStop(.3, 'rgba(255,200,150,.30)'); sun.addColorStop(1, 'rgba(255,200,140,0)');
+  ctx.fillStyle = sun; ctx.fillRect(460, 0, 500, ISLE.hz + 30);
+  ctx.fillStyle = '#fff';
+  for (var i = 0; i < stars.length; i++){ var st2 = stars[i]; if (st2.y > ISLE.hz - 20) continue; ctx.globalAlpha = .3 + .5 * Math.pow(.5 + .5 * Math.sin(t * st2.f * 2 + st2.p), 2); ctx.beginPath(); ctx.arc(st2.x, st2.y, st2.r, 0, 6.283); ctx.fill(); }
+  ctx.globalAlpha = 1;
+  // the mainland, far off across the water
+  ctx.fillStyle = '#26365c';
+  ctx.beginPath(); ctx.moveTo(-20, ISLE.hz + 2);
+  for (var x = -20; x <= LW + 20; x += 40) ctx.lineTo(x, ISLE.hz - 6 - 14 * Math.abs(Math.sin(x / 260 + 1.2)) - 6 * Math.sin(x / 90));
+  ctx.lineTo(LW + 20, ISLE.hz + 2); ctx.closePath(); ctx.fill();
+}
+function drawIsland(t){
+  // sea, then the island itself: shelf, beach, snow, shoreline foam
+  var sea = ctx.createLinearGradient(0, ISLE.hz - 10, 0, LH + 120);
+  sea.addColorStop(0, '#20355e'); sea.addColorStop(.45, '#16294c'); sea.addColorStop(1, '#0d1a33');
+  ctx.fillStyle = sea; ctx.fillRect(-400, ISLE.hz - 12, LW + 800, LH + 200);
+  ctx.strokeStyle = 'rgba(150,190,240,.16)'; ctx.lineWidth = 2;
+  for (var w = 0; w < 9; w++){
+    var wz = 140 + w * 430, yy = isleAt(0, wz)[1] + 24 * Math.sin(t * .5 + w);
+    ctx.beginPath(); ctx.moveTo(-200, yy); ctx.lineTo(LW + 200, yy); ctx.stroke();
+  }
+  var floes = [[-2600, 200], [2500, 520], [-3100, 1500], [3000, 1800], [-2300, 2450], [2400, 2500], [-1200, 2700], [900, 2760]];
+  for (var fi = 0; fi < floes.length; fi++){
+    var fq = isleAt(floes[fi][0], floes[fi][1]), fs = fq[2];
+    ctx.fillStyle = 'rgba(226,236,250,.85)'; ctx.beginPath(); ctx.ellipse(fq[0], fq[1], 150 * fs, 34 * fs, 0, 0, 6.283); ctx.fill();
+    ctx.fillStyle = 'rgba(150,190,240,.5)'; ctx.beginPath(); ctx.ellipse(fq[0], fq[1] + 10 * fs, 150 * fs, 16 * fs, 0, 0, 6.283); ctx.fill();
+  }
+  var shelf = isleOutline(1.18);
+  ctx.fillStyle = 'rgba(120,170,220,.30)'; islePoly(shelf); ctx.fill();         // shallow water round the island
+  var beach = isleOutline(1.04);
+  ctx.fillStyle = '#b9a184'; islePoly(beach); ctx.fill();                        // sand and shingle
+  var land = isleOutline(.92);
+  var lg = ctx.createLinearGradient(0, isleAt(0, ISLE.d)[1], 0, isleAt(0, 0)[1]);
+  lg.addColorStop(0, '#cdd8ee'); lg.addColorStop(1, '#f2f6ff');
+  ctx.fillStyle = lg; islePoly(land); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 3; islePoly(land); ctx.stroke();
+  // a frozen tarn in the middle, so the plane has a landmark
+  ctx.fillStyle = 'rgba(150,200,240,.55)';
+  ctx.beginPath();
+  for (var i = 0; i < 28; i++){ var a = 6.283 * i / 28, q = isleAt(Math.cos(a) * 520, ISLE.d / 2 + 140 + Math.sin(a) * 260); if (i === 0) ctx.moveTo(q[0], q[1]); else ctx.lineTo(q[0], q[1]); }
+  ctx.closePath(); ctx.fill();
+}
+function drawIsleActor(e, fn){
+  withIsle(e.x, e.z, function(){
+    var w = e.def ? 40 : 150, js = e.def ? (1 - Math.min(1, e.y / 220)) : 1;
+    ctx.fillStyle = 'rgba(70,80,120,.28)';
+    ctx.beginPath(); ctx.ellipse(e.x, GROUND, w * js + 8, (e.def ? 8 : 12), 0, 0, 6.283); ctx.fill();
+    fn();
+  });
+}
+function drawIsleWorld(t){
+  drawIsland(t);
+  var items = [];
+  isleProps().forEach(function(o){ items.push({z: o.z, d: function(){ drawIsleProp(o); }}); });
+  G.rhinos.forEach(function(r0){
+    if (r0.state === 'gone') return;
+    items.push({z: r0.z, d: function(){ drawIsleActor(r0, function(){
+      if (r0.state === 'paw'){ ctx.font = '400 40px Bangers, Impact, sans-serif'; ctx.fillStyle = '#ff5a3c'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 5; ctx.textAlign = 'center'; var yy = GROUND - 2.4 * RS - 10 + 6 * Math.sin(r0.st * 30); ctx.strokeText('!', r0.x, yy); ctx.fillText('!', r0.x, yy); ctx.textAlign = 'left'; }
+      drawRhino(r0);
+    }); }});
+  });
+  G.players.forEach(function(q){
+    items.push({z: q.z, d: function(){ drawIsleActor(q, function(){
+      if (q.inv > 0 && q.state !== 'ko' && q.state !== 'special' && Math.floor(G.t * 20) % 2 === 0) ctx.globalAlpha = .4;
+      fighterDraw(q, t); ctx.globalAlpha = 1;
+    }); }});
+  });
+  items.sort(function(a, b){ return b.z - a.z; });   // far first
+  for (var i = 0; i < items.length; i++) items[i].d();
+  G.players.forEach(function(q){
+    if (q.state === 'ko') return;
+    var pr = isleAt(q.x, q.z), cy = pr[1] - (2.35 * RS + q.y) * pr[2] - 14 - 3 * Math.sin(G.t * 4);
+    ctx.fillStyle = '#f2c56b'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(pr[0], cy + 10); ctx.lineTo(pr[0] - 7, cy); ctx.lineTo(pr[0] + 7, cy); ctx.closePath(); ctx.fill(); ctx.stroke();
+  });
+  drawFX();
+}
 function rhinoRect(r){
   var front = r.x + r.facing * 2.55 * RS, back = r.x - r.facing * 1.6 * RS;
   return {x0: Math.min(front, back), x1: Math.max(front, back), y0: GROUND - 2.2 * RS - r.jump, y1: GROUND - r.jump};
 }
 function inRect(pt, rc, pad){ pad = pad || 0; return pt[0] > rc.x0 - pad && pt[0] < rc.x1 + pad && pt[1] > rc.y0 - pad && pt[1] < rc.y1 + pad; }
 function liveRhinos(){ return G.rhinos.filter(function(r){ return r.state !== 'ko' && r.state !== 'gone'; }); }
-function inReach(r){ return !depthOn() || (r.z || 0) <= 70; }   // round 6: nothing reaches down the z axis
-function rhinoAt(pt, pad){ var rs = liveRhinos(); for (var i = 0; i < rs.length; i++){ if (!inReach(rs[i])) continue; if (inRect(pt, rhinoRect(rs[i]), pad)) return rs[i]; } return null; }
+function inReach(r, q){   // round 6: nothing reaches down the z axis. round 7: you have to be on the same line of it
+  if (isleOn()) return Math.abs((q ? (q.z || 0) : 0) - (r.z || 0)) < 95;
+  return !depthOn() || (r.z || 0) <= 70;
+}
+function rhinoAt(pt, pad, q){ var rs = liveRhinos(); for (var i = 0; i < rs.length; i++){ if (!inReach(rs[i], q)) continue; if (inRect(pt, rhinoRect(rs[i]), pad)) return rs[i]; } return null; }
 function hitRhino(r, p, pt, dmg, big, label){
   var vuln = (r.state === 'skid' || r.state === 'sleep') ? 1.6 : 1;
   dmg = Math.round(dmg * p.def.power * vuln);
@@ -1145,13 +1309,15 @@ function alivePlayers(){ return G.players.filter(function(q){ return q.state !==
 function rhinoTarget(r){
   // a rhino goes for the nearest fighter still standing
   var best = null, bd = 1e9;
-  G.players.forEach(function(q){ if (q.state === 'ko') return; var d = Math.abs(q.x - r.x); if (d < bd){ bd = d; best = q; } });
+  G.players.forEach(function(q){ if (q.state === 'ko') return; var dz = isleOn() ? (q.z || 0) - (r.z || 0) : 0, d = Math.abs(q.x - r.x) + Math.abs(dz); if (d < bd){ bd = d; best = q; } });
   return best || G.p;
 }
+var curR = null;   // the rhino currently being updated, so its damage can be gated on depth in round 7
 function hitPlayer(p, dmg, label, knock){
   if (p.inv > 0 || G.over || p.state === 'ko') return;
+  if (isleOn() && curR && Math.abs((p.z || 0) - (curR.z || 0)) > 95) return;
   p.hp = Math.max(0, p.hp - dmg); p.inv = 1.0; p.flash = 0.15; p.state = 'hurt'; p.st = 0; p.vy = 260; p.y = Math.max(p.y, 1); p.kx = knock;
-  fx.push({x: p.headPt[0], y: p.headPt[1] - 20, t: 0, life: .5, r: 60, label: label, big: false, red: true});
+  fx.push({x: p.headPt[0], y: p.headPt[1] - 20, z: p.z, t: 0, life: .5, r: 60, label: label, big: false, red: true});
   shake = Math.max(shake, 12); sfx('hurt'); sfx('hit');
   if (p.hp <= 0) playerKO(p);
 }
@@ -1175,7 +1341,8 @@ function rhinoKO(r){
 var PACIFIST_DEBUG = parseFloat((location.hash.match(/pacifist=(\d+(?:\.\d+)?)/) || [])[1]);
 var REVEAL_DEBUG = (location.hash.match(/reveal=([a-z]+)/) || [])[1];
 function pacifistTime(){ return PACIFIST_DEBUG > 0 ? PACIFIST_DEBUG : 30; }
-window.__fight = function(){ return G ? {spawns: G.spawns, over: G.over, pacifist: G.pacifist, identified: G.identified, stageT: G.stageT, z: G.r.z, rstate: G.r.state, rhp: G.r.hp} : null; };   // test hook
+window.__isle = function(){ return G ? {p: G.p, r: G.r} : null; };   // test hook: place the fighters on the plane
+window.__fight = function(){ return G ? {spawns: G.spawns, over: G.over, pacifist: G.pacifist, identified: G.identified, stageT: G.stageT, z: G.r.z, rstate: G.r.state, rhp: G.r.hp, px: G.p.x, pz: G.p.z, php: G.p.hp} : null; };   // test hook
 function revealKinds(){ return LEVELS[LEVEL].reruns ? ['tapir', 'horse', 'zebra', 'camel', 'okapi', 'warthog', 'reindeer', 'moose', 'fox', 'wolverine', 'bear', 'lynx', 'hare'] : ['tapir', 'horse', 'zebra']; }
 function rhinoReveal(){
   if (G.over) return;
@@ -1228,11 +1395,18 @@ function updatePlayer(p, dt){
   var onGround = p.y <= 0 && p.vy <= 0;
   // face the rhino when not mid-attack
   if (!busy || p.state === 'hurt') p.facing = r.x > p.x ? 1 : -1;
-  var moving = false;
+  var moving = false, isle = isleOn();
+  if (isle) speed *= ISLE.spd;   // the island is five times the old arena, so walking it has to be quicker
   if (!busy && !G.over){
     if (keys.left){ p.x -= speed * dt; moving = true; }
     if (keys.right){ p.x += speed * dt; moving = true; }
-    if (pressed.jump && onGround){ p.vy = 690 * def.jump * (LEVELS[LEVEL].gravity ? .82 : 1); p.y = 1; sfx('jump'); }
+    if (isle){
+      // up and down walk into and out of the screen; jump moves to the space bar (and the JUMP pad)
+      if (keys.jump){ p.z += speed * dt; moving = true; }
+      if (keys.down){ p.z -= speed * dt; moving = true; }
+      if (pressed.hop && onGround){ p.vy = 690 * def.jump; p.y = 1; sfx('jump'); }
+    }
+    else if (pressed.jump || pressed.hop){ if (onGround){ p.vy = 690 * def.jump * (LEVELS[LEVEL].gravity ? .82 : 1); p.y = 1; sfx('jump'); } }
     if (pressed.punch && onGround) startAttack(p, 'punch');
     else if (pressed.kick && onGround) startAttack(p, 'kick');
     else if (pressed.special && p.meter >= 100 && onGround) startAttack(p, 'special');
@@ -1240,8 +1414,11 @@ function updatePlayer(p, dt){
   // gravity
   if (p.y > 0 || p.vy > 0){ p.vy -= 1500 * (LEVELS[LEVEL].gravity || 1) * dt; p.y += p.vy * dt; if (p.y <= 0){ p.y = 0; p.vy = 0; if (p.state === 'hurt' && p.st > .3){ p.state = 'idle'; } } }
   if (p.state === 'hurt' && p.kx){ p.x += p.kx * dt; p.kx *= Math.pow(0.02, dt); }
-  p.x = clamp(p.x, 40, AW - 40);
-  if (AW > LW) p.x = clamp(p.x, camX + 24, camX + LW - 24);   // stay inside the camera's view on the wide field
+  if (isle) isleClamp(p);
+  else {
+    p.x = clamp(p.x, 40, AW - 40);
+    if (AW > LW) p.x = clamp(p.x, camX + 24, camX + LW - 24);   // stay inside the camera's view on the wide field
+  }
   // pose selection
   var pose;
   if (p.state === 'ko') pose = POSE.ko;
@@ -1250,12 +1427,12 @@ function updatePlayer(p, dt){
   else if (p.state === 'punch'){
     var k = p.alt ? POSE.punch : POSE.punch2; var u = p.st < .1 ? p.st / .1 : 1 - smooth(.18, .32, p.st);
     pose = mixPose(POSE.guard, k, u);
-    if (p.st > .06 && p.st < .2 && !p.attackHit){ var hp = p.stickPt || p.handPt, hr = rhinoAt(hp, 14); if (hr){ p.attackHit = true; hitRhino(hr, p, hp, 7, false); } }
+    if (p.st > .06 && p.st < .2 && !p.attackHit){ var hp = p.stickPt || p.handPt, hr = rhinoAt(hp, 14, p); if (hr){ p.attackHit = true; hitRhino(hr, p, hp, 7, false); } }
     if (p.st > .32) p.state = 'idle';
   } else if (p.state === 'kick'){
     var u2 = p.st < .12 ? 0 : (p.st < .22 ? (p.st - .12) / .1 : 1 - smooth(.34, .5, p.st));
     pose = p.st < .12 ? mixPose(POSE.guard, POSE.kickWind, p.st / .12) : mixPose(POSE.kickWind, POSE.kick, u2);
-    if (p.st > .17 && p.st < .32 && !p.attackHit){ var kr = rhinoAt(p.footPt, 16); if (kr){ p.attackHit = true; hitRhino(kr, p, p.footPt, 12, true); } }
+    if (p.st > .17 && p.st < .32 && !p.attackHit){ var kr = rhinoAt(p.footPt, 16, p); if (kr){ p.attackHit = true; hitRhino(kr, p, p.footPt, 12, true); } }
     if (p.st > .5) p.state = 'idle';
   } else if (p.state === 'special'){
     pose = specialUpdate(p, dt);
@@ -1268,7 +1445,7 @@ function updatePlayer(p, dt){
     else { pose = POSE.guard; p.state = 'idle'; }
   }
   p.pose = pose;
-  p.ducking = keys.down && onGround && !busy;
+  p.ducking = keys.down && onGround && !busy && !isle;
   // radioactive hot spots (round 2)
   if (!G.over && p.state !== 'ko' && p.y <= 0 && hot.length){
     var inHot = false;
@@ -1287,14 +1464,14 @@ function specialUpdate(p, dt){
   if (kind === 'dash' || kind === 'grab'){
     var dur = kind === 'dash' ? .55 : .7, spd = kind === 'dash' ? 900 : 520;
     if (st < .12) pose = mixPose(POSE.guard, POSE.kickWind, st / .12);
-    else if (st < dur - .15){ p.x += p.dashDir * spd * dt; pose = kind === 'dash' ? POSE.punch : POSE.grab; var dr = p.attackHit ? null : rhinoAt(kind === 'dash' ? (p.stickPt || p.handPt) : p.headPt, kind === 'dash' ? 20 : 40); if (dr){ p.attackHit = true; hitRhino(dr, p, p.handPt, sp.dmg, true, kind === 'grab' ? 'SUPLEX!' : 'PURGED!'); if (kind === 'grab'){ dr.jump = 60; dr.tilt = -.6; } } }
+    else if (st < dur - .15){ p.x += p.dashDir * spd * dt; pose = kind === 'dash' ? POSE.punch : POSE.grab; var dr = p.attackHit ? null : rhinoAt(kind === 'dash' ? (p.stickPt || p.handPt) : p.headPt, kind === 'dash' ? 20 : 40, p); if (dr){ p.attackHit = true; hitRhino(dr, p, p.handPt, sp.dmg, true, kind === 'grab' ? 'SUPLEX!' : 'PURGED!'); if (kind === 'grab'){ dr.jump = 60; dr.tilt = -.6; } } }
     else pose = mixPose(POSE.punch, POSE.guard, smooth(dur - .15, dur, st));
     if (st > dur) p.state = 'idle';
   } else if (kind === 'fly' || kind === 'upper'){
     pose = kind === 'fly' ? POSE.fly : POSE.upper;
     if (kind === 'fly') p.x += p.dashDir * 380 * dt;
     var pt = kind === 'fly' ? p.footPt : p.handPt;
-    var fr = p.attackHit ? null : rhinoAt(pt, 22); if (fr){ p.attackHit = true; hitRhino(fr, p, pt, sp.dmg, true, kind === 'fly' ? 'K.O. KICK!' : 'AURORA!'); slowmo = 0; }
+    var fr = p.attackHit ? null : rhinoAt(pt, 22, p); if (fr){ p.attackHit = true; hitRhino(fr, p, pt, sp.dmg, true, kind === 'fly' ? 'K.O. KICK!' : 'AURORA!'); slowmo = 0; }
     if (p.y <= 0 && p.vy <= 0 && st > .3){ p.state = 'idle'; slowmo = 0; }
   } else if (kind === 'combo' || kind === 'spin'){
     var hits = sp.hits, per = kind === 'combo' ? .17 : .26, idx = Math.floor(st / per);
@@ -1302,7 +1479,7 @@ function specialUpdate(p, dt){
     var u = (st - idx * per) / per;
     if (kind === 'combo') pose = mixPose(POSE.guard, idx % 2 ? POSE.punch2 : POSE.punch, u < .5 ? u * 2 : 2 - u * 2);
     else { pose = mixPose(POSE.kickWind, POSE.kick, u < .5 ? u * 2 : 2 - u * 2); p.facing = (idx % 2 ? -1 : 1) * p.dashDir; }
-    if (u > .35 && u < .7 && p.specialHits === idx){ p.specialHits++; var pt2 = kind === 'combo' ? p.handPt : p.footPt, cr = rhinoAt(pt2, 18); if (cr) hitRhino(cr, p, pt2, sp.dmg, idx === hits - 1, idx === hits - 1 ? (kind === 'combo' ? 'ESPRESSO!' : 'TORNADO!') : null); }
+    if (u > .35 && u < .7 && p.specialHits === idx){ p.specialHits++; var pt2 = kind === 'combo' ? p.handPt : p.footPt, cr = rhinoAt(pt2, 18, p); if (cr) hitRhino(cr, p, pt2, sp.dmg, idx === hits - 1, idx === hits - 1 ? (kind === 'combo' ? 'ESPRESSO!' : 'TORNADO!') : null); }
     if (kind === 'spin') p.x += p.dashDir * 120 * dt;
   } else if (kind === 'godzilla'){
     p.inv = Math.max(p.inv, .1); slowmo = 0;
@@ -1317,7 +1494,7 @@ function specialUpdate(p, dt){
         p.attackHit = true; shake = 48; impactFrame = 4; flashA = .55; sfx('bighit'); sfx('boom'); sfx('drum');
         for (var gi = 0; gi < 30; gi++) puffs.push({x: p.x + rnd(-460, 460), y: GROUND - rnd(0, 30), t: 0, r: rnd(12, 30)});
         liveRhinos().forEach(function(r){ var rc2 = rhinoRect(r), rcx = (rc2.x0 + rc2.x1) / 2;
-          if (inReach(r) && Math.abs(p.x - rcx) < 620){ hitRhino(r, p, [rcx, GROUND - 90], sp.dmg, true, 'PER-ZILLA!'); r.jump = 110; r.tilt = -.5; if (r.state === 'charge' || r.state === 'paw' || r.state === 'horn'){ r.state = 'stagger'; r.st = 0; } } });
+          if (inReach(r, p) && Math.abs(p.x - rcx) < 620){ hitRhino(r, p, [rcx, GROUND - 90], sp.dmg, true, 'PER-ZILLA!'); r.jump = 110; r.tilt = -.5; if (r.state === 'charge' || r.state === 'paw' || r.state === 'horn'){ r.state = 'stagger'; r.st = 0; } } });
       }
     }
     else pose = mixPose(POSE.slam, POSE.guard, smooth(1.9, 2.5, st));
@@ -1330,7 +1507,7 @@ function specialUpdate(p, dt){
       if (!p.attackHit && st > .6){
         p.attackHit = true;
         var r = nearestRhino(p.x), rc3 = r ? rhinoRect(r) : null, rcx3 = r ? (rc3.x0 + rc3.x1) / 2 : 1e9;
-        if (r && inReach(r) && Math.abs(p.x - rcx3) < 420){
+        if (r && inReach(r, p) && Math.abs(p.x - rcx3) < 420){
           hitRhino(r, p, [rcx3, GROUND - 120], sp.dmg, true, 'NAP TIME!');
           if (r.state !== 'ko' && r.state !== 'gone'){ r.state = 'sleep'; r.st = 0; r.run = 0; r.facing = p.x > r.x ? 1 : -1; }
         } else { fx.push({x: p.headPt[0], y: p.headPt[1] - 30, t: 0, life: .7, r: 40, label: 'too far…', big: false}); }
@@ -1340,7 +1517,7 @@ function specialUpdate(p, dt){
     if (st > 2.3) p.state = 'idle';
   } else if (kind === 'slam'){
     if (st < .25){ pose = mixPose(POSE.guard, POSE.upper, st / .25); p.y = 40 * Math.sin(st / .25 * 3.14); }
-    else if (st < .4){ pose = POSE.slam; if (!p.attackHit){ p.attackHit = true; shake = 22; sfx('drum'); sfx('bighit'); for (var i = 0; i < 12; i++) puffs.push({x: p.x + rnd(-120, 120), y: GROUND - rnd(0, 20), t: 0, r: rnd(8, 18)}); liveRhinos().forEach(function(r){ var rc = rhinoRect(r); if (inReach(r) && Math.abs(p.x - (rc.x0 + rc.x1) / 2) < 320){ hitRhino(r, p, [ (rc.x0 + rc.x1) / 2, GROUND - 60 ], sp.dmg, true, 'SLAM!'); r.jump = 40; } }); } }
+    else if (st < .4){ pose = POSE.slam; if (!p.attackHit){ p.attackHit = true; shake = 22; sfx('drum'); sfx('bighit'); for (var i = 0; i < 12; i++) puffs.push({x: p.x + rnd(-120, 120), y: GROUND - rnd(0, 20), t: 0, r: rnd(8, 18)}); liveRhinos().forEach(function(r){ var rc = rhinoRect(r); if (inReach(r, p) && Math.abs(p.x - (rc.x0 + rc.x1) / 2) < 320){ hitRhino(r, p, [ (rc.x0 + rc.x1) / 2, GROUND - 60 ], sp.dmg, true, 'SLAM!'); r.jump = 40; } }); } }
     else pose = mixPose(POSE.slam, POSE.guard, smooth(.4, .7, st));
     if (st > .7) p.state = 'idle';
   }
@@ -1348,6 +1525,7 @@ function specialUpdate(p, dt){
 }
 function updateRhino(r, dt){
   var p = rhinoTarget(r);
+  curR = r;
   r.st += dt; if (r.flash > 0) r.flash -= dt;
   r.tail = .12 * Math.sin(G.t * 1.4);
   if (r.jump > 0 && r.state !== 'jetstomp'){ r.jump = Math.max(0, r.jump - 140 * dt); }
@@ -1376,6 +1554,12 @@ function updateRhino(r, dt){
   var dist = p.x - r.x, adist = Math.abs(dist);
   r.angry = r.hp < r.maxhp * .45;
   var spdMul = r.angry ? 1.25 : 1;
+  if (isleOn() && r.state !== 'charge' && r.state !== 'skid' && r.state !== 'stagger'){
+    // it lines itself up on your line of the island before it commits to a run
+    var dzr = p.z - r.z;
+    if (Math.abs(dzr) > 30){ r.z += Math.sign(dzr) * Math.min(Math.abs(dzr), (r.angry ? 300 : 210) * dt); r.run = Math.max(r.run, .45); r.phase += dt * 7; }
+    isleClamp(r);
+  }
   if (r.state === 'idle'){
     r.facing = dist > 0 ? 1 : -1; r.run = 0; r.tilt *= Math.pow(.05, dt); r.head *= Math.pow(.05, dt);
     r.timer -= dt;
@@ -1444,7 +1628,7 @@ function updateRhino(r, dt){
     }
     if (r.st > 1.1){ r.state = 'idle'; r.st = 0; r.timer = .8; r.glow = 0; r.squash = 0; r.chargeHit = false; }
   } else if (r.state === 'charge'){
-    var sp = (r.angry ? 700 : 540) * spdMul * Math.min(1, r.st * 3 + .3);
+    var sp = (r.angry ? 700 : 540) * spdMul * Math.min(1, r.st * 3 + .3) * (isleOn() ? ISLE.spd : 1);
     r.x += r.dir * sp * dt; r.run = 1; r.phase += dt * 20; r.tilt = .06 + .03 * Math.sin(r.phase); r.head = -.15;
     if (Math.random() < .6) puffs.push({x: r.x - r.dir * rnd(60, 150), y: GROUND - rnd(0, 30), t: 0, r: rnd(6, 14)});
     // hit the player?
@@ -1536,6 +1720,16 @@ function drawHUD(){
   ctx.textAlign = 'center'; ctx.font = '400 30px Bangers, Impact, sans-serif'; ctx.fillStyle = '#eef2f8'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 4;
   var s = Math.floor(G.elapsed); var tt = (s < 10 ? '0' : '') + s;
   ctx.strokeText(tt, LW / 2, 16); ctx.fillText(tt, LW / 2, 16);
+  if (isleOn()){
+    var mx = LW - 132, my = LH - 96, mw = 104, mh = 64;
+    ctx.fillStyle = 'rgba(10,14,30,.55)'; ctx.strokeStyle = 'rgba(201,211,230,.5)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.ellipse(mx, my, mw / 2, mh / 2, 0, 0, 6.283); ctx.fill(); ctx.stroke();
+    var mapAt = function(e){ return [mx + (e.x / ISLE.rx) * (mw / 2 - 4), my - ((e.z - ISLE.d / 2) / ISLE.rz) * (mh / 2 - 4)]; };   // up the map = further up the screen
+    G.rhinos.forEach(function(r0){ if (r0.state === 'gone') return; var m = mapAt(r0); ctx.fillStyle = '#ff5a3c'; ctx.beginPath(); ctx.arc(m[0], m[1], 4, 0, 6.283); ctx.fill(); });
+    G.players.forEach(function(q){ if (q.state === 'ko') return; var m = mapAt(q); ctx.fillStyle = '#f2c56b'; ctx.beginPath(); ctx.arc(m[0], m[1], 3.5, 0, 6.283); ctx.fill(); });
+    ctx.font = '900 10px Nunito, sans-serif'; ctx.fillStyle = 'rgba(201,211,230,.75)'; ctx.textAlign = 'center';
+    ctx.fillText('THE ISLAND', mx, my + mh / 2 + 6); ctx.textAlign = 'left'; ctx.font = '700 15px Nunito, sans-serif';
+  }
   if (depthOn() && !G.over){
     var far = G.rhinos.some(function(r0){ return (r0.z || 0) > 70 && r0.state !== 'gone'; });
     ctx.font = '900 12px Nunito, sans-serif'; ctx.fillStyle = far ? '#ff8a6a' : '#6fe3a0'; ctx.textAlign = 'center';
@@ -1558,13 +1752,20 @@ function bar(x, y, w, h, v, col, back, label, align){
 }
 function roundRect(x, y, w, h, r){ if (w < 0) w = 0; ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 function star(cx, cy, R, n, inner, ang){ ctx.beginPath(); for (var k = 0; k < 2 * n; k++){ var rr = k % 2 ? R * inner : R, a = ang + Math.PI * k / n; var x = cx + rr * Math.cos(a), y = cy + rr * Math.sin(a); if (k === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); } ctx.closePath(); }
+function fxAt(o, fn){ if (!isleOn()){ fn(); return; } withIsle(o.x, o.z === undefined ? (G.p.z || 0) : o.z, fn); }
 function drawFX(){
   // snow puffs
-  for (var i = 0; i < puffs.length; i++){ var q = puffs[i], u = q.t / .55; ctx.globalAlpha = .7 * (1 - u); ctx.fillStyle = '#f6f9ff'; ctx.beginPath(); ctx.arc(q.x, q.y - u * 40, q.r + u * 24, 0, 6.283); ctx.fill(); }
+  for (var i = 0; i < puffs.length; i++){ (function(q){ var u = q.t / .55; fxAt(q, function(){ ctx.globalAlpha = .7 * (1 - u); ctx.fillStyle = '#f6f9ff'; ctx.beginPath(); ctx.arc(q.x, q.y - u * 40, q.r + u * 24, 0, 6.283); ctx.fill(); }); })(puffs[i]); }
   ctx.globalAlpha = 1;
   for (var j = 0; j < fx.length; j++){
     var e = fx[j], u2 = e.t / e.life, R = e.r * (.6 + .4 * Math.min(1, e.t * 12)) * (1 + .5 * u2), al = 1 - u2 * u2;
     ctx.globalAlpha = al;
+    if (isleOn()){ (function(e2, R2, al2){ fxAt(e2, function(){ ctx.globalAlpha = al2;
+      star(e2.x, e2.y, R2, 12, .55, e2.t * 3); ctx.fillStyle = e2.red ? '#ff6a4a' : '#ffe86e'; ctx.fill(); ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 3; ctx.stroke();
+      star(e2.x, e2.y, R2 * .62, 12, .55, -e2.t * 2); ctx.fillStyle = '#fffbe8'; ctx.fill();
+      ctx.font = '400 ' + (e2.big ? 44 : 28) + 'px Bangers, Impact, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.lineWidth = 6; ctx.strokeStyle = '#fff'; ctx.strokeText(e2.label, e2.x, e2.y - 4); ctx.fillStyle = e2.red ? '#c8262c' : '#e3352b'; ctx.fillText(e2.label, e2.x, e2.y - 4);
+      ctx.textAlign = 'left'; ctx.textBaseline = 'top'; }); })(e, R, al); continue; }
     star(e.x, e.y, R, 12, .55, e.t * 3); ctx.fillStyle = e.red ? '#ff6a4a' : '#ffe86e'; ctx.fill(); ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 3; ctx.stroke();
     star(e.x, e.y, R * .62, 12, .55, -e.t * 2); ctx.fillStyle = '#fffbe8'; ctx.fill();
     ctx.font = '400 ' + (e.big ? 44 : 28) + 'px Bangers, Impact, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -1611,8 +1812,9 @@ function draw(){
   drawBackground(t);
   ctx.restore();
   ctx.save(); ctx.translate(G ? -camX : 0, 0);   // world layer
-  if (G && depthOn()) drawFloor3D();
-  if (G){
+  if (G && isleOn()){ drawIsleWorld(t); }
+  else if (G && depthOn()) drawFloor3D();
+  if (G && !isleOn()){
     var p = G.p, rr = G.r;
     if (depthOn()) G.rhinos.forEach(function(r0){ if (r0.state === 'zaim' || r0.state === 'zcharge') drawLane3D(r0); });
     // shadows
@@ -1973,8 +2175,8 @@ function guestTick(dt){
 var POSE_KEYS = ['crouch', 'lean', 'lh', 'lk', 'rh', 'rk', 'la', 'le', 'ra', 're'];
 function r1(v){ return Math.round((v || 0) * 10) / 10; }
 function r2(v){ return Math.round((v || 0) * 100) / 100; }
-function packP(p){ return [r1(p.x), r1(p.y), p.facing, r1(p.hp), p.meter | 0, p.state, r2(p.st), r2(p.inv), r2(p.flash), r2(p.scale || 1), p.ducking ? 1 : 0, POSE_KEYS.map(function(k){ return r2(p.pose[k]); }), p.alt ? 1 : 0, p.hitsLanded]; }
-function unpackP(p, a){ p.x = a[0]; p.y = a[1]; p.facing = a[2]; p.hp = a[3]; p.meter = a[4]; p.state = a[5]; p.st = a[6]; p.inv = a[7]; p.flash = a[8]; p.scale = a[9]; p.ducking = !!a[10]; var o = {}; POSE_KEYS.forEach(function(k, i){ o[k] = a[11][i]; }); p.pose = o; p.alt = !!a[12]; p.hitsLanded = a[13]; }
+function packP(p){ return [r1(p.x), r1(p.y), p.facing, r1(p.hp), p.meter | 0, p.state, r2(p.st), r2(p.inv), r2(p.flash), r2(p.scale || 1), p.ducking ? 1 : 0, POSE_KEYS.map(function(k){ return r2(p.pose[k]); }), p.alt ? 1 : 0, p.hitsLanded, r1(p.z || 0)]; }
+function unpackP(p, a){ p.x = a[0]; p.y = a[1]; p.facing = a[2]; p.hp = a[3]; p.meter = a[4]; p.state = a[5]; p.st = a[6]; p.inv = a[7]; p.flash = a[8]; p.scale = a[9]; p.ducking = !!a[10]; var o = {}; POSE_KEYS.forEach(function(k, i){ o[k] = a[11][i]; }); p.pose = o; p.alt = !!a[12]; p.hitsLanded = a[13]; p.z = a[14] || 0; }
 function packR(r){ return [r1(r.x), r.facing, r.hp, r.state, r2(r.st), r1(r.jump), r2(r.tilt), r2(r.head), r2(r.squash), r2(r.run), r2(r.phase), r2(r.tail), r2(r.flash), r2(r.glow), r.angry ? 1 : 0, r.dir, r1(r.targetX), r.morph || '', r.revealed ? 1 : 0, r.willFeint ? 1 : 0, r1(r.z || 0)]; }
 function unpackR(r, a){ r.x = a[0]; r.facing = a[1]; r.hp = a[2]; r.state = a[3]; r.st = a[4]; r.jump = a[5]; r.tilt = a[6]; r.head = a[7]; r.squash = a[8]; r.run = a[9]; r.phase = a[10]; r.tail = a[11]; r.flash = a[12]; r.glow = a[13]; r.angry = !!a[14]; r.dir = a[15]; r.targetX = a[16]; r.morph = a[17] || null; r.revealed = !!a[18]; r.willFeint = !!a[19]; r.z = a[20] || 0; }
 function sendSnap(){
@@ -2034,7 +2236,7 @@ function buildRoster(){
   });
 }
 function beginRound(){
-  newFight(ROSTER[selected]); scene = 'fight'; show(null);
+  newFight(ROSTER[selected]); scene = 'fight'; show(null); document.body.setAttribute('data-arena', isleOn() ? 'island' : 'flat');
   unlockAudio(); sfx('gong', {f: LEVEL ? 70 : 96, v: .6}); setTimeout(function(){ sfx('drum'); }, 800);
   if (LEVEL) setTimeout(function(){ sfx('geiger'); }, 300);
 }
@@ -2091,6 +2293,9 @@ function showResult(){
     } else if (LEVEL === 2){
       $('resBig').textContent = 'CLEAN'; $('resTitle').textContent = 'BARCODE CORRECTED';
       $('resReadout').innerHTML = '> hopped read: <b>Rhinoceros (wrong sample)</b> — status: <b>SENT HOME</b><br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · round bonus: <b>+3000</b><br>> lesson: one read can hop onto another sample\'s barcode during sequencing and appear where it never was.<br>> next: the read shows up <b>twice</b>. Round 4.';
+    } else if (LEVEL === 6){
+      $('resBig').textContent = 'K.O.!'; $('resTitle').textContent = 'THE SITE IS CLEAN';
+      $('resReadout').innerHTML = '> sampling site: <b>the whole island</b> — status: <b>SURVEYED</b><br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · round bonus: <b>+9000</b><br>> lesson: an air filter samples a place, not a line. Cover the place and the stray read has nowhere left to be.<br>> dataset clean. The crew can go home.';
     } else if (LEVEL === 5){
       $('resBig').textContent = 'K.O.!'; $('resTitle').textContent = 'STRUCTURE SAYS NO';
       $('resReadout').innerHTML = '> read: <b>Rhinoceros (2D alignment)</b> — structure: <b>WRONG FOLD</b><br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · round bonus: <b>+7500</b><br>> lesson: letters in a row can agree while the shapes they fold into do not. One more dimension, one less false positive.<br>> dataset clean. The crew can go home.';
@@ -2106,7 +2311,7 @@ function showResult(){
     }
   } else {
     $('resBig').textContent = 'TRAMPLED'; $('resTitle').textContent = LEVEL === 4 ? 'THE READ STAYS IN THE DATASET' : 'THE RHINO STAYS IN THE DATASET';
-    $('resReadout').innerHTML = '> read: <b>' + (LEVEL === 5 ? 'Rhinoceros (2D alignment)</b> — status: <b>still folded wrong' : LEVEL === 4 ? 'unassigned</b> — status: <b>still unassigned' : 'Rhinoceros' + (LEVEL === 3 ? ' ×2 (PCR duplicate)' : LEVEL === 2 ? ' (wrong sample)' : LEVEL ? ' (contaminant match)' : ' (98.7%)') + '</b> — status: <b>still there') + '</b><br>> fighter: <b>' + teamName(G) + '</b> · survived <b>' + G.elapsed.toFixed(1) + ' s</b> · rhino HP left: <b>' + G.rhinos.map(function(r0){ return r0.hp; }).join(' + ') + '</b><br>> tip: jump the charge when you see the <b>!</b>, duck the horn sweep, and hit it while it skids (or sleeps).';
+    $('resReadout').innerHTML = '> read: <b>' + (LEVEL === 6 ? 'Rhinoceros (island survey)</b> — status: <b>still on the island' : LEVEL === 5 ? 'Rhinoceros (2D alignment)</b> — status: <b>still folded wrong' : LEVEL === 4 ? 'unassigned</b> — status: <b>still unassigned' : 'Rhinoceros' + (LEVEL === 3 ? ' ×2 (PCR duplicate)' : LEVEL === 2 ? ' (wrong sample)' : LEVEL ? ' (contaminant match)' : ' (98.7%)') + '</b> — status: <b>still there') + '</b><br>> fighter: <b>' + teamName(G) + '</b> · survived <b>' + G.elapsed.toFixed(1) + ' s</b> · rhino HP left: <b>' + G.rhinos.map(function(r0){ return r0.hp; }).join(' + ') + '</b><br>> tip: jump the charge when you see the <b>!</b>, duck the horn sweep, and hit it while it skids (or sleeps).';
   }
   show('result'); scene = 'result';
 }
