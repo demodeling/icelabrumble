@@ -22,5 +22,5 @@ A single-page HTML5 canvas fighting game (Swebits crew vs a false-positive rhino
 - Hidden pacifist ending: survive `pacifistTime()` (60 s in round 1, +30 s per round) with zero hits landed and `rhinoReveal()` turns the rhino into a tapir/horse/zebra (`ANIMALS`, states `morph` → `graze` → `trot`). `#pacifist=<seconds>` in the URL shortens the timer for testing.
 - Fighters live in the `ROSTER` array; looks in `LOOK`; specials in `specialUpdate()`; rhino behaviour in `updateRhino()`.
 - Adding a fighter: ROSTER entry + LOOK entry + a video (`CHAR=<id> tools/video/render_cutout.py` after adding the sprite via `export_sprites.js`) + the test count in `tests/smoke.spec.js`.
-- Scores: `Scores` adapter (`load()` / `add(entry)`) — swap its body to point at a backend; keep the localStorage fallback.
+- Scores: `Scores` adapter (`load()` / `add(entry)` / `report(entry)`) talks to the Supabase `scores` table via REST (`SUPA` constants; schema in `supabase/migrations/`, insert-only under RLS, `report_score()` hides an entry). localStorage is the fallback when the table is unreachable. `board` caches the last list for the title-screen best and the roster cards.
 - Never commit photos of people to the repo; the cutout faces are procedural on purpose.

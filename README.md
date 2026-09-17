@@ -54,7 +54,7 @@ Keyboard: ← → / A D move · ↑ / W / space jump · ↓ / S duck · **J** pu
 
 ## High scores
 
-Stored per device (localStorage) for now. `Scores` in `src/index.html` has `load()` and `add(entry)`; point them at a Supabase table (or any tiny endpoint) for a shared leaderboard. See the roadmap for options.
+Shared leaderboard in a free Supabase table (`scores`: name, fighter, score, time_s, level, created_at). The page inserts with the project's publishable key and reads the top 25; row-level security allows nothing else, and a **report** button next to each entry hides it for everyone (`report_score()`). The schema is in `supabase/migrations/`; the project URL and key are the `SUPA` constants at the top of the `Scores` adapter in `src/index.html`. If the table cannot be reached the page falls back to this device's localStorage.
 
 ## Credits
 
