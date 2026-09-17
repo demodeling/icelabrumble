@@ -1,0 +1,15 @@
+{
+  "name": "swebits-rumble",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Swebits Cutout Rumble \u2014 pick a crew member, remove the false-positive rhino.",
+  "scripts": {
+    "build": "python3 tools/build.py",
+    "build:inline": "python3 tools/build.py --inline",
+    "test": "python3 tools/build.py && playwright test",
+    "serve": "python3 -m http.server 8000 -d dist"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.47.0"
+  }
+}
