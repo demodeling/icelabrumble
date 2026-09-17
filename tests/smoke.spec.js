@@ -248,6 +248,7 @@ test('co-op loads the bundled Trystero module and opens a room', async ({ page }
     await expect(page.locator('#select')).toBeVisible({ timeout: 10000 });     // the module imported and joinRoom() ran
     await expect(page.locator('#selCoop')).toContainText('Room KIRUNA');
     await page.waitForTimeout(2000);
+    await expect(page.locator('#selCoop')).toContainText(/relays \d+\/\d+/);   // live relay diagnostics
     expect(errors).toEqual([]);
   } finally { srv.kill(); }
 });
