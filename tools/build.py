@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 """Assemble the deployable site into dist/.
 
-  python3 tools/build.py            -> dist/ with videos served as files (GitHub Pages)
-  python3 tools/build.py --inline   -> dist/index.html with the videos embedded as base64 (single-file build, e.g. for a claude.ai artifact)
+  python3 tools/build.py            -> dist/ with the menu clip served as a file (GitHub Pages)
+  python3 tools/build.py --inline   -> dist/index.html with the menu clip embedded as base64 (single-file build, e.g. for a claude.ai artifact)
   python3 tools/build.py --docs     -> build into docs/ instead of dist/ (for GitHub Pages "deploy from a branch", main /docs)
 """
 import base64, json, os, shutil, subprocess, sys, time
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC, VIDS = os.path.join(ROOT, 'src'), os.path.join(ROOT, 'assets', 'videos')
 DIST = os.path.join(ROOT, 'docs' if '--docs' in sys.argv else 'dist')
-FIGHTERS = ['albertas', 'bjorn', 'bea', 'annamia', 'per', 'marco', 'jose', 'mike', 'daniel', 'henrik', 'anton']
-CLIPS = FIGHTERS + ['intro']   # + the menu clip (tools/video/render_intro.sh)
+CLIPS = ['intro']   # just the menu clip (tools/video/render_intro.sh); the game ships no per-fighter videos
 inline = '--inline' in sys.argv
 try:
     version = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'], cwd=ROOT, stderr=subprocess.DEVNULL).decode().strip()
