@@ -19,12 +19,12 @@ test('game boots and a fight runs', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('all five rounds start', async ({ page }) => {
+test('all six rounds start', async ({ page }) => {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(URL);
   await page.click('#btnStart');
-  for (const lvl of ['0', '1', '2', '3', '4']) {
+  for (const lvl of ['0', '1', '2', '3', '4', '5']) {
     await page.selectOption('#startLevel', lvl);
     await page.click('#btnFight');
     if (lvl !== '0') { await expect(page.locator('#btnLevelGo')).toBeVisible(); await page.click('#btnLevelGo'); }
@@ -92,6 +92,30 @@ test('round 5: a species that does not belong runs the pipeline again, four time
   await expect(page.locator('#result')).toBeVisible({ timeout: 40000 });
   await expect(page.locator('#resBig')).toHaveText('CALL IT');
   await expect(page.locator('#resReadout')).toContainText('pass 4/4: CAMEL');
+  expect(errors).toEqual([]);
+});
+
+// Round 6 has a z axis: the rhino retreats down the floor grid, where nothing reaches it, and charges the screen.
+test('round 6: the rhino goes down the z axis, out of reach, and comes back', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  await page.click('#btnStart');
+  await page.locator('.fighter').nth(4).click();
+  await page.selectOption('#startLevel', '5');
+  await page.click('#btnFight');
+  await expect(page.locator('#btnLevelGo')).toBeVisible();
+  await page.click('#btnLevelGo');
+  // it backs away and lines up
+  await page.waitForFunction(() => { const g = window.__fight(); return g && g.rstate === 'zaim' && g.z > 300; }, null, { timeout: 30000 });
+  // punching thin air down the lane does nothing while it is back there
+  const hpBefore = await page.evaluate(() => window.__fight().rhp);
+  for (let i = 0; i < 4; i++) { await page.keyboard.press('j'); await page.waitForTimeout(90); }
+  expect(await page.evaluate(() => window.__fight().rhp)).toBe(hpBefore);
+  // …then it arrives on the front plane, where it can be hit again
+  await page.waitForFunction(() => { const g = window.__fight(); return g && g.z === 0 && g.rstate !== 'zaim'; }, null, { timeout: 30000 });
+  for (let i = 0; i < 6; i++) { await page.keyboard.press('j'); await page.waitForTimeout(110); }
+  expect(await page.evaluate(() => window.__fight().rhp)).toBeLessThan(hpBefore);
   expect(errors).toEqual([]);
 });
 
