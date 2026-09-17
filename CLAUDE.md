@@ -19,6 +19,7 @@ A single-page HTML5 canvas fighting game (Swebits crew vs a false-positive rhino
 - Safari first: no optional chaining or `??` in page JS, Web Audio only after a user gesture (`unlockAudio()`), pointer events for touch buttons.
 - Keep `dist/` out of git; it is a build product. `docs/` IS committed: it is the pre-built copy for branch-based GitHub Pages — rebuild it with `python3 tools/build.py --docs` when you change `src/`.
 - Levels live in the `LEVELS` array (theme, rhino HP, `mutant` behaviours, intro card text); `LEVEL` is the current index. Round 2 = wasteland theme, feints, hot spots, radiation burst, CRT overlay. Round 3 = space theme (`gravity: .5`), horn laser bolts (`bolts`), jet-stomp with landing ring, helmets.
+- Hidden pacifist ending: survive `pacifistTime()` (60 s in round 1, +30 s per round) with zero hits landed and `rhinoReveal()` turns the rhino into a tapir/horse/zebra (`ANIMALS`, states `morph` → `graze` → `trot`). `#pacifist=<seconds>` in the URL shortens the timer for testing.
 - Fighters live in the `ROSTER` array; looks in `LOOK`; specials in `specialUpdate()`; rhino behaviour in `updateRhino()`.
 - Adding a fighter: ROSTER entry + LOOK entry + a video (`CHAR=<id> tools/video/render_cutout.py` after adding the sprite via `export_sprites.js`) + the test count in `tests/smoke.spec.js`.
 - Scores: `Scores` adapter (`load()` / `add(entry)`) — swap its body to point at a backend; keep the localStorage fallback.
