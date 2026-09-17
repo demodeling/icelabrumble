@@ -83,6 +83,10 @@
   .readout b{color:var(--gold);font-weight:400;}
   .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
   .small{font-size:clamp(11px,1.3vw,13px);color:var(--muted);margin:0;}
+  .creds{max-width:60ch;text-align:left;color:var(--snow2);font-size:clamp(12px,1.5vw,15px);line-height:1.5;}
+  .creds p{margin:0 0 8px;}  .creds b{color:var(--snow);}
+  #credits .small{max-width:60ch;margin-inline:auto;}
+  .panel a{color:var(--aurora);}
   .small.ver{font-size:11px;opacity:.6;letter-spacing:.06em;font-variant-numeric:tabular-nums;}
   .small.coop{color:var(--aurora);font-weight:700;}
   #topBtns{position:absolute;top:8px;right:8px;z-index:5;display:flex;gap:6px;}
@@ -149,11 +153,11 @@
     <div id="title" class="overlay"><div class="panel">
       <h1>ICELAB<br>RUMBLE</h1>
       <p class="sub">An airborne eDNA sampler in Kiruna reported a rhino. One read, 98.7% match. Somebody has to remove it from the dataset by hand.</p>
-      <div class="row"><button class="btn" id="btnStart">CHOOSE YOUR FIGHTER</button><button class="btn secondary" id="btnScores">HIGH SCORES</button><button class="btn secondary" id="btnCoop">CO-OP</button><button class="btn secondary" id="btnIntro">▶ FALSE POSITIVE?</button></div>
+      <div class="row"><button class="btn" id="btnStart">CHOOSE YOUR FIGHTER</button><button class="btn secondary" id="btnScores">HIGH SCORES</button><button class="btn secondary" id="btnCoop">CO-OP</button><button class="btn secondary" id="btnIntro">▶ FALSE POSITIVE?</button><button class="btn secondary" id="btnCredits">CREDITS</button></div>
       <p class="small" id="titleBest"></p>
       <p class="small">Sound on for the full kung-fu experience. Works on Safari, iPhone and iPad — tap ⛶ FULLSCREEN for a widescreen arena on your phone.</p>
       <p class="small" id="iosHint" hidden>iPhone: for a real full screen, tap Share → <b>Add to Home Screen</b> and open the game from there (no Safari bars at all).</p>
-      <p class="small ver" id="verLine">v1.3.0 · build 8775f6b</p>
+      <p class="small ver" id="verLine">v1.3.0 · build 683a6b6</p>
     </div></div>
 
     <div id="select" class="overlay" hidden><div class="panel">
@@ -186,6 +190,21 @@
       <p class="small" id="scoresMode"></p>
       <table class="scores" id="scoresTable"><thead><tr><th class="num">#</th><th>NAME</th><th>FIGHTER</th><th class="num">TIME</th><th class="num">SCORE</th><th></th></tr></thead><tbody></tbody></table>
       <div class="row"><button class="btn secondary" id="btnScoresBack">BACK</button></div>
+    </div></div>
+
+    <div id="credits" class="overlay" hidden><div class="panel">
+      <h2>CREDITS</h2>
+      <p class="sub">The fighters are the people of <b>IceLab</b>, the Integrated Science Lab at Umeå University: mathematicians, physicists, ecologists, molecular biologists, plant physiologists and computer scientists sharing one house, one whiteboard wall and a great deal of fika.</p>
+      <div class="creds">
+        <p><b>Why IceLab is great</b></p>
+        <p>Because the interesting problems sit between the disciplines, and IceLab is built for exactly that spot. Flat, non-hierarchical, open — everyone’s opinions are valued, and a question asked over coffee can turn into a project by the end of the week. Multidisciplinary postdoctoral fellows belong to two groups at once, so collaborations start with a person rather than a memo. Group leaders, PhD students, staff scientists and affiliated researchers from half the departments in Umeå argue about models together and come out with better ones.</p>
+        <p>That is also the whole point of this game. One airborne eDNA read said <i>rhinoceros</i> at 98.7 %, and finding out why takes an ecologist, a statistician, a molecular biologist and somebody who knows what PCR duplicates look like. Here they just take turns kicking it.</p>
+      </div>
+      <p class="small" id="credRoster"></p>
+      <p class="small">Every face is drawn by the game from a hash of the person’s name — a paper-cutout avatar, deliberately not a likeness. No photographs of anyone are used anywhere in this project.</p>
+      <p class="small">The rhino is a false positive. No rhinos were harmed; it was one short read that looked like a horse.</p>
+      <p class="small ver">Built with Claude · v1.3.0 · <a href="https://www.umu.se/en/icelab/" target="_blank" rel="noopener">umu.se/en/icelab</a></p>
+      <div class="row"><button class="btn secondary" id="btnCreditsBack">BACK</button></div>
     </div></div>
 
     <div id="result" class="overlay" hidden><div class="panel">
@@ -331,12 +350,18 @@ var SKINS = ['#f1c9a5', '#f3c8b0', '#f0cdb0', '#f2d0b4', '#efc8ac', '#e9c0a0', '
 var HAIRC = ['#2b2320', '#4a3626', '#6b4a2e', '#8a6a48', '#c9a266', '#a86f45', '#5a5a5e', '#d8d3c8'];
 var HAIRT = ['short', 'long', 'bangs', 'curly', 'buzz'];
 var MOUTHS = ['smile', 'flat', 'open'];
+// The generated look is a hash, not a portrait. Anyone who wants a particular cutout can pin it here,
+// e.g. LOOK_FIX['aswin-gopakumar'] = {hair: {type:'curly', color:'#2b2320'}, glasses: true};
+var LOOK_FIX = {};
 function lookFor(id){
   var h = hashOf(id + '-look'), t = HAIRT[h % HAIRT.length];
-  return {skin: SKINS[(h >>> 3) % SKINS.length],
+  var look = {skin: SKINS[(h >>> 3) % SKINS.length],
           hair: {type: t, color: HAIRC[(h >>> 7) % HAIRC.length], big: ((h >>> 11) & 1) === 1, messy: ((h >>> 12) & 1) === 1, receding: t === 'short' && ((h >>> 13) & 3) === 0},
           beard: null, glasses: ((h >>> 17) % 3) === 0, mouth: MOUTHS[(h >>> 19) % MOUTHS.length],
           brow: ((h >>> 23) & 3) === 0};
+  var fix = LOOK_FIX[id];
+  if (fix) for (var k in fix) if (Object.prototype.hasOwnProperty.call(fix, k)) look[k] = fix[k];
+  return look;
 }
 var LOOK = {};
 ROSTER.forEach(function(d){ LOOK[d.face] = lookFor(d.id); });
@@ -1588,6 +1613,14 @@ function renderBest(){
   Array.prototype.forEach.call(document.querySelectorAll('#roster .fighter'), function(card){ var bb = bestFor(card.getAttribute('aria-label')), be = card.querySelector('.best'); if (be) be.textContent = bb ? 'BEST ' + fmtScore(bb.score) + ' · ' + bb.name : ''; });
 }
 function refreshBoard(){ return Scores.load().then(function(list){ board = list; renderBest(); return list; }); }
+function openCredits(){
+  var by = {};
+  ROSTER.forEach(function(d){ by[d.group] = (by[d.group] || 0) + 1; });
+  $('credRoster').textContent = 'Roster: the ' + ROSTER.length + ' people on the IceLab members page — '
+    + (by.L || 0) + ' group leaders, ' + (by.M || 0) + ' members, ' + (by.A || 0) + ' affiliated researchers, in page order. '
+    + 'Moves come from what each of them actually works on.';
+  show('credits'); scene = 'credits';
+}
 function openScores(){ show('scores'); scene = 'scores'; Scores.load().then(function(list){ renderScores(list); renderBest(); }); }
 
 // ------------------------------------------------------------ co-op over WebRTC
@@ -1793,7 +1826,7 @@ function applySnap(d){
 
 // ------------------------------------------------------------ screens
 var $ = function(id){ return document.getElementById(id); };
-function show(id){ ['title', 'select', 'result', 'scores', 'levelCard', 'coop'].forEach(function(s){ $(s).hidden = s !== id; }); $('menuBtn').hidden = id === 'title'; document.body.setAttribute('data-scene', id || 'fight'); }
+function show(id){ ['title', 'select', 'result', 'scores', 'levelCard', 'coop', 'credits'].forEach(function(s){ $(s).hidden = s !== id; }); $('menuBtn').hidden = id === 'title'; document.body.setAttribute('data-scene', id || 'fight'); }
 // back to the main menu from anywhere (Esc, or the ☰ MENU button): abandons a running fight
 function goMenu(){
   if (scene === 'title') return;
@@ -1904,6 +1937,8 @@ $('btnIntro').addEventListener('click', function(){ unlockAudio(); openVideo('in
 $('btnVideoClose').addEventListener('click', closeVideo);
 $('theVideo').addEventListener('ended', function(){ setTimeout(closeVideo, 800); });
 $('btnScores').addEventListener('click', function(){ unlockAudio(); openScores(); });
+$('btnCredits').addEventListener('click', function(){ unlockAudio(); openCredits(); });
+$('btnCreditsBack').addEventListener('click', function(){ show('title'); scene = 'title'; });
 $('btnScoresBack').addEventListener('click', function(){ show('title'); scene = 'title'; });
 $('btnSave').addEventListener('click', function(){
   if (!G || !G.won) return;

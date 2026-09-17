@@ -163,6 +163,19 @@ test('the menu has the false-positive clip', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test('the credits screen celebrates IceLab and counts the roster', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  await page.click('#btnCredits');
+  await expect(page.locator('#credits')).toBeVisible();
+  await expect(page.locator('#credits .creds')).toContainText('Why IceLab is great');
+  await expect(page.locator('#credRoster')).toContainText('the 73 people on the IceLab members page — 10 group leaders, 34 members, 29 affiliated researchers');
+  await page.click('#btnCreditsBack');
+  await expect(page.locator('#title')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test('the title screen shows the version', async ({ page }) => {
   await page.goto(URL);
   await expect(page.locator('#verLine')).toHaveText(/^v\d+\.\d+\.\d+ · build \S+$/);

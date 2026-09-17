@@ -2,7 +2,7 @@
 
 An airborne eDNA sampler in Kiruna reported a rhino. One read, 98.7 % match. Somebody has to remove it from the dataset by hand.
 
-A single-page HTML5 canvas fighter: pick one of the 73 people from the [IceLab members page](https://www.umu.se/en/icelab/about-us/members/), dodge the charge, duck the horn, fill the meter, land your special (Map Equation Crunch, Chloroplast Lullaby, Trophic Cascade Kick…) and watch the false positive explode into DNA. Works in Safari, Chrome, iPhone, iPad and desktop; installable as a home-screen app; keyboard or touch.
+A single-page HTML5 canvas fighter: pick one of the 73 people from the [IceLab members page](https://www.umu.se/en/icelab/about-us/members/), dodge the charge, duck the horn, fill the meter, land your special (Map Equation Crunch, Chloroplast Lullaby, Trophic Cascade Kick…) and watch the false positive explode into DNA. Works in Safari, Chrome, iPhone, iPad and desktop; installable as a home-screen app; keyboard or touch. The CREDITS button on the title screen says what IceLab is and why it is worth celebrating.
 
 ## Put it on GitHub Pages
 
