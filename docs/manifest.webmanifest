@@ -1,6 +1,6 @@
 {
-  "name": "Swebits Rumble",
-  "short_name": "Swebits Rumble",
+  "name": "IceLab Rumble",
+  "short_name": "IceLab Rumble",
   "start_url": "./index.html",
   "scope": "./",
   "display": "fullscreen",

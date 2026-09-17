@@ -1,16 +1,17 @@
-var LOOK = {
-  albertas:{skin:'#f1c9a5', hair:{type:'curly', color:'#6b4a2e', big:true}, beard:{type:'full', color:'#7a5232'}, glasses:true, mouth:'open'},
-  bjorn:   {skin:'#f3c8b0', hair:{type:'bald'}, beard:null, mouth:'flat', brow:true},
-  bea:     {skin:'#f0cdb0', hair:{type:'bangs', color:'#8a6a48'}, beard:null, mouth:'smile'},
-  annamia: {skin:'#f2d0b4', hair:{type:'long', color:'#c9a266'}, beard:null, mouth:'smile'},
-  per:     {skin:'#efc8ac', hair:{type:'short', color:'#4a3626'}, beard:{type:'stubble', color:'#5a4433'}, mouth:'flat'},
-  marco:   {skin:'#e9c0a0', hair:{type:'curly', color:'#2b2320', big:true}, beard:{type:'mustache', color:'#2b2320'}, mouth:'smile'},
-  jose:    {skin:'#e8bfa0', hair:{type:'buzz', color:'#2f2620'}, beard:{type:'full', color:'#2a221e', big:true}, mouth:'smile'},
-  mike:    {skin:'#f0c7a8', hair:{type:'short', color:'#8a6a48', messy:true}, beard:{type:'full', color:'#a86f45'}, mouth:'open'},
-  daniel:  {skin:'#f1c9ad', hair:{type:'short', color:'#4a3a2e', receding:true}, beard:null, glasses:true, mouth:'smile', chain:true},
-  henrik:  {skin:'#f2c9ae', hair:{type:'bald'}, beard:{type:'full', color:'#c4652e', big:true}, mouth:'flat', brow:true},
-  anton:   {skin:'#f0c8ae', hair:{type:'short', color:'#5a3d26', messy:true}, beard:{type:'goatee', color:'#7a5236'}, mouth:'smile'}
-};
+// Extracted from src/index.html (roster look + drawCutoutFace) so the video renderer draws the same faces.
+function hashOf(s){ var h = 2166136261; for (var i = 0; i < s.length; i++){ h = (h ^ s.charCodeAt(i)) >>> 0; h = (h * 16777619) >>> 0; } return h; }
+// Generic paper-cutout avatars, built from a hash of the id — a look per fighter, not a likeness of anyone.
+var SKINS = ['#f1c9a5', '#f3c8b0', '#f0cdb0', '#f2d0b4', '#efc8ac', '#e9c0a0', '#e8bfa0', '#d8a882', '#c08b62', '#8d5a3b'];
+var HAIRC = ['#2b2320', '#4a3626', '#6b4a2e', '#8a6a48', '#c9a266', '#a86f45', '#5a5a5e', '#d8d3c8'];
+var HAIRT = ['short', 'long', 'bangs', 'curly', 'buzz'];
+var MOUTHS = ['smile', 'flat', 'open'];
+function lookFor(id){
+  var h = hashOf(id + '-look'), t = HAIRT[h % HAIRT.length];
+  return {skin: SKINS[(h >>> 3) % SKINS.length],
+          hair: {type: t, color: HAIRC[(h >>> 7) % HAIRC.length], big: ((h >>> 11) & 1) === 1, messy: ((h >>> 12) & 1) === 1, receding: t === 'short' && ((h >>> 13) & 3) === 0},
+          beard: null, glasses: ((h >>> 17) % 3) === 0, mouth: MOUTHS[(h >>> 19) % MOUTHS.length],
+          brow: ((h >>> 23) & 3) === 0};
+}
 function drawCutoutFace(c, cx, cy, S, look, fac, opt){
   // S = head width. Big round head, big oval eyes, thick paper-cut outline.
   opt = opt || {};

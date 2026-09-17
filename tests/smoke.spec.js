@@ -1,4 +1,4 @@
-// Playwright smoke test: the built game loads, a fight starts, a special fires, the video button works, no page errors.
+// Playwright smoke test: the built game loads, a fight starts, a special fires, the menu clip plays, no page errors.
 const { test, expect } = require('@playwright/test');
 const path = require('path');
 const URL = 'file://' + path.resolve(__dirname, '..', 'dist', 'index.html');
@@ -9,32 +9,14 @@ test('game boots and a fight runs', async ({ page }) => {
   await page.goto(URL);
   await expect(page.locator('#btnStart')).toBeVisible();
   await page.click('#btnStart');
-  await expect(page.locator('.fighter')).toHaveCount(11);
-  await page.click('.fighter:nth-child(5)');          // Per (not pre-selected, so one click only selects)
+  await expect(page.locator('.fighter')).toHaveCount(73);   // everyone on umu.se/en/icelab/about-us/members
+  await page.locator('.fighter').nth(4).click();       // Eric Libby (not pre-selected, so one click only selects)
   await page.click('#btnFight');
   await page.waitForTimeout(1500);
   for (let i = 0; i < 20; i++) { await page.keyboard.down('ArrowRight'); await page.waitForTimeout(60); await page.keyboard.up('ArrowRight'); await page.keyboard.press('j'); await page.waitForTimeout(120); }
   await page.keyboard.press('ArrowUp'); await page.keyboard.press('k'); await page.keyboard.press('l');
   await page.waitForTimeout(500);
   expect(errors).toEqual([]);
-});
-
-test('every fighter has a video', async ({ page }) => {
-  await page.goto(URL);
-  await page.click('#btnStart');
-  const fighters = page.locator('.fighter');
-  await expect(fighters).toHaveCount(11);
-  for (let i = 0; i < 11; i++) {
-    const f = fighters.nth(i);
-    // clicking an already-selected fighter starts the fight, so only click when it is not selected yet
-    if (!(await f.evaluate(el => el.classList.contains('sel')))) await f.click();
-    await expect(page.locator('#btnVideo')).toBeVisible();
-    await page.click('#btnVideo');
-    const src = await page.evaluate(() => document.getElementById('theVideo').getAttribute('src') || '');
-    expect(src.length).toBeGreaterThan(0);
-    await page.click('#btnVideoClose');
-    await expect(page.locator('#select')).toBeVisible();
-  }
 });
 
 test('all four rounds start', async ({ page }) => {
@@ -62,7 +44,7 @@ test('pacifist ending: outlast the rhino without hitting it', async ({ page }) =
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(URL + '#pacifist=2');            // debug hook: shortens the 60 s pacifist timer to 2 s
   await page.click('#btnStart');
-  await page.click('.fighter:nth-child(5)');
+  await page.locator('.fighter').nth(4).click();
   await page.click('#btnFight');
   // dodge only: never press punch / kick / special
   for (let i = 0; i < 25; i++) { await page.keyboard.press('ArrowUp'); await page.waitForTimeout(160); }
@@ -87,8 +69,8 @@ async function mockSupabase(page, rows) {
   return calls;
 }
 const ROWS = [
-  { id: 1, name: 'Björn', fighter: 'Björn', score: 8420, time_s: 61.2, level: 2, created_at: '2026-09-16T10:00:00Z' },
-  { id: 2, name: 'Pelle', fighter: 'Per', score: 5120, time_s: 40.0, level: 1, created_at: '2026-09-16T11:00:00Z' },
+  { id: 1, name: 'Ludde', fighter: 'Åke Brännström', score: 8420, time_s: 61.2, level: 2, created_at: '2026-09-16T10:00:00Z' },
+  { id: 2, name: 'Pelle', fighter: 'Eric Libby', score: 5120, time_s: 40.0, level: 1, created_at: '2026-09-16T11:00:00Z' },
 ];
 
 test('shared leaderboard: title best, roster best, report hides an entry', async ({ page }) => {
@@ -101,15 +83,15 @@ test('shared leaderboard: title best, roster best, report hides an entry', async
   await page.click('#btnScores');
   await expect(page.locator('#scoresMode')).toContainText('Shared leaderboard');
   await expect(page.locator('#scoresTable tbody tr')).toHaveCount(2);
-  await expect(page.locator('#scoresTable tbody tr').first()).toContainText('Björn');
+  await expect(page.locator('#scoresTable tbody tr').first()).toContainText('Ludde');
   await page.locator('#scoresTable tbody tr').first().locator('button.report').click();
   await expect(page.locator('#scoresTable tbody tr')).toHaveCount(1);
   expect(calls.some(c => c.startsWith('POST rpc/report_score'))).toBe(true);
   await expect(page.locator('#titleBest')).toContainText('5,120');
   await page.click('#btnScoresBack');
   await page.click('#btnStart');
-  await expect(page.locator('.fighter:nth-child(5) .best')).toHaveText('BEST 5,120 · Pelle');
-  await expect(page.locator('.fighter:nth-child(1) .best')).toHaveText('');
+  await expect(page.locator('.fighter').nth(4).locator('.best')).toHaveText('BEST 5,120 · Pelle');
+  await expect(page.locator('.fighter').nth(0).locator('.best')).toHaveText('');
   expect(errors).toEqual([]);
 });
 
@@ -119,11 +101,11 @@ test('saving a score posts it to the table and highlights it', async ({ page }) 
   const calls = await mockSupabase(page, ROWS.map(r => Object.assign({}, r)));
   await page.goto(URL + '#pacifist=2');
   await page.click('#btnStart');
-  await page.click('.fighter:nth-child(5)');
+  await page.locator('.fighter').nth(4).click();
   await page.click('#btnFight');
   for (let i = 0; i < 25; i++) { await page.keyboard.press('ArrowUp'); await page.waitForTimeout(160); }
   await expect(page.locator('#result')).toBeVisible({ timeout: 15000 });
-  await expect(page.locator('#playerName')).toHaveValue('Per');                  // defaults to your fighter's name
+  await expect(page.locator('#playerName')).toHaveValue('Eric');                 // defaults to your fighter's first name
   await page.fill('#playerName', '  Tester  ');
   await page.click('#btnSave');
   await expect(page.locator('#scores')).toBeVisible();
@@ -150,14 +132,14 @@ test('Esc and the MENU button return to the main menu', async ({ page }) => {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(URL);
-  await expect(page.locator('#title h1')).toHaveText(/SWEBITS\s*RUMBLE/);
+  await expect(page.locator('#title h1')).toHaveText(/ICELAB\s*RUMBLE/);
   await expect(page.locator('#menuBtn')).toBeHidden();          // not on the title screen
   await page.click('#btnStart');
   await expect(page.locator('#menuBtn')).toBeVisible();
   await page.click('#menuBtn');
   await expect(page.locator('#title')).toBeVisible();
   await page.click('#btnStart');
-  await page.click('.fighter:nth-child(5)');
+  await page.locator('.fighter').nth(4).click();
   await page.click('#btnFight');
   await page.waitForTimeout(800);
   await page.keyboard.press('Escape');                          // mid-fight
@@ -218,9 +200,9 @@ test('co-op: two pages fight the rhino through a room', async ({ browser }) => {
   await A.evaluate(() => window.__coopPeer('b')); await B.evaluate(() => window.__coopPeer('a'));
   await expect(A.locator('#selCoop')).toContainText('you are the host');
   await expect(B.locator('#selCoop')).toContainText('the host picks the round');
-  await A.click('.fighter:nth-child(5)'); await A.click('#btnFight');      // Per, host ready first
+  await A.locator('.fighter').nth(4).click(); await A.click('#btnFight');   // Eric Libby, host ready first
   await expect(A.locator('#selCoop')).toContainText('waiting for your friend to press');
-  await B.click('.fighter:nth-child(2)'); await B.click('#btnFight');      // Björn
+  await B.locator('.fighter').nth(1).click(); await B.click('#btnFight');   // Åke Brännström
   await expect(A.locator('#select')).toBeHidden(); await expect(B.locator('#select')).toBeHidden();
   // the guest plays: its inputs travel to the host, snapshots come back
   for (let i = 0; i < 8; i++) { await B.keyboard.down('ArrowRight'); await B.waitForTimeout(60); await B.keyboard.up('ArrowRight'); await B.keyboard.press('j'); await B.waitForTimeout(100); }
@@ -301,8 +283,8 @@ test('co-op falls back to the Supabase relay when P2P never connects', async ({ 
   await expect(A.locator('#selCoop')).toContainText('via relay');
   await expect(B.locator('#selCoop')).toContainText('via relay');
   await expect(A.locator('#selCoop')).toContainText('you are the host');
-  await A.click('.fighter:nth-child(5)'); await A.click('#btnFight');
-  await B.click('.fighter:nth-child(2)'); await B.click('#btnFight');
+  await A.locator('.fighter').nth(4).click(); await A.click('#btnFight');
+  await B.locator('.fighter').nth(1).click(); await B.click('#btnFight');
   await expect(A.locator('#select')).toBeHidden(); await expect(B.locator('#select')).toBeHidden();
   for (let i = 0; i < 8; i++) { await B.keyboard.down('ArrowRight'); await B.waitForTimeout(60); await B.keyboard.up('ArrowRight'); await B.keyboard.press('j'); await B.waitForTimeout(100); }
   await B.waitForTimeout(1200);

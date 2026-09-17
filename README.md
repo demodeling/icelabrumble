@@ -1,8 +1,8 @@
-# Swebits Rumble
+# IceLab Rumble
 
 An airborne eDNA sampler in Kiruna reported a rhino. One read, 98.7 % match. Somebody has to remove it from the dataset by hand.
 
-A single-page HTML5 canvas fighter: pick one of the eleven Swebits crew members, dodge the charge, duck the horn, fill the meter, land your special (Godzilla Smash, Babysitter Mode, Finger Guns…) and watch the false positive explode into DNA. Works in Safari, Chrome, iPhone, iPad and desktop; installable as a home-screen app; keyboard or touch.
+A single-page HTML5 canvas fighter: pick one of the 73 people from the [IceLab members page](https://www.umu.se/en/icelab/about-us/members/), dodge the charge, duck the horn, fill the meter, land your special (Map Equation Crunch, Chloroplast Lullaby, Trophic Cascade Kick…) and watch the false positive explode into DNA. Works in Safari, Chrome, iPhone, iPad and desktop; installable as a home-screen app; keyboard or touch.
 
 ## Put it on GitHub Pages
 
@@ -14,7 +14,7 @@ Two ways to switch it on. Either works; A is automatic, B needs no Actions at al
 
 **A. GitHub Actions (recommended — rebuilds on every push)**
 
-1. Push this folder to a new repository (`git init`, `git add .`, `git commit -m "Swebits Rumble"`, `git branch -M main`, `git remote add origin …`, `git push -u origin main`).
+1. Push this folder to a new repository (`git init`, `git add .`, `git commit -m "IceLab Rumble"`, `git branch -M main`, `git remote add origin …`, `git push -u origin main`).
 2. On GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 3. Open the **Actions** tab. The workflow *Build, test and deploy to GitHub Pages* should be running (or run it with *Run workflow* if it isn't). It takes 2–4 minutes the first time because it installs a browser for the tests.
 4. When the job is green, the game is at `https://<your-username>.github.io/<repo-name>/`. The Actions run also prints the URL under the *deploy* job.
@@ -54,7 +54,7 @@ Keyboard: ← → / A D move · ↑ / W / space jump · ↓ / S duck · **J** pu
 
 ## Videos
 
-`assets/videos/<fighter>.mp4` are the 20-second "False positive" clips, one per fighter, rendered by `tools/video/render_all.sh` (Python 3 + Pillow + numpy + ffmpeg; the face sprites come from the game's own drawing code via `export_sprites.js`, which needs Playwright). `assets/videos/intro.mp4` is the menu clip behind the ▶ FALSE POSITIVE? button (the crew member looks back, walks on, touches the rhino and it turns out to be a zebra), rendered by `tools/video/render_intro.sh`. `assets/trailer/trailer.mp4` is the 20-second trailer.
+The game ships one clip: `assets/videos/intro.mp4`, the menu clip behind the ▶ FALSE POSITIVE? button (someone looks back, walks on, touches the rhino and it turns out to be a zebra), rendered by `tools/video/render_intro.sh` (Python 3 + Pillow + numpy + ffmpeg; the face sprites come from the game's own drawing code via `export_sprites.js`, which needs Playwright). `assets/trailer/trailer.mp4` is the 20-second trailer. There are no per-fighter videos.
 
 ## High scores
 
@@ -62,4 +62,4 @@ Shared leaderboard in a free Supabase table (`scores`: name, fighter, score, tim
 
 ## Credits
 
-Made by the Swebits crew with Claude. The rhino was a false positive. No rhinos were harmed.
+Made with Claude. The rhino was a false positive. No rhinos were harmed.

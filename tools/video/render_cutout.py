@@ -354,12 +354,12 @@ STRIDE = 92.0
 
 JACKET = (52, 64, 98)
 JACKET_D = (36, 46, 74)
-CHAR = os.environ.get('CHAR', 'albertas')
-SHIRTS = {'albertas': (47, 58, 90), 'bjorn': (62, 60, 72), 'bea': (90, 94, 110), 'annamia': (233, 229, 220), 'per': (58, 58, 66), 'marco': (38, 38, 46), 'jose': (45, 51, 70), 'mike': (31, 31, 38), 'daniel': (31, 61, 52), 'henrik': (59, 95, 168), 'anton': (110, 58, 58)}
-PROPS = {'anton': 'stick'}   # innebandy stick in the near hand
+CHAR = os.environ.get('CHAR', 'martin-rosvall')   # a roster id; sprites/sprite_<CHAR>_{flat,open,smile}.png must exist
+SHIRT = os.environ.get('SHIRT', '#2f3a5a')        # jacket colour, matching the fighter's shirt in the game
+PROPS = {}   # optional prop in the near hand, e.g. {'someone': 'stick'}
 SPRITES = {m: Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sprites', 'sprite_%s_%s.png' % (CHAR, m))).convert('RGBA') for m in ('flat', 'open', 'smile')}
 IMG_REF = [None]
-JACKET = SHIRTS[CHAR]
+JACKET = tuple(int(SHIRT.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
 JACKET_D = tuple(max(0, c - 18) for c in JACKET)
 PANTS = (38, 42, 64)
 PANTS_D = (26, 30, 46)

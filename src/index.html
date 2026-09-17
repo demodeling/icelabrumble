@@ -7,15 +7,15 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Swebits Rumble">
-<meta name="description" content="An air filter in Kiruna reported a rhino. Pick a Swebits crew member and remove the false positive by hand.">
+<meta name="apple-mobile-web-app-title" content="IceLab Rumble">
+<meta name="description" content="An air filter in Kiruna reported a rhino. Pick an IceLab member and remove the false positive by hand.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="icon" href="icons/icon-192.png">
 <style>[hidden]{display:none!important}html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box}</style>
 </head>
 <body>
-<title>Swebits Rumble</title>
+<title>IceLab Rumble</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;700;900&display=swap">
 <style>
   :root{
@@ -48,13 +48,16 @@
   .btn:focus-visible{outline:3px solid var(--aurora);outline-offset:3px;}
   .roster{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;width:min(100%,900px);}
   @media (max-width:640px){.roster{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}}
+  .rgroup{grid-column:1/-1;font-family:var(--display);letter-spacing:.06em;font-size:clamp(14px,2vw,20px);color:var(--gold);text-align:left;margin-top:6px;}
   .fighter{background:var(--night2);border:3px solid transparent;border-radius:12px;padding:6px 4px 5px;min-width:0;cursor:pointer;
            display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--snow);transition:transform .1s,border-color .1s;}
   .fighter:hover,.fighter:focus-visible{transform:translateY(-3px);border-color:var(--aurora);outline:none;}
   .fighter.sel{border-color:var(--gold);background:#2a2b48;}
   .fighter img{height:clamp(40px,7vw,84px);width:auto;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5));}
-  .fighter .name{font-family:var(--display);font-size:clamp(15px,2.2vw,22px);letter-spacing:.05em;}
-  .fighter .move{font-size:clamp(9px,1.2vw,12px);color:var(--muted);line-height:1.15;}
+  .fighter .name{font-family:var(--display);font-size:clamp(12px,1.6vw,17px);letter-spacing:.04em;line-height:1.05;overflow-wrap:anywhere;min-height:2.1em;}
+  .fighter .role{font-size:clamp(8px,1vw,10px);color:var(--snow2);line-height:1.15;opacity:.8;min-height:2.3em;}
+  .fighter .move{font-size:clamp(9px,1.2vw,12px);color:var(--muted);line-height:1.15;min-height:2.3em;}
+  .fighter .stats{margin-top:auto;}
   .fighter .best{font-size:clamp(9px,1.1vw,11px);color:var(--gold);font-variant-numeric:tabular-nums;margin-top:2px;min-height:1.2em;}
   table.scores td.rep{text-align:right;padding-left:0;}
   table.scores button.report{font:700 10px/1 Nunito,sans-serif;color:var(--muted);background:transparent;border:1px solid rgba(147,160,191,.5);border-radius:4px;padding:3px 5px;cursor:pointer;}
@@ -144,7 +147,7 @@
     </div>
 
     <div id="title" class="overlay"><div class="panel">
-      <h1>SWEBITS<br>RUMBLE</h1>
+      <h1>ICELAB<br>RUMBLE</h1>
       <p class="sub">An airborne eDNA sampler in Kiruna reported a rhino. One read, 98.7% match. Somebody has to remove it from the dataset by hand.</p>
       <div class="row"><button class="btn" id="btnStart">CHOOSE YOUR FIGHTER</button><button class="btn secondary" id="btnScores">HIGH SCORES</button><button class="btn secondary" id="btnCoop">CO-OP</button><button class="btn secondary" id="btnIntro">▶ FALSE POSITIVE?</button></div>
       <p class="small" id="titleBest"></p>
@@ -156,8 +159,7 @@
     <div id="select" class="overlay" hidden><div class="panel">
       <h2>CHOOSE YOUR FIGHTER</h2>
       <div class="row" style="align-items:center">
-        <button class="btn" id="btnFight"><span id="fightVerb">FIGHT AS</span> <span id="selName">ALBERTAS</span>!</button>
-        <button class="btn secondary" id="btnVideo">SHOW ME <span id="selName2">ALBERTAS</span>’S VIDEO</button>
+        <button class="btn" id="btnFight"><span id="fightVerb">FIGHT AS</span> <span id="selName">MARTIN</span>!</button>
       </div>
       <p class="small">Tap a fighter to select — tap again to fight.</p>
       <p class="small coop" id="selCoop" hidden></p>
@@ -173,7 +175,7 @@
 
     <div id="coop" class="overlay" hidden><div class="panel">
       <h2>CO-OP</h2>
-      <p class="small">Two crew members, one rhino. Both of you type the <b>same room code</b> (for example <b>kiruna</b>), then pick a fighter. Peer-to-peer over WebRTC — nothing to host.</p>
+      <p class="small">Two IceLab members, one rhino. Both of you type the <b>same room code</b> (for example <b>kiruna</b>), then pick a fighter. Peer-to-peer over WebRTC — nothing to host.</p>
       <div class="namebox"><label for="coopCode" class="small">Room code</label><input id="coopCode" maxlength="24" autocomplete="off" autocapitalize="off" placeholder="kiruna"><button class="btn" id="btnCoopJoin">JOIN ROOM</button></div>
       <p class="small" id="coopStatus"></p>
       <div class="row"><button class="btn secondary" id="btnCoopBack">BACK</button></div>
@@ -207,46 +209,137 @@
 'use strict';
 var FACES = {};   // faces are drawn procedurally in this edition
 
-// ------------------------------------------------------------ roster
-var ROSTER = [
-  {id:'albertas', name:'Albertas', face:'albertas', shirt:'#2f3a5a', pants:'#3b3f55', hp:100, speed:1.0, power:1.0, jump:1.0,
-   special:{name:'Pipeline Purge', kind:'dash', dmg:34, desc:'Dash punch straight through the read.'}},
-  {id:'bjorn', name:'Björn', face:'bjorn', shirt:'#3e3c48', pants:'#3a4060', hp:110, speed:0.95, power:1.1, jump:1.05,
-   special:{name:'Kiruna Flying Kick', kind:'fly', dmg:40, desc:'The kick from the video. Slow-mo included.'}},
-  {id:'bea', name:'Bea', face:'bea', shirt:'#5a5e6e', pants:'#2f3450', hp:90, speed:1.25, power:0.9, jump:1.1,
-   special:{name:'Espresso Rush', kind:'combo', dmg:9, hits:5, desc:'Five hits before the rhino blinks.'}},
-  {id:'annamia', name:'Anna Mia', face:'annamia', shirt:'#e9e5dc', pants:'#3b3f55', hp:95, speed:1.15, power:0.95, jump:1.25,
-   special:{name:'Aurora Uppercut', kind:'upper', dmg:36, desc:'Launches straight up under the horn.'}},
-  {id:'per', name:'Per', face:'per', shirt:'#3a3a42', pants:'#2c3048', hp:105, speed:0.95, power:1.15, jump:0.95,
-   special:{name:'Godzilla Smash', kind:'godzilla', dmg:80, desc:'Grows to kaiju size. Smashes. Everything.'}},
-  {id:'marco', name:'Marco', face:'marco', shirt:'#26262e', pants:'#3b3f55', hp:100, speed:1.1, power:1.0, jump:1.1,
-   special:{name:'Hair Whip Tornado', kind:'spin', dmg:13, hits:3, desc:'Three spinning kicks, zero hair products.'}},
-  {id:'jose', name:'Jose', face:'jose', shirt:'#2d3346', pants:'#2c3048', hp:130, speed:0.8, power:1.35, jump:0.92,
-   special:{name:'Babysitter Mode', kind:'babysit', dmg:45, desc:'Bottle, blanket, lullaby. Nap time for the rhino.'}},
-  {id:'mike', name:'Mike', face:'mike', shirt:'#1f1f26', pants:'#33384e', hp:100, speed:1.15, power:1.05, jump:1.1,
-   special:{name:'Finger Guns', kind:'combo', dmg:11, hits:4, desc:'Pew pew pew pew. Somehow it works.'}},
-  {id:'daniel', name:'Daniel', face:'daniel', shirt:'#1f3d34', pants:'#33384e', hp:100, speed:1.05, power:1.1, jump:1.0,
-   special:{name:'Significance Strike', kind:'dash', dmg:38, desc:'p < 0.05. Null rhino rejected.'}},
-  {id:'henrik', name:'Henrik', face:'henrik', shirt:'#3b5fa8', pants:'#2c3048', hp:120, speed:0.34, power:2.0, jump:0.85,
-   special:{name:'Timber Slam', kind:'slam', dmg:70, desc:'Slow as a glacier. Hits like one too.'}},
-  {id:'anton', name:'Anton', face:'anton', shirt:'#6e3a3a', pants:'#33384e', hp:50, speed:1.15, power:1.0, jump:1.1, prop:'stick',
-   special:{name:'Innebandy Slapshot', kind:'dash', dmg:36, desc:'Full swing. The rhino is the ball.'}}
+// ------------------------------------------------------------ roster: the people of IceLab
+// Straight from umu.se/en/icelab/about-us/members (list of 2025-01-30).
+// [id, name, role, group (L = group leader, M = member, A = affiliated researcher), research theme]
+var MEMBERS = [
+  ['kemal-avican', 'Kemal Avican', 'Research Fellow', 'L', 'microbes'],
+  ['ake-brannstrom', 'Åke Brännström', 'Professor', 'L', 'evolution'],
+  ['laura-carroll', 'Laura Carroll', 'Assistant Professor', 'L', 'microbes'],
+  ['sebastian-diehl', 'Sebastian Diehl', 'Professor Emeritus of Ecology', 'L', 'ecology'],
+  ['eric-libby', 'Eric Libby', 'Associate Professor', 'L', 'evolution'],
+  ['ludvig-lizana', 'Ludvig Lizana', 'Associate Professor', 'L', 'physics'],
+  ['andrew-magee', 'Andrew Magee', 'Research Fellow, DDLS Fellow', 'L', 'epidemics'],
+  ['?flik=publikationer', 'Gerard Rocher-Ros', 'Assistant Professor', 'L', 'ecology'],
+  ['martin-rosvall', 'Martin Rosvall', 'IceLab Director', 'L', 'director'],
+  ['yanjun-zan', 'Yanjun Zan', 'Assistant Professor', 'L', 'plants'],
+  ['sofia-almirante', 'Sofia Almirante', 'Stress Response Modeling PhD Student', 'M', 'ecology'],
+  ['jerome-arnoux', 'Jérôme Arnoux', 'Multidisciplinary Postdoctoral Fellow', 'M', 'networks'],
+  ['gabrielle-beans', 'Gabrielle Beans', 'IceLab Coordinator', 'M', 'coordination'],
+  ['ruben-bernardo-madrid', 'Rubén Bernardo Madrid', 'Postdoctoral Fellow', 'M', 'ecology'],
+  ['anton-carcedo', 'Antón Carcedo Martínez', 'PhD Student', 'M', 'genomics'],
+  ['oleksandr-cherednichenko', 'Oleksandr (Sasha) Cherednichenko', 'DDLS PhD Student', 'M', 'data'],
+  ['sara-culligan', 'Sara Culligan', 'Stress Response Modeling PhD Student', 'M', 'plants'],
+  ['albertas-dvirnas', 'Albertas Dvirnas', 'Postdoctoral Fellow', 'M', 'data'],
+  ['daniel-edler', 'Daniel Edler', 'Staff Scientist', 'M', 'networks'],
+  ['luis-fernando', 'Luis Jose Fernando', 'Stress Response Modeling PhD Student', 'M', 'water'],
+  ['corentin-fournier', 'Corentin Fournier', 'Multidisciplinary Postdoctoral Fellow', 'M', 'microbes'],
+  ['robert-garvey', 'Robert Garvey', 'Postdoctoral Fellow', 'M', 'epidemics'],
+  ['elsa-gascon', 'Elsa Gascon', 'Multidisciplinary Postdoctoral Fellow', 'M', 'plants'],
+  ['aswin-gopakumar', 'Aswin Gopakumar', 'PhD student', 'M', 'ecology'],
+  ['ying-ke-hou', 'Ying Ke Hou', 'Stress Response Modeling PhD Student', 'M', 'plants'],
+  ['noor-huda', 'Noor Ul Huda', 'Stress Response Modeling PhD Student', 'M', 'networks'],
+  ['ilyas-mohammad', 'Mohammad Ilyas', 'Multidisciplinary Postdoctoral Fellow', 'M', 'cells'],
+  ['yun-ting-jang', 'Yun-Ting Jang', 'Multidisciplinary Postdoctoral Fellow', 'M', 'ecology'],
+  ['henrik-jessen', 'Henrik Høiberg Jessen', 'Multidisciplinary Postdoctoral Fellow', 'M', 'math'],
+  ['lei-liang', 'Lei Liang', 'Postdoctoral Fellow', 'M', 'plants'],
+  ['maja-lindstrom', 'Maja Lindström', 'PhD student', 'M', 'networks'],
+  ['lea-maheux', 'Léa Maheux', 'Stress Response Modeling PhD Student', 'M', 'cells'],
+  ['magnus-neuman', 'Magnus Neuman', 'Staff Scientist', 'M', 'networks'],
+  ['anna-nordstrom01', 'Anna Nordström', 'IceLab Event Coordinator', 'M', 'coordination'],
+  ['defne-platturk', 'Defne Plätturk', 'PhD Student', 'M', 'evolution'],
+  ['abigail-rec', 'Abigail Rec', 'Postdoctoral Fellow', 'M', 'water'],
+  ['jelena-smiljanic', 'Jelena Smiljanić', 'Staff Scientist', 'M', 'networks'],
+  ['josephine-solowiej-wedderburn', 'Josephine Solowiej-Wedderburn', 'Postdoctoral Fellow', 'M', 'cells'],
+  ['sena-gizem', 'Sena Gizem Süer', 'Stress Response Modeling PhD student', 'M', 'microbes'],
+  ['roy-suvam-id11930489', 'Suvam Roy', 'Postdoctoral Researcher', 'M', 'microbes'],
+  ['jyoti-verma', 'Jyoti Verma', 'Postdoctoral Fellow', 'M', 'microbes'],
+  ['sarah-vollert', 'Sarah Vollert', 'Postdoctoral Fellow', 'M', 'ecology'],
+  ['ying-wang', 'Ying Wang', 'Stress Response Modeling PhD Student', 'M', 'water'],
+  ['seong-gyu-yang', 'Seong-Gyu Yang', 'Postdoctoral fellow', 'M', 'physics'],
+  ['francesca-aguilo', 'Francesca Aguilo', 'Associate Professor', 'A', 'genomics'],
+  ['florian-albrecht', 'Florian Albrecht', 'Stress Response Modeling PhD Student', 'A', 'genomics'],
+  ['magnus-andersson', 'Magnus Andersson', 'Professor, Head of Physics Department', 'A', 'physics'],
+  ['eric-capo', 'Eric Capo', 'Assistant Professor', 'A', 'microbes'],
+  ['felipe-cava', 'Felipe Cava', 'Professor', 'A', 'microbes'],
+  ['cemal-erdem', 'Cemal Erdem', 'Assistant Professor', 'A', 'cells'],
+  ['maria-eriksson', 'Maria Eriksson', 'Associate professor', 'A', 'plants'],
+  ['maria-fallman', 'Maria Fällman', 'Professor, Molecular Biology', 'A', 'microbes'],
+  ['johan-henriksson', 'Johan Henriksson', 'Research fellow', 'A', 'math'],
+  ['nick-kamenos', 'Nicholas Kamenos', 'Professor', 'A', 'water'],
+  ['jan-p-karlsson', 'Jan Karlsson', 'Professor', 'A', 'networks'],
+  ['olivier-keech', 'Olivier Keech', 'Associate professor', 'A', 'ecology'],
+  ['?flik=presentation', 'Jonatan Klaminder', 'Professor', 'A', 'ecology'],
+  ['peter-lind', 'Peter Lind', 'Assistant Professor', 'A', 'evolution'],
+  ['nicolo-maccaferri', 'Nicolò Maccaferri', 'Assistant Professor', 'A', 'physics'],
+  ['andre-mateus', 'André Mateus', 'Assistant Professor', 'A', 'microbes'],
+  ['fredrik-ohlsson', 'Fredrik Ohlsson', 'Associate Professor', 'A', 'math'],
+  ['stephanie-robert', 'Stéphanie Robert', 'Professor', 'A', 'plants'],
+  ['joacim-rocklov', 'Joacim Rocklöv', 'Professor', 'A', 'epidemics'],
+  ['leon-serre-fredj', 'Léon Serre-Fredj', 'Staff scientist', 'A', 'water'],
+  ['henrik-sjodin', 'Henrik Sjödin', 'Research Fellow', 'A', 'epidemics'],
+  ['per-stenberg', 'Per Stenberg', 'Associate Professor', 'A', 'ecology'],
+  ['asa-strand', 'Åsa Strand', 'Professor, UPSC', 'A', 'plants'],
+  ['nathaniel-street', 'Nathaniel Street', 'Professor', 'A', 'plants'],
+  ['nicklas-stromberg', 'Nicklas Strömberg', 'Professor', 'A', 'microbes'],
+  ['sebastian-throm', 'Sebastian Throm', 'Assistant Professor', 'A', 'networks'],
+  ['stephane-verger', 'Stéphane Verger', 'Associate Professor', 'A', 'plants'],
+  ['jonas-westin', 'Jonas Westin', 'Associate Professor', 'A', 'data'],
+  ['jun-yu', 'Jun Yu', 'Professor', 'A', 'physics']
 ];
+// One signature move per research theme. The kinds are implemented in specialUpdate().
+var THEMES = {
+  director:     {name:'Map Equation Crunch', kind:'godzilla', dmg:80, desc:'Grows to kaiju size and compresses the rhino into one module.'},
+  events:       {name:'Fika Break', kind:'babysit', dmg:45, desc:'Coffee, cinnamon bun, nap. Nobody fights during fika.'},
+  coordination: {name:'Interdisciplinary Grip', kind:'grab', dmg:42, desc:'Pulls two fields together. The rhino is in between.'},
+  networks:     {name:'Modularity Whirl', kind:'spin', dmg:13, hits:3, desc:'Three spinning kicks. The rhino ends up in one module.'},
+  plants:       {name:'Chloroplast Lullaby', kind:'babysit', dmg:45, desc:'Retrograde signal: lights down, rhino dormant.'},
+  microbes:     {name:'Colony Combo', kind:'combo', dmg:9, hits:5, desc:'Doubling time: alarmingly short.'},
+  evolution:    {name:'Major Transition', kind:'grab', dmg:42, desc:'Two cells, one throw.'},
+  epidemics:    {name:'Outbreak Curve', kind:'combo', dmg:11, hits:4, desc:'Exponential. Then flattened.'},
+  ecology:      {name:'Trophic Cascade Kick', kind:'fly', dmg:40, desc:'Top-down control, delivered by foot. Slow-mo included.'},
+  water:        {name:'Catchment Slam', kind:'slam', dmg:70, desc:'Everything runs downhill. Onto the rhino.'},
+  genomics:     {name:'Sequencing Run', kind:'combo', dmg:10, hits:4, desc:'Read after read after read.'},
+  physics:      {name:'Photon Uppercut', kind:'upper', dmg:36, desc:'Straight up, at the speed of light.'},
+  cells:        {name:'Host Defence Uppercut', kind:'upper', dmg:36, desc:'The host strikes back, right under the horn.'},
+  data:         {name:'Pipeline Purge', kind:'dash', dmg:34, desc:'Dash punch straight through the read.'},
+  math:         {name:'Adaptive Dynamics', kind:'dash', dmg:38, desc:'Evolves straight through the false positive.'}
+};
+var GROUPS = {L:'Group leaders', M:'Members', A:'Affiliated researchers'};
+// Shirt, stats and face come from a hash of the id, so the roster stays in sync with the list above.
+var SHIRTS = ['#2f3a5a', '#3e3c48', '#1f3d34', '#2d3346', '#26262e', '#e9e5dc', '#3b5fa8', '#6e3a3a', '#5a5e6e', '#1f1f26', '#3a3a42', '#2b4a5a'];
+var PANTSC = ['#3b3f55', '#3a4060', '#2c3048', '#33384e', '#2f3450'];
+var KINDMOD = {slam:{hp:12, sp:-.18, pw:.22}, godzilla:{hp:8, sp:-.05, pw:.15}, combo:{hp:-6, sp:.12, pw:-.1},
+               fly:{hp:6, sp:-.04, pw:.07}, grab:{hp:6, sp:-.02, pw:.05}, babysit:{hp:4, sp:0, pw:0}, spin:{hp:0, sp:.06, pw:-.04},
+               upper:{hp:-4, sp:.06, pw:0}, dash:{hp:0, sp:.04, pw:.02}};
+function hashOf(s){ var h = 2166136261; for (var i = 0; i < s.length; i++){ h = (h ^ s.charCodeAt(i)) >>> 0; h = (h * 16777619) >>> 0; } return h; }
+function rnd2(x){ return Math.round(x * 100) / 100; }
+var ROSTER = MEMBERS.map(function(m){
+  var id = m[0], sp = THEMES[m[4]] || THEMES.math, h = hashOf(id), mod = KINDMOD[sp.kind] || {hp:0, sp:0, pw:0};
+  return {id: id, name: m[1], first: m[1].split(' ')[0], role: m[2], group: m[3], face: id,
+          shirt: SHIRTS[h % SHIRTS.length], pants: PANTSC[(h >>> 4) % PANTSC.length],
+          hp: 95 + (h % 4) * 7 + mod.hp,
+          speed: rnd2(0.94 + ((h >>> 7) % 5) * 0.06 + mod.sp),
+          power: rnd2(0.94 + ((h >>> 11) % 5) * 0.06 + mod.pw),
+          jump: rnd2(0.96 + ((h >>> 15) % 4) * 0.06),
+          special: sp};
+});
 var faceImgs = {};
 // ------------------------------------------------------------ cutout-style faces (construction-paper look)
-var LOOK = {
-  albertas:{skin:'#f1c9a5', hair:{type:'curly', color:'#6b4a2e', big:true}, beard:{type:'full', color:'#7a5232'}, glasses:true, mouth:'open'},
-  bjorn:   {skin:'#f3c8b0', hair:{type:'bald'}, beard:null, mouth:'flat', brow:true},
-  bea:     {skin:'#f0cdb0', hair:{type:'bangs', color:'#8a6a48'}, beard:null, mouth:'smile'},
-  annamia: {skin:'#f2d0b4', hair:{type:'long', color:'#c9a266'}, beard:null, mouth:'smile'},
-  per:     {skin:'#efc8ac', hair:{type:'short', color:'#4a3626'}, beard:{type:'stubble', color:'#5a4433'}, mouth:'flat'},
-  marco:   {skin:'#e9c0a0', hair:{type:'curly', color:'#2b2320', big:true}, beard:{type:'mustache', color:'#2b2320'}, mouth:'smile'},
-  jose:    {skin:'#e8bfa0', hair:{type:'buzz', color:'#2f2620'}, beard:{type:'full', color:'#2a221e', big:true}, mouth:'smile'},
-  mike:    {skin:'#f0c7a8', hair:{type:'short', color:'#8a6a48', messy:true}, beard:{type:'full', color:'#a86f45'}, mouth:'open'},
-  daniel:  {skin:'#f1c9ad', hair:{type:'short', color:'#4a3a2e', receding:true}, beard:null, glasses:true, mouth:'smile', chain:true},
-  henrik:  {skin:'#f2c9ae', hair:{type:'bald'}, beard:{type:'full', color:'#c4652e', big:true}, mouth:'flat', brow:true},
-  anton:   {skin:'#f0c8ae', hair:{type:'short', color:'#5a3d26', messy:true}, beard:{type:'goatee', color:'#7a5236'}, mouth:'smile'}
-};
+// Generic paper-cutout avatars, built from a hash of the id — a look per fighter, not a likeness of anyone.
+var SKINS = ['#f1c9a5', '#f3c8b0', '#f0cdb0', '#f2d0b4', '#efc8ac', '#e9c0a0', '#e8bfa0', '#d8a882', '#c08b62', '#8d5a3b'];
+var HAIRC = ['#2b2320', '#4a3626', '#6b4a2e', '#8a6a48', '#c9a266', '#a86f45', '#5a5a5e', '#d8d3c8'];
+var HAIRT = ['short', 'long', 'bangs', 'curly', 'buzz'];
+var MOUTHS = ['smile', 'flat', 'open'];
+function lookFor(id){
+  var h = hashOf(id + '-look'), t = HAIRT[h % HAIRT.length];
+  return {skin: SKINS[(h >>> 3) % SKINS.length],
+          hair: {type: t, color: HAIRC[(h >>> 7) % HAIRC.length], big: ((h >>> 11) & 1) === 1, messy: ((h >>> 12) & 1) === 1, receding: t === 'short' && ((h >>> 13) & 3) === 0},
+          beard: null, glasses: ((h >>> 17) % 3) === 0, mouth: MOUTHS[(h >>> 19) % MOUTHS.length],
+          brow: ((h >>> 23) & 3) === 0};
+}
+var LOOK = {};
+ROSTER.forEach(function(d){ LOOK[d.face] = lookFor(d.id); });
 function drawCutoutFace(c, cx, cy, S, look, fac, opt){
   // S = head width. Big round head, big oval eyes, thick paper-cut outline.
   opt = opt || {};
@@ -321,7 +414,7 @@ function portraitURL(def){
   drawCutoutFace(c2, 110, 118, 150, LOOK[def.face], 1, {noChain:false});
   return cv.toDataURL('image/png');
 }
-ROSTER.forEach(function(d){ FACES[d.face] = portraitURL(d); });
+function faceFor(d){ if (!FACES[d.face]) FACES[d.face] = portraitURL(d); return FACES[d.face]; }
 
 // ------------------------------------------------------------ canvas
 var canvas = document.getElementById('c');
@@ -1639,7 +1732,7 @@ function coopReady(){
 function coopStart(level){
   // host only: same fighters again (rematch / next round) or the freshly picked pair
   if (!Net.host || !Net.peer) return;
-  LEVEL = level; Net.f = [ROSTER[selected].id, Net.peerReady || (Net.f && Net.f[1]) || 'albertas'];
+  LEVEL = level; Net.f = [ROSTER[selected].id, Net.peerReady || (Net.f && Net.f[1]) || 'martin'];
   sendNet({t:'start', f: Net.f, level: LEVEL}); beginCoopRound();
 }
 function defById(id){ for (var i = 0; i < ROSTER.length; i++) if (ROSTER[i].id === id) return ROSTER[i]; return ROSTER[0]; }
@@ -1711,17 +1804,19 @@ function goMenu(){
   show('title'); scene = 'title'; refreshBoard();
 }
 function buildRoster(){
-  var host = $('roster'); host.innerHTML = ''; $('selName').textContent = ROSTER[selected].name.toUpperCase(); $('selName2').textContent = ROSTER[selected].name.toUpperCase();
+  var host = $('roster'); host.innerHTML = ''; $('selName').textContent = ROSTER[selected].name.toUpperCase();
+  var group = null;
   ROSTER.forEach(function(d, i){
+    if (d.group !== group){ group = d.group; var gh = document.createElement('div'); gh.className = 'rgroup'; gh.textContent = GROUPS[group] || ''; host.appendChild(gh); }
     var el = document.createElement('button'); el.className = 'fighter' + (i === selected ? ' sel' : ''); el.type = 'button'; el.setAttribute('aria-label', d.name);
-    el.innerHTML = '<img alt="" src="' + FACES[d.face] + '"><div class="name">' + d.name + '</div><div class="move">' + d.special.name + '</div>' +
+    el.innerHTML = '<img alt="" src="' + faceFor(d) + '"><div class="name">' + d.name + '</div><div class="role">' + d.role + '</div><div class="move">' + d.special.name + '</div>' +
       '<div class="best">' + (function(){ var bb = bestFor(d.name); return bb ? 'BEST ' + fmtScore(bb.score) + ' · ' + bb.name : ''; })() + '</div>' +
       '<div class="stats"><span>PWR</span><div class="bar"><i style="width:' + Math.min(100, Math.round(d.power * 70)) + '%"></i></div><span>SPD</span><div class="bar"><i style="width:' + Math.min(100, Math.round(d.speed * 70)) + '%"></i></div><span>HP</span><div class="bar"><i style="width:' + Math.min(100, Math.round(d.hp / 1.4)) + '%"></i></div></div>';
     el.addEventListener('click', function(){
       unlockAudio();
       if (selected === i && el.classList.contains('sel')){ startFight(); return; }
-      selected = i; sfx('chime', {f: 1318}); $('selName').textContent = d.name.toUpperCase(); $('selName2').textContent = d.name.toUpperCase();
-      Array.prototype.forEach.call(host.children, function(c, k){ c.classList.toggle('sel', k === i); });
+      selected = i; sfx('chime', {f: 1318}); $('selName').textContent = d.name.toUpperCase();
+      Array.prototype.forEach.call(host.querySelectorAll('.fighter'), function(c, k){ c.classList.toggle('sel', k === i); });
     });
     host.appendChild(el);
   });
@@ -1762,7 +1857,7 @@ function showResult(){
   $('btnAgain').hidden = coop && !Net.host;
   if (G.won){
     var sc = scoreFor(G); $('scoreLine').textContent = 'SCORE ' + sc.toLocaleString();
-    $('playerName').value = p.def.name;
+    $('playerName').value = p.def.first;
     if (G.pacifist){
       var animals = G.rhinos.filter(function(r0){ return r0.morph; }).map(function(r0){ return ANIMALS[r0.morph].name; }).join(' + '), readLabel = 'Rhinoceros' + (LEVEL === 3 ? ' ×2 (PCR duplicate)' : LEVEL === 2 ? ' (wrong sample)' : LEVEL ? ' (contaminant match)' : ' (98.7%)');
       $('resBig').textContent = 'PEACE'; $('resTitle').textContent = 'FALSE POSITIVE RECLASSIFIED';
@@ -1786,13 +1881,13 @@ function showResult(){
   }
   show('result'); scene = 'result';
 }
-var VIDEOS = __VIDEOS__, videoURLs = {};   // one 20 s clip per fighter plus 'intro' (the menu clip): {mode:'files', base:'assets/videos/'} or {mode:'inline', data:{key: base64}}
+var VIDEOS = __VIDEOS__, videoURLs = {};   // just 'intro' (the menu clip): {mode:'files', base:'assets/videos/'} or {mode:'inline', data:{key: base64}}
 function openVideo(key){
   var v = $('theVideo');
   if (!videoURLs[key]){
     if (VIDEOS.mode === 'files'){ videoURLs[key] = VIDEOS.base + key + '.mp4'; }
     else {
-      var b64 = VIDEOS.data[key] || VIDEOS.data.albertas;
+      var b64 = VIDEOS.data[key] || VIDEOS.data.intro;
       try {
         var bin = atob(b64), len = bin.length, bytes = new Uint8Array(len);
         for (var i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
@@ -1805,7 +1900,6 @@ function openVideo(key){
   var pr = v.play(); if (pr && pr.catch) pr.catch(function(){});
 }
 function closeVideo(){ var v = $('theVideo'); v.pause(); $('videoBox').hidden = true; }
-$('btnVideo').addEventListener('click', function(){ unlockAudio(); openVideo(ROSTER[selected].face); });
 $('btnIntro').addEventListener('click', function(){ unlockAudio(); openVideo('intro'); });
 $('btnVideoClose').addEventListener('click', closeVideo);
 $('theVideo').addEventListener('ended', function(){ setTimeout(closeVideo, 800); });
@@ -1814,9 +1908,9 @@ $('btnScoresBack').addEventListener('click', function(){ show('title'); scene = 
 $('btnSave').addEventListener('click', function(){
   if (!G || !G.won) return;
   var mine = G.players[(Net.on && Net.peer) ? Net.me : 0] || G.p;
-  var name = ($('playerName').value || mine.def.name).replace(/[\u0000-\u001f\u007f]/g, '').replace(/\s+/g, ' ').trim().slice(0, 16) || mine.def.name;
+  var name = ($('playerName').value || mine.def.first).replace(/[\u0000-\u001f\u007f]/g, '').replace(/\s+/g, ' ').trim().slice(0, 16) || mine.def.first;
   try { localStorage.setItem('swebits_name', name); } catch (e) {}
-  lastEntry = {name: name, fighter: teamName(G).slice(0, 24), score: scoreFor(G), time: Math.round(G.elapsed * 10) / 10, level: LEVEL + 1, t: Date.now()};
+  lastEntry = {name: name, fighter: teamName(G).slice(0, 48), score: scoreFor(G), time: Math.round(G.elapsed * 10) / 10, level: LEVEL + 1, t: Date.now()};
   $('btnSave').disabled = true; $('btnSave').textContent = 'SAVING…';
   Scores.add(lastEntry).then(function(list){ $('btnSave').textContent = 'SAVED'; sfx('chime', {f: 2093}); renderScores(list); renderBest(); show('scores'); scene = 'scores'; });
 });

@@ -3,8 +3,8 @@
 Reuses the scene, rig and rhino from render_cutout.py. The crew member walks in, stops and looks back
 for a moment, walks on, touches the rhino, and it turns out to be a zebra.
 
-  CHAR=albertas python3 render_intro.py frames_intro            # all 600 frames
-  CHAR=albertas python3 render_intro.py frames_intro 0 2        # every 2nd frame from 0 (for two workers)
+  CHAR=martin python3 render_intro.py frames_intro            # all 600 frames
+  CHAR=martin python3 render_intro.py frames_intro 0 2        # every 2nd frame from 0 (for two workers)
 """
 import math, os, sys
 import numpy as np
