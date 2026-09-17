@@ -10,7 +10,7 @@ test('game boots and a fight runs', async ({ page }) => {
   await expect(page.locator('#btnStart')).toBeVisible();
   await page.click('#btnStart');
   await expect(page.locator('.fighter')).toHaveCount(9);
-  await page.click('.fighter:nth-child(5)');          // Per
+  await page.click('.fighter:nth-child(5)');          // Per (not pre-selected, so one click only selects)
   await page.click('#btnFight');
   await page.waitForTimeout(1500);
   for (let i = 0; i < 20; i++) { await page.keyboard.down('ArrowRight'); await page.waitForTimeout(60); await page.keyboard.up('ArrowRight'); await page.keyboard.press('j'); await page.waitForTimeout(120); }
@@ -22,11 +22,36 @@ test('game boots and a fight runs', async ({ page }) => {
 test('every fighter has a video', async ({ page }) => {
   await page.goto(URL);
   await page.click('#btnStart');
-  for (let i = 1; i <= 9; i++) {
-    await page.click('.fighter:nth-child(' + i + ')');
+  const fighters = page.locator('.fighter');
+  await expect(fighters).toHaveCount(9);
+  for (let i = 0; i < 9; i++) {
+    const f = fighters.nth(i);
+    // clicking an already-selected fighter starts the fight, so only click when it is not selected yet
+    if (!(await f.evaluate(el => el.classList.contains('sel')))) await f.click();
+    await expect(page.locator('#btnVideo')).toBeVisible();
     await page.click('#btnVideo');
     const src = await page.evaluate(() => document.getElementById('theVideo').getAttribute('src') || '');
     expect(src.length).toBeGreaterThan(0);
     await page.click('#btnVideoClose');
+    await expect(page.locator('#select')).toBeVisible();
   }
+});
+
+test('all three rounds start', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  await page.click('#btnStart');
+  for (const lvl of ['0', '1', '2']) {
+    await page.selectOption('#startLevel', lvl);
+    await page.click('#btnFight');
+    if (lvl !== '0') { await expect(page.locator('#btnLevelGo')).toBeVisible(); await page.click('#btnLevelGo'); }
+    await page.waitForTimeout(1200);
+    await page.keyboard.press('ArrowUp'); await page.keyboard.press('j');
+    await page.waitForTimeout(400);
+    // back to the fighter screen for the next round (the in-game overlays are hidden during a fight)
+    await page.evaluate(() => { document.getElementById('btnChoose').click(); });
+    await expect(page.locator('#select')).toBeVisible();
+  }
+  expect(errors).toEqual([]);
 });
