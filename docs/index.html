@@ -151,7 +151,7 @@
       <div class="row"><button class="btn" id="btnStart">CHOOSE YOUR FIGHTER</button><button class="btn secondary" id="btnScores">HIGH SCORES</button><button class="btn secondary" id="btnCoop">CO-OP</button><button class="btn secondary" id="btnIntro">▶ FALSE POSITIVE?</button></div>
       <p class="small" id="titleBest"></p>
       <p class="small">Sound on for the full kung-fu experience. Works on Safari, iPhone and iPad — tap ⛶ FULLSCREEN for a widescreen arena on your phone.</p>
-      <p class="small ver" id="verLine">v1.1.0 · build 8180a40</p>
+      <p class="small ver" id="verLine">v1.1.0 · build e36155e</p>
     </div></div>
 
     <div id="select" class="overlay" hidden><div class="panel">
@@ -1460,20 +1460,21 @@ function openScores(){ show('scores'); scene = 'scores'; Scores.load().then(func
 // ------------------------------------------------------------ co-op over WebRTC
 // Two players in one room. The peer with the lower id hosts: it runs the whole simulation (both fighters + the rhino)
 // and streams a compact snapshot 30x a second; the guest sends its inputs and draws the snapshot. Trystero does the
-// signalling and the data channel; it is loaded from a CDN only when CO-OP is used. A test can inject
-// window.__coopTransport with the same {join(code, handlers) -> {send, selfId, leave}} shape.
-var TRYSTERO_URL = 'https://cdn.jsdelivr.net/npm/trystero@0.25.4/+esm';
+// signalling and the data channel; the bundle in vendor/trystero.js (npm run vendor) is imported only when CO-OP is
+// used. A test can inject window.__coopTransport with the same {join(code, handlers) -> {send, selfId, leave}} shape.
+var TRYSTERO_URL = './vendor/trystero.js';
 var Net = {on:false, host:false, me:0, code:'', peer:null, conn:null, id:'', ready:false, peerReady:null, f:null, guestInp:{keys:{}, pressed:{}}, sfxQ:[], frame:0, lastKeys:''};
 function netTransport(){
   if (window.__coopTransport) return Promise.resolve(window.__coopTransport);
   return import(TRYSTERO_URL).then(function(m){
     return {join: function(code, h){
+      // Trystero 0.25 API: actions are objects (send / onMessage), peer hooks are properties
       var room = m.joinRoom({appId: 'swebits-rumble'}, code);
-      var act = room.makeAction('g'), send = act[0], get = act[1];
-      get(function(data, id){ h.onData(data, id); });
-      room.onPeerJoin(function(id){ h.onPeerJoin(id); });
-      room.onPeerLeave(function(id){ h.onPeerLeave(id); });
-      return {send: send, selfId: m.selfId, leave: function(){ try { room.leave(); } catch (e) {} }};
+      var act = room.makeAction('g');
+      act.onMessage = function(data, ctx){ h.onData(data, ctx && ctx.peerId); };
+      room.onPeerJoin = function(id){ h.onPeerJoin(id); };
+      room.onPeerLeave = function(id){ h.onPeerLeave(id); };
+      return {send: function(d){ act.send(d); }, selfId: m.selfId, leave: function(){ try { room.leave(); } catch (e) {} }};
     }};
   });
 }
@@ -1489,7 +1490,7 @@ function coopJoin(){
     var conn = tr.join(code, {onPeerJoin: netPeerJoin, onPeerLeave: netPeerLeave, onData: netData});
     Net.on = true; Net.code = code; Net.conn = conn; Net.id = String(conn.selfId); Net.peer = null; Net.ready = false; Net.peerReady = null; Net.host = false; Net.me = 0;
     buildRoster(); show('select'); scene = 'select'; updateCoopLine();
-  }).catch(function(){ coopStatus('Could not load the multiplayer library. Are you online? Try again.'); });
+  }).catch(function(e){ Net.on = false; coopStatus('Could not start the multiplayer module: ' + ((e && e.message) || e) + '. Reload the page and try again.'); });
 }
 function netLeave(){
   if (Net.conn){ try { sendNet({t:'bye'}); Net.conn.leave(); } catch (e) {} }
@@ -1656,7 +1657,7 @@ function showResult(){
   $('btnAgain').hidden = coop && !Net.host;
   if (G.won){
     var sc = scoreFor(G); $('scoreLine').textContent = 'SCORE ' + sc.toLocaleString();
-    try { $('playerName').value = localStorage.getItem('swebits_name') || ''; } catch (e) {}
+    $('playerName').value = p.def.name;
     if (G.pacifist){
       var an = ANIMALS[r.morph], readLabel = 'Rhinoceros' + (LEVEL === 2 ? ' (wrong sample)' : LEVEL ? ' (contaminant match)' : ' (98.7%)');
       $('resBig').textContent = 'PEACE'; $('resTitle').textContent = 'FALSE POSITIVE RECLASSIFIED';

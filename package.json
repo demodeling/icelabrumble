@@ -7,7 +7,8 @@
     "build": "python3 tools/build.py",
     "build:inline": "python3 tools/build.py --inline",
     "test": "python3 tools/build.py && playwright test",
-    "serve": "python3 -m http.server 8000 -d dist"
+    "serve": "python3 -m http.server 8000 -d dist",
+    "vendor": "npm install --no-save trystero@0.25.4 esbuild && esbuild node_modules/trystero/dist/index.mjs --bundle --format=esm --minify --target=es2020 --legal-comments=none --outfile=src/vendor/trystero.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.47.0"

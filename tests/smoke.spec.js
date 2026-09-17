@@ -122,6 +122,7 @@ test('saving a score posts it to the table and highlights it', async ({ page }) 
   await page.click('#btnFight');
   for (let i = 0; i < 25; i++) { await page.keyboard.press('ArrowUp'); await page.waitForTimeout(160); }
   await expect(page.locator('#result')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('#playerName')).toHaveValue('Per');                  // defaults to your fighter's name
   await page.fill('#playerName', '  Tester  ');
   await page.click('#btnSave');
   await expect(page.locator('#scores')).toBeVisible();
@@ -231,4 +232,22 @@ test('co-op: two pages fight the rhino through a room', async ({ browser }) => {
   await A.waitForTimeout(300);
   expect(errors).toEqual([]);
   await ctx.close();
+});
+
+// The real Trystero bundle is an ES module, which a file:// page cannot import, so this test serves dist/ over http
+// (like the deployed site; the service worker registers too). Relays are unreachable in CI; that must not throw.
+test('co-op loads the bundled Trystero module and opens a room', async ({ page }) => {
+  const { spawn } = require('child_process');
+  const srv = spawn('python3', ['-m', 'http.server', '8765', '-d', path.resolve(__dirname, '..', 'dist')], { stdio: 'ignore' });
+  try {
+    const errors = [];
+    page.on('pageerror', e => errors.push(e.message));
+    await page.route(/\/rest\/v1\//, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    for (let i = 0; i < 30; i++) { try { await page.goto('http://127.0.0.1:8765/index.html'); break; } catch (e) { await page.waitForTimeout(250); } }
+    await page.click('#btnCoop'); await page.fill('#coopCode', 'kiruna'); await page.click('#btnCoopJoin');
+    await expect(page.locator('#select')).toBeVisible({ timeout: 10000 });     // the module imported and joinRoom() ran
+    await expect(page.locator('#selCoop')).toContainText('Room KIRUNA');
+    await page.waitForTimeout(2000);
+    expect(errors).toEqual([]);
+  } finally { srv.kill(); }
 });
