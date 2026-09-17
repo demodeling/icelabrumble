@@ -37,17 +37,18 @@ test('every fighter has a video', async ({ page }) => {
   }
 });
 
-test('all three rounds start', async ({ page }) => {
+test('all four rounds start', async ({ page }) => {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(URL);
   await page.click('#btnStart');
-  for (const lvl of ['0', '1', '2']) {
+  for (const lvl of ['0', '1', '2', '3']) {
     await page.selectOption('#startLevel', lvl);
     await page.click('#btnFight');
     if (lvl !== '0') { await expect(page.locator('#btnLevelGo')).toBeVisible(); await page.click('#btnLevelGo'); }
     await page.waitForTimeout(1200);
     await page.keyboard.press('ArrowUp'); await page.keyboard.press('j');
+    if (lvl === '3') { for (let i = 0; i < 12; i++) { await page.keyboard.down('ArrowRight'); await page.waitForTimeout(80); await page.keyboard.up('ArrowRight'); } }   // round 4: walk right so the camera scrolls
     await page.waitForTimeout(400);
     // back to the fighter screen for the next round (the in-game overlays are hidden during a fight)
     await page.evaluate(() => { document.getElementById('btnChoose').click(); });
