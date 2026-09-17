@@ -86,8 +86,6 @@
   #fsBtn,#menuBtn{font-family:var(--display);font-size:14px;letter-spacing:.06em;color:var(--snow);
          background:rgba(20,26,52,.7);border:2px solid rgba(255,255,255,.35);border-radius:8px;padding:4px 10px;cursor:pointer;}
   #fsBtn:focus-visible,#menuBtn:focus-visible{outline:3px solid var(--aurora);}
-  #topBtns.compact button span{display:none;}   /* icon-only during a fight so the HUD stays readable */
-  #topBtns.compact button{padding:4px 8px;}
   #stage.fs-fill{position:fixed;inset:0;width:100vw;height:100vh;max-width:none;aspect-ratio:auto;border-radius:0;z-index:50;}
   #stage.fs-rot{position:fixed;top:0;left:0;width:100vh;height:100vw;max-width:none;aspect-ratio:auto;border-radius:0;z-index:50;
                 transform:rotate(90deg) translateY(-100%);transform-origin:top left;}
@@ -151,6 +149,7 @@
       <div class="row"><button class="btn" id="btnStart">CHOOSE YOUR FIGHTER</button><button class="btn secondary" id="btnScores">HIGH SCORES</button><button class="btn secondary" id="btnCoop">CO-OP</button><button class="btn secondary" id="btnIntro">▶ FALSE POSITIVE?</button></div>
       <p class="small" id="titleBest"></p>
       <p class="small">Sound on for the full kung-fu experience. Works on Safari, iPhone and iPad — tap ⛶ FULLSCREEN for a widescreen arena on your phone.</p>
+      <p class="small" id="iosHint" hidden>iPhone: for a real full screen, tap Share → <b>Add to Home Screen</b> and open the game from there (no Safari bars at all).</p>
       <p class="small ver" id="verLine">v__APPVER__ · build __VERSION__</p>
     </div></div>
 
@@ -350,8 +349,9 @@ function applyFS(){
 function toggleFS(){
   fsOn = !fsOn;
   var m = nativeFS();
-  if (fsOn && m){ try { var pr = stage[m](); if (pr && pr.catch) pr.catch(function(){}); } catch (e) {} }
-  if (!fsOn){ var ex = document.exitFullscreen || document.webkitExitFullscreen; if (ex && (document.fullscreenElement || document.webkitFullscreenElement)) { try { ex.call(document); } catch (e) {} } }
+  if (fsOn && m){ try { var pr = stage[m](); if (pr && pr.catch) pr.catch(function(){}); } catch (e) {}
+    try { if (screen.orientation && screen.orientation.lock){ var lk = screen.orientation.lock('landscape'); if (lk && lk.catch) lk.catch(function(){}); } } catch (e2) {} }
+  if (!fsOn){ var ex = document.exitFullscreen || document.webkitExitFullscreen; if (ex && (document.fullscreenElement || document.webkitFullscreenElement)) { try { ex.call(document); } catch (e) {} } try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e3) {} }
   applyFS(); setTimeout(resize, 50); setTimeout(resize, 400);
   document.getElementById('fsBtn').innerHTML = fsOn ? '✕<span> EXIT</span>' : '⛶<span> FULLSCREEN</span>';
 }
@@ -364,6 +364,8 @@ document.getElementById('fsBtn').addEventListener('click', function(){ unlockAud
 document.getElementById('menuBtn').addEventListener('click', function(){ unlockAudio(); goMenu(); });
 var isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 if (isTouch) { document.getElementById('touch').classList.add('on'); document.getElementById('ctrlHelp').textContent = 'Use the on-screen buttons. Fill the meter with hits to unlock your special.'; }
+var isIPhone = /iPhone|iPod/.test(navigator.userAgent), standalone = !!navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches);
+if (isIPhone && !standalone) document.getElementById('iosHint').hidden = false;
 
 // ------------------------------------------------------------ audio (synth, unlocked on first tap)
 var AC = null;
@@ -1253,7 +1255,7 @@ function drawHUD(){
     ctx.font = '700 15px Nunito, sans-serif';
   });
   G.rhinos.forEach(function(r, i){
-    var oy = i * 42, w = i ? 260 : 330, h = i ? 16 : 20;
+    var oy = 50 + i * 42, w = i ? 260 : 330, h = i ? 16 : 20;   // below the MENU / FULLSCREEN buttons in the corner
     bar(LW - 24 - w, 22 + oy, w, h, r.hp / r.maxhp, r.space ? (r.angry ? '#ff8ad0' : '#7fe7ff') : r.mutant ? (r.angry ? '#ccff66' : '#8dff5a') : (r.angry ? '#ff5a3c' : '#f2c56b'), '#c8262c', (r.morph && r.revealed) ? ANIMALS[r.morph].label : (LEVELS[LEVEL].hud + (i ? ' #' + (i + 1) : '')), 'right');
   });
   // timer
@@ -1698,7 +1700,7 @@ function applySnap(d){
 
 // ------------------------------------------------------------ screens
 var $ = function(id){ return document.getElementById(id); };
-function show(id){ ['title', 'select', 'result', 'scores', 'levelCard', 'coop'].forEach(function(s){ $(s).hidden = s !== id; }); $('menuBtn').hidden = id === 'title'; $('topBtns').classList.toggle('compact', id === null); document.body.setAttribute('data-scene', id || 'fight'); }
+function show(id){ ['title', 'select', 'result', 'scores', 'levelCard', 'coop'].forEach(function(s){ $(s).hidden = s !== id; }); $('menuBtn').hidden = id === 'title'; document.body.setAttribute('data-scene', id || 'fight'); }
 // back to the main menu from anywhere (Esc, or the ☰ MENU button): abandons a running fight
 function goMenu(){
   if (scene === 'title') return;
