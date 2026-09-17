@@ -151,7 +151,7 @@
       <div class="row"><button class="btn" id="btnStart">CHOOSE YOUR FIGHTER</button><button class="btn secondary" id="btnScores">HIGH SCORES</button><button class="btn secondary" id="btnCoop">CO-OP</button><button class="btn secondary" id="btnIntro">▶ FALSE POSITIVE?</button></div>
       <p class="small" id="titleBest"></p>
       <p class="small">Sound on for the full kung-fu experience. Works on Safari, iPhone and iPad — tap ⛶ FULLSCREEN for a widescreen arena on your phone.</p>
-      <p class="small ver" id="verLine">v1.1.0 · build e36155e</p>
+      <p class="small ver" id="verLine">v1.1.0 · build 44dcb3a</p>
     </div></div>
 
     <div id="select" class="overlay" hidden><div class="panel">
@@ -1463,18 +1463,22 @@ function openScores(){ show('scores'); scene = 'scores'; Scores.load().then(func
 // signalling and the data channel; the bundle in vendor/trystero.js (npm run vendor) is imported only when CO-OP is
 // used. A test can inject window.__coopTransport with the same {join(code, handlers) -> {send, selfId, leave}} shape.
 var TRYSTERO_URL = './vendor/trystero.js';
+var TURN_SERVERS = [{urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443', 'turns:openrelay.metered.ca:443'], username: 'openrelayproject', credential: 'openrelayproject'}];
 var Net = {on:false, host:false, me:0, code:'', peer:null, conn:null, id:'', ready:false, peerReady:null, f:null, guestInp:{keys:{}, pressed:{}}, sfxQ:[], frame:0, lastKeys:''};
 function netTransport(){
   if (window.__coopTransport) return Promise.resolve(window.__coopTransport);
   return import(TRYSTERO_URL).then(function(m){
     return {join: function(code, h){
-      // Trystero 0.25 API: actions are objects (send / onMessage), peer hooks are properties
-      var room = m.joinRoom({appId: 'swebits-rumble'}, code);
+      // Trystero 0.25 API: actions are objects (send / onMessage), peer hooks are properties.
+      // Ten relays instead of the default five (the pick is seeded by the app id, so both peers use the same ten),
+      // and a public TURN server so two phones behind strict NATs can still reach each other.
+      var room = m.joinRoom({appId: 'swebits-rumble', relayConfig: {redundancy: 10}, turnConfig: TURN_SERVERS}, code, {onJoinError: function(err){ h.onError((err && err.error) || String(err)); }});
       var act = room.makeAction('g');
       act.onMessage = function(data, ctx){ h.onData(data, ctx && ctx.peerId); };
       room.onPeerJoin = function(id){ h.onPeerJoin(id); };
       room.onPeerLeave = function(id){ h.onPeerLeave(id); };
-      return {send: function(d){ act.send(d); }, selfId: m.selfId, leave: function(){ try { room.leave(); } catch (e) {} }};
+      function relays(){ var socks = m.getRelaySockets ? m.getRelaySockets() : {}, n = 0, ok = 0; for (var u in socks){ n++; if (socks[u] && socks[u].readyState === 1) ok++; } return ok + '/' + n; }
+      return {send: function(d){ act.send(d); }, selfId: m.selfId, relays: relays, leave: function(){ try { room.leave(); } catch (e) {} }};
     }};
   });
 }
@@ -1487,9 +1491,11 @@ function coopJoin(){
   netLeave();
   coopStatus('Connecting to room ' + code.toUpperCase() + '…');
   netTransport().then(function(tr){
-    var conn = tr.join(code, {onPeerJoin: netPeerJoin, onPeerLeave: netPeerLeave, onData: netData});
-    Net.on = true; Net.code = code; Net.conn = conn; Net.id = String(conn.selfId); Net.peer = null; Net.ready = false; Net.peerReady = null; Net.host = false; Net.me = 0;
+    var conn = tr.join(code, {onPeerJoin: netPeerJoin, onPeerLeave: netPeerLeave, onData: netData, onError: function(msg){ Net.err = msg; updateCoopLine(); }});
+    Net.on = true; Net.code = code; Net.conn = conn; Net.id = String(conn.selfId); Net.peer = null; Net.ready = false; Net.peerReady = null; Net.host = false; Net.me = 0; Net.err = '';
     buildRoster(); show('select'); scene = 'select'; updateCoopLine();
+    if (Net.timer) clearInterval(Net.timer);
+    Net.timer = setInterval(function(){ if (!Net.on){ clearInterval(Net.timer); Net.timer = null; return; } if (!Net.peer && scene === 'select') updateCoopLine(); }, 1000);
   }).catch(function(e){ Net.on = false; coopStatus('Could not start the multiplayer module: ' + ((e && e.message) || e) + '. Reload the page and try again.'); });
 }
 function netLeave(){
@@ -1524,7 +1530,8 @@ function netData(d, id){
 function updateCoopLine(){
   var el = $('selCoop'); el.hidden = !Net.on; if (!Net.on) return;
   var room = 'Room ' + Net.code.toUpperCase();
-  if (!Net.peer) el.textContent = room + ' · waiting for your friend to type the same code… pick your fighter meanwhile.';
+  var diag = (Net.conn && Net.conn.relays) ? ' · relays ' + Net.conn.relays() : '';
+  if (!Net.peer) el.textContent = room + ' · waiting for your friend to type the same code… pick your fighter meanwhile.' + diag + (Net.err ? ' · ' + Net.err : '') + ' · your id ' + Net.id.slice(0, 6);
   else if (Net.ready && !Net.peerReady) el.textContent = room + ' · you are ready — waiting for your friend to press FIGHT…';
   else if (Net.ready && Net.peerReady) el.textContent = room + ' · starting…';
   else el.textContent = room + ' · friend connected' + (Net.host ? ' · you are the host and pick the round' : ' · the host picks the round') + ' · press FIGHT when ready.';
