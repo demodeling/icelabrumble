@@ -46,7 +46,7 @@ Round 1 is the Kiruna snowfield. Beat it and Round 2 opens: the Wasteland, where
 
 ## Co-op
 
-**CO-OP** on the title screen: both players type the same room code (say `kiruna`), pick a fighter and press READY. The two browsers connect directly over WebRTC using [Trystero](https://github.com/dmotz/trystero) (loaded from a CDN only when you use co-op; signalling goes over public Nostr relays, so there is nothing to host). The peer with the lower id hosts: it runs the fight for both and streams snapshots 30 times a second, the guest sends inputs. The rhino goes for whoever is closest; the round is lost only when both are down. The host picks the round and starts rematches.
+**CO-OP** on the title screen: both players type the same room code (say `kiruna`), pick a fighter and press READY. The two browsers connect directly over WebRTC using [Trystero](https://github.com/dmotz/trystero) (bundled in `src/vendor/trystero.js`, loaded only when you use co-op; signalling goes over public Nostr relays, so there is nothing to host). The peer with the lower id hosts: it runs the fight for both and streams snapshots 30 times a second, the guest sends inputs. The rhino goes for whoever is closest; the round is lost only when both are down. The host picks the round and starts rematches.
 
 ## Controls
 
