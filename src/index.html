@@ -96,6 +96,12 @@
   .scoreline{font-family:var(--display);font-size:clamp(22px,3.4vw,36px);letter-spacing:.05em;color:var(--aurora);margin:0;}
   #videoBox{position:absolute;inset:0;z-index:8;background:rgba(6,10,26,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:14px;box-sizing:border-box;}
   #videoBox video{width:min(100%,960px);max-height:82%;border-radius:10px;background:#000;box-shadow:0 14px 40px rgba(0,0,0,.6);}
+  .term{font-family:var(--mono);color:#8dff5a;background:#050a06;border:2px solid #2f6b2a;border-radius:8px;padding:16px 20px;width:min(100%,720px);text-align:left;
+        font-size:clamp(12px,1.6vw,16px);line-height:1.55;min-height:9em;white-space:pre-wrap;text-shadow:0 0 6px rgba(141,255,90,.6);
+        background-image:repeating-linear-gradient(0deg,rgba(0,0,0,0) 0 2px,rgba(0,0,0,.25) 2px 3px);}
+  .term b{color:#e8ffb0;font-weight:700;}
+  .btn.rad{background:#8dff5a;box-shadow:0 5px 0 #3f8a2a,0 10px 22px rgba(0,0,0,.4);}
+  .check{font-size:clamp(11px,1.3vw,13px);color:var(--muted);display:flex;gap:6px;align-items:center;}
   @media (prefers-reduced-motion:reduce){.btn,.fighter{transition:none;}}
 </style>
 
@@ -137,8 +143,14 @@
         <button class="btn secondary" id="btnVideo">SHOW ME <span id="selName2">ALBERTAS</span>’S VIDEO</button>
       </div>
       <p class="small">Tap a fighter to select — tap again to fight.</p>
+      <label class="check"><input type="checkbox" id="startR2"> Start at Round 2 — The Wasteland (test)</label>
       <div class="roster" id="roster"></div>
       <div class="controls" id="ctrlHelp"><kbd>←</kbd><kbd>→</kbd> move · <kbd>↑</kbd>/<kbd>space</kbd> jump · <kbd>↓</kbd> duck · <kbd>J</kbd> punch · <kbd>K</kbd> kick · <kbd>L</kbd> special (when the meter is full)</div>
+    </div></div>
+
+    <div id="levelCard" class="overlay" hidden><div class="panel">
+      <div class="term" id="termText"></div>
+      <div class="row"><button class="btn rad" id="btnLevelGo">FIGHT ROUND 2</button><button class="btn secondary" id="btnLevelBack">BACK</button></div>
     </div></div>
 
     <div id="scores" class="overlay" hidden><div class="panel">
@@ -155,6 +167,7 @@
       <div class="namebox" id="nameBox" hidden><label for="playerName" class="small">Your name</label><input id="playerName" maxlength="16" autocomplete="nickname" placeholder="Name"><button class="btn secondary" id="btnSave">SAVE SCORE</button></div>
       <div class="readout" id="resReadout"></div>
       <div class="row">
+        <button class="btn rad" id="btnNext" hidden>NEXT ROUND: THE WASTELAND</button>
         <button class="btn" id="btnAgain">REMATCH</button>
         <button class="btn secondary" id="btnChoose">CHANGE FIGHTER</button>
       </div>
@@ -409,6 +422,16 @@ function sfx(kind, opt){
       var ts = t + k * .22; g12.gain.setValueAtTime(0.0001, ts); g12.gain.exponentialRampToValueAtTime(0.28, ts + .01); g12.gain.exponentialRampToValueAtTime(0.001, ts + .7);
       o12.start(ts); o12.stop(ts + .75);
     });
+  } else if (kind === 'geiger'){
+    var sg = a.createBufferSource(); sg.buffer = noiseBuf(a, 0.03);
+    var fg = a.createBiquadFilter(); fg.type = 'highpass'; fg.frequency.value = 2500; sg.connect(fg); fg.connect(g);
+    g.gain.setValueAtTime(0.5, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.03); sg.start(t); sg.stop(t + 0.035);
+  } else if (kind === 'burst'){
+    var ob = a.createOscillator(); ob.type = 'sawtooth'; ob.frequency.setValueAtTime(90, t); ob.frequency.exponentialRampToValueAtTime(900, t + .55);
+    var fb = a.createBiquadFilter(); fb.type = 'lowpass'; fb.frequency.setValueAtTime(400, t); fb.frequency.exponentialRampToValueAtTime(4000, t + .55);
+    var sb = a.createBufferSource(); sb.buffer = noiseBuf(a, 0.8); var gb = a.createGain(); gb.gain.value = .4; sb.connect(gb); gb.connect(fb);
+    ob.connect(fb); fb.connect(g); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.6, t + .5); g.gain.exponentialRampToValueAtTime(0.001, t + .85);
+    ob.start(t); ob.stop(t + .9); sb.start(t); sb.stop(t + .85);
   } else if (kind === 'pluck'){
     var o9 = a.createOscillator(); o9.type = 'triangle'; o9.frequency.value = opt.f || 440;
     var f9 = a.createBiquadFilter(); f9.type = 'lowpass'; f9.frequency.setValueAtTime(4000, t); f9.frequency.exponentialRampToValueAtTime(600, t + 0.6);
@@ -467,7 +490,40 @@ function ridge(pts, color, snow, snowH){
   }
 }
 var skyGrad = null;
+function drawWasteland(t){
+  var g = ctx.createLinearGradient(0, 0, 0, 360); g.addColorStop(0, '#2a1a14'); g.addColorStop(.55, '#7d3f1e'); g.addColorStop(1, '#d8913e');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, LW, 360);
+  var sg = ctx.createRadialGradient(760, 150, 10, 760, 150, 220); sg.addColorStop(0, 'rgba(255,232,180,.9)'); sg.addColorStop(.25, 'rgba(240,180,90,.35)'); sg.addColorStop(1, 'rgba(240,160,80,0)');
+  ctx.fillStyle = sg; ctx.fillRect(500, 0, 520, 360);
+  ctx.fillStyle = '#f2dca8'; ctx.beginPath(); ctx.arc(760, 150, 34, 0, 6.283); ctx.fill();
+  // drifting dust bands
+  ctx.save(); ctx.globalAlpha = .16; ctx.fillStyle = '#e8b070';
+  for (var b = 0; b < 3; b++){ var y0 = 190 + b * 55 + 10 * Math.sin(t * .3 + b); ctx.beginPath();
+    for (var x = 0; x <= LW; x += 32){ var yy = y0 + 18 * Math.sin(x / 140 + t * .5 + b * 2); if (x === 0) ctx.moveTo(x, yy); else ctx.lineTo(x, yy); }
+    ctx.lineTo(LW, y0 + 70); ctx.lineTo(0, y0 + 70); ctx.closePath(); ctx.fill(); }
+  ctx.restore();
+  // radiation glow on the horizon
+  var rg = ctx.createLinearGradient(0, 290, 0, 420); rg.addColorStop(0, 'rgba(120,255,120,0)'); rg.addColorStop(.6, 'rgba(120,255,120,.18)'); rg.addColorStop(1, 'rgba(120,255,120,0)');
+  ctx.fillStyle = rg; ctx.fillRect(0, 290, LW, 130);
+  ridge(FAR, '#6b4634'); ridge(MID, '#4a2f24');
+  ctx.strokeStyle = '#6a463a'; ctx.lineWidth = 2;
+  [[326, 880, 950], [338, 868, 964], [350, 860, 976]].forEach(function(l){ ctx.beginPath(); ctx.moveTo(l[1], l[0]); ctx.lineTo(l[2], l[0]); ctx.stroke(); });
+  // broken headframe tower
+  ctx.strokeStyle = '#2e1c16'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(150, 372); ctx.lineTo(165, 290); ctx.lineTo(185, 372); ctx.moveTo(158, 330); ctx.lineTo(178, 330); ctx.moveTo(165, 290); ctx.lineTo(200, 300); ctx.stroke();
+  ridge(NEAR, '#8a6a48');
+  var gg = ctx.createLinearGradient(0, 410, 0, LH); gg.addColorStop(0, '#b08a5a'); gg.addColorStop(1, '#6f5238');
+  ctx.fillStyle = gg; ctx.fillRect(0, 412, LW, LH - 412);
+  ctx.strokeStyle = 'rgba(60,40,25,.55)'; ctx.lineWidth = 2;
+  for (var k = 0; k < 14; k++){ var cx = (k * 173 + 40) % LW, cy = 440 + (k * 57) % 140; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + 30 + (k % 3) * 15, cy + 12); ctx.lineTo(cx + 50 + (k % 4) * 10, cy + 40 + (k % 2) * 10); ctx.lineTo(cx + 84, cy + 48); ctx.stroke(); }
+  drawTree(70, 452, 22, 4, 11); drawTree(880, 448, 20, 4, 5); drawTree(930, 590, 68, 5, 3);
+  // wreck of the air sampler
+  ctx.save(); ctx.translate(300, 452); ctx.rotate(-.35);
+  ctx.fillStyle = '#7a5a48'; ctx.fillRect(-4, -70, 8, 70); ctx.fillStyle = '#9c8878'; ctx.strokeStyle = '#2e1c16'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.rect(-18, -112, 36, 44); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#c96a2a'; ctx.fillRect(-14, -100, 12, 8); ctx.fillRect(2, -84, 10, 10);
+  ctx.restore();
+}
 function drawBackground(t){
+  if (LEVELS[LEVEL].theme === 'wasteland'){ drawWasteland(t); return; }
   if (!skyGrad){ skyGrad = ctx.createLinearGradient(0, 0, 0, 360); skyGrad.addColorStop(0, '#0c1434'); skyGrad.addColorStop(.6, '#425a96'); skyGrad.addColorStop(1, '#f0b282'); }
   ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, LW, 360);
   // sun glow
@@ -555,11 +611,17 @@ function drawPoly(pts, fill, stroke, lw){
   if (stroke){ ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.lineJoin = 'round'; ctx.stroke(); }
   if (fill){ ctx.fillStyle = fill; ctx.fill(); }
 }
+var MUTANT = {'#6c686c': '#6e7d5c', '#4e4a50': '#465640', '#868286': '#93a472', '#b0a89c': '#d8d2a4', '#1e1c20': '#8dff5a', '#e0302a': '#8dff5a', '#343236': '#2e3a2a'};
 function drawRhino(p){
   var parts = rhinoParts(p);
   // ink outline pass
   for (var i = 0; i < parts.length; i++) drawPoly(parts[i][0], '#1a141e', '#1a141e', 7);
-  for (var k = 0; k < parts.length; k++) drawPoly(parts[k][0], p.flash > 0 ? '#ffffff' : parts[k][1], null, 0);
+  for (var k = 0; k < parts.length; k++){ var col = parts[k][1]; if (p.mutant && MUTANT[col]) col = MUTANT[col]; drawPoly(parts[k][0], p.flash > 0 ? '#ffffff' : col, null, 0); }
+  if (p.mutant && p.state !== 'gone'){
+    // glowing veins / drips
+    ctx.strokeStyle = 'rgba(141,255,90,.75)'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+    for (var v = 0; v < 4; v++){ var vx = p.x - p.facing * (20 + v * 38), vy = GROUND - 150 + (v % 2) * 18; ctx.beginPath(); ctx.moveTo(vx, vy); ctx.lineTo(vx + 8, vy + 22 + 6 * Math.sin(G.t * 3 + v)); ctx.lineTo(vx - 4, vy + 40); ctx.stroke(); }
+  }
 }
 
 // ------------------------------------------------------------ fighter rig
@@ -657,6 +719,12 @@ function shade(hex, d){
 }
 
 // ------------------------------------------------------------ game state
+var LEVELS = [
+  {name: 'ROUND 1', theme: 'kiruna', rhino: {hp: 380, mutant: false}, hud: 'THE RHINO · false positive'},
+  {name: 'ROUND 2', theme: 'wasteland', rhino: {hp: 460, mutant: true}, hud: 'THE MUTANT RHINO · contaminated reference',
+   card: "> ROUND 2 — THE WASTELAND\n> reference genome: <b>CONTAMINATED</b>\n\nSome reference genomes carry bits of other organisms. A read can match the contaminant, not the rhino — and the rhino gets the credit.\n\nThe mutant rhino <b>feints</b> before it charges, leaves <b>hot spots</b> where it skids, and <b>vents radiation</b> up close.\n\n> jump the real charge, not the feint\n> stay out of the green\n> jump the burst"}
+];
+var LEVEL = 0, hot = [], rings = [];
 var G = null;   // current fight
 var scene = 'title';
 var selected = 0;
@@ -664,9 +732,10 @@ var particles = [], fx = [], dna = [], puffs = [], shake = 0, flashA = 0, slowmo
 
 function newFight(def){
   var p = {def:def, x:200, y:0, vy:0, facing:1, hp:def.hp, maxhp:def.hp, meter:0, state:'idle', st:0, pose:POSE.guard, inv:0, flash:0, combo:0, hitsLanded:0, handPt:[0,0], footPt:[0,0], headPt:[0,0], attackHit:false, dashDir:1, specialHits:0, scale:1};
-  var r = {x:720, facing:-1, hp:380, maxhp:380, state:'idle', st:0, timer:1.4, run:0, phase:0, tilt:0, head:0, jump:0, squash:0, tail:0, flash:0, angry:false, rage:0, dir:-1, chargeHit:false, vx:0};
+  var lv = LEVELS[LEVEL];
+  var r = {x:720, facing:-1, hp:lv.rhino.hp, maxhp:lv.rhino.hp, mutant:lv.rhino.mutant, glow:0, willFeint:false, state:'idle', st:0, timer:1.4, run:0, phase:0, tilt:0, head:0, jump:0, squash:0, tail:0, flash:0, angry:false, rage:0, dir:-1, chargeHit:false, vx:0};
   G = {p:p, r:r, t:0, over:false, won:false, elapsed:0, koT:0};
-  particles = []; fx = []; dna = []; puffs = []; shake = 0; flashA = 0; slowmo = 0; impactFrame = 0;
+  particles = []; fx = []; dna = []; puffs = []; hot = []; rings = []; shake = 0; flashA = 0; slowmo = 0; impactFrame = 0;
 }
 
 // player attacks: {state, dur, hitFrom, hitTo, pose sequence}
@@ -699,7 +768,11 @@ function hitPlayer(dmg, label, knock){
   p.hp = Math.max(0, p.hp - dmg); p.inv = 1.0; p.flash = 0.15; p.state = 'hurt'; p.st = 0; p.vy = 260; p.y = Math.max(p.y, 1); p.kx = knock;
   fx.push({x: p.headPt[0], y: p.headPt[1] - 20, t: 0, life: .5, r: 60, label: label, big: false, red: true});
   shake = Math.max(shake, 12); sfx('hurt'); sfx('hit');
-  if (p.hp <= 0){ G.over = true; G.won = false; p.state = 'ko'; p.st = 0; setTimeout(showResult, 1800); sfx('gong', {f: 70, v: .6}); }
+  if (p.hp <= 0) playerKO();
+}
+function playerKO(){
+  var p = G.p; if (G.over) return;
+  G.over = true; G.won = false; p.state = 'ko'; p.st = 0; setTimeout(showResult, 1800); sfx('gong', {f: 70, v: .6});
 }
 function rhinoKO(){
   var r = G.r; r.state = 'ko'; r.st = 0; G.over = true; G.won = true; G.p.state = 'win'; G.p.st = 0; G.koT = 0;
@@ -769,6 +842,17 @@ function updatePlayer(dt){
   }
   p.pose = pose;
   p.ducking = keys.down && onGround && !busy;
+  // radioactive hot spots (round 2)
+  if (!G.over && p.y <= 0 && hot.length){
+    var inHot = false;
+    for (var hi = 0; hi < hot.length; hi++){ if (Math.abs(p.x - hot[hi].x) < hot[hi].r) inHot = true; }
+    if (inHot){
+      p.hp = Math.max(0, p.hp - 9 * dt); p.radT = (p.radT || 0) + dt;
+      if (p.radT > .18){ p.radT = 0; sfx('geiger'); }
+      if (!p.radLabel){ p.radLabel = true; fx.push({x: p.headPt[0], y: p.headPt[1] - 30, t: 0, life: .6, r: 40, label: 'RADS!', big: false, red: true}); }
+      if (p.hp <= 0) playerKO();
+    } else p.radLabel = false;
+  }
 }
 function specialUpdate(p, r, dt){
   var sp = p.def.special, kind = sp.kind, st = p.st, pose = POSE.guard;
@@ -841,6 +925,7 @@ function updateRhino(dt){
   if (r.jump > 0){ r.jump = Math.max(0, r.jump - 140 * dt); }
   if (r.state === 'ko'){ var a = r.st; r.tilt = -.5 * Math.exp(-a * 1.2) * Math.cos(a * 7); r.head = .4 * Math.exp(-a * 2) * Math.cos(a * 9); r.squash = .1 * Math.exp(-a * 6); return; }
   if (r.state === 'gone') return;
+  if (r.state !== 'burst' && r.glow > 0) r.glow = Math.max(0, r.glow - dt * 3);
   var dist = p.x - r.x, adist = Math.abs(dist);
   r.angry = r.hp < r.maxhp * .45;
   var spdMul = r.angry ? 1.25 : 1;
@@ -848,14 +933,28 @@ function updateRhino(dt){
     r.facing = dist > 0 ? 1 : -1; r.run = 0; r.tilt *= Math.pow(.05, dt); r.head *= Math.pow(.05, dt);
     r.timer -= dt;
     if (r.timer <= 0){
-      if (adist > 300 || Math.random() < .3){ r.state = 'paw'; r.st = 0; }
+      if (r.mutant && adist < 280 && Math.random() < .5){ r.state = 'burst'; r.st = 0; r.chargeHit = false; }
+      else if (adist > 300 || Math.random() < .3){ r.state = 'paw'; r.st = 0; r.willFeint = r.mutant && Math.random() < .55; }
       else if (Math.random() < .75){ r.state = 'horn'; r.st = 0; }
-      else { r.state = 'paw'; r.st = 0; }
+      else { r.state = 'paw'; r.st = 0; r.willFeint = r.mutant && Math.random() < .55; }
     }
   } else if (r.state === 'paw'){
     var pw = Math.max(0, Math.sin(r.st * 6.28 * 1.4)); r.tilt = .03 * pw; r.head = -.12 * pw;
     if (r.st > .15 && Math.floor(r.st * 10) % 3 === 0 && Math.random() < .5) puffs.push({x: r.x + r.facing * 95 + rnd(-20, 20), y: GROUND - rnd(0, 20), t: 0, r: rnd(5, 10)});
-    if (r.st > (r.angry ? .55 : .85)){ r.state = 'charge'; r.st = 0; r.dir = r.facing; r.chargeHit = false; sfx('drum'); sfx('whoosh'); }
+    if (r.willFeint && r.st > .45){ r.willFeint = false; r.state = 'feint'; r.st = 0; r.dir = r.facing; sfx('drum'); }
+    else if (r.st > (r.angry ? .55 : .85)){ r.state = 'charge'; r.st = 0; r.dir = r.facing; r.chargeHit = false; sfx('drum'); sfx('whoosh'); }
+  } else if (r.state === 'feint'){
+    // fake start: lurches forward, then stops and paws again
+    r.x += r.dir * 380 * dt * (1 - r.st / .3); r.run = 1; r.phase += dt * 20; r.tilt = .06;
+    if (Math.random() < .5) puffs.push({x: r.x - r.dir * rnd(40, 120), y: GROUND - rnd(0, 25), t: 0, r: rnd(5, 12)});
+    if (r.st > .3){ r.state = 'paw'; r.st = .3; r.run = 0; }
+  } else if (r.state === 'burst'){
+    r.run = 0; r.glow = Math.min(1, r.st / .6); r.squash = .04 * Math.sin(r.st * 40) * r.glow;
+    if (r.st >= .6 && !r.chargeHit){
+      r.chargeHit = true; sfx('burst'); rings.push({x: r.x, t: 0}); shake = Math.max(shake, 10);
+      if (Math.abs(p.x - r.x) < 250 && p.y < 70) hitPlayer(18, 'IRRADIATED!', Math.sign(p.x - r.x || 1) * 320);
+    }
+    if (r.st > 1.1){ r.state = 'idle'; r.st = 0; r.timer = .8; r.glow = 0; r.squash = 0; r.chargeHit = false; }
   } else if (r.state === 'charge'){
     var sp = (r.angry ? 700 : 540) * spdMul * Math.min(1, r.st * 3 + .3);
     r.x += r.dir * sp * dt; r.run = 1; r.phase += dt * 20; r.tilt = .06 + .03 * Math.sin(r.phase); r.head = -.15;
@@ -863,7 +962,8 @@ function updateRhino(dt){
     // hit the player?
     var pr = p.y, tooLow = pr < 84;
     if (!r.chargeHit && Math.abs(p.x - (r.x + r.dir * 120)) < 110 && tooLow && p.inv <= 0 && !(p.state === 'special' && (p.def.special.kind === 'dash'))){ r.chargeHit = true; hitPlayer(r.angry ? 26 : 20, 'TRAMPLED!', r.dir * 520); }
-    if ((r.dir > 0 && r.x > LW - 120) || (r.dir < 0 && r.x < 120)){ r.state = 'skid'; r.st = 0; r.x = clamp(r.x, 120, LW - 120); sfx('whoosh'); for (var i = 0; i < 10; i++) puffs.push({x: r.x + r.dir * rnd(-40, 100), y: GROUND - rnd(0, 30), t: 0, r: rnd(10, 22)}); }
+    if ((r.dir > 0 && r.x > LW - 120) || (r.dir < 0 && r.x < 120)){ r.state = 'skid'; r.st = 0; r.x = clamp(r.x, 120, LW - 120); sfx('whoosh'); for (var i = 0; i < 10; i++) puffs.push({x: r.x + r.dir * rnd(-40, 100), y: GROUND - rnd(0, 30), t: 0, r: rnd(10, 22)});
+      if (r.mutant){ for (var hk = 0; hk < 3; hk++) hot.push({x: clamp(r.x - r.dir * (90 + hk * 120), 60, LW - 60), r: rnd(48, 70), t: 0, life: 9}); if (hot.length > 6) hot.splice(0, hot.length - 6); } }
   } else if (r.state === 'skid'){
     r.run = .3 * (1 - r.st); r.tilt = -.22 * (1 - smooth(.3, .8, r.st)) * smooth(0, .12, r.st); r.head = .05;
     if (r.st > .9){ r.state = 'idle'; r.st = 0; r.timer = r.angry ? .5 : .9; r.facing = -r.dir; }
@@ -895,7 +995,13 @@ function update(dt){
   if (shake > 0) shake = Math.max(0, shake - 60 * dt);
   if (flashA > 0) flashA = Math.max(0, flashA - 3 * dt);
   if (impactFrame > 0) impactFrame--;
-  for (var f = 0; f < flakes.length; f++){ var fl = flakes[f]; fl.y += fl.v * dt; fl.x += 6 * dt + Math.sin(G.t + fl.p) * 10 * dt; if (fl.y > LH) { fl.y = -5; fl.x = Math.random() * LW; } }
+  for (var h = hot.length - 1; h >= 0; h--){ hot[h].t += dt; if (hot[h].t > hot[h].life) hot.splice(h, 1); }
+  for (var rg = rings.length - 1; rg >= 0; rg--){ rings[rg].t += dt; if (rings[rg].t > .6) rings.splice(rg, 1); }
+  if (LEVELS[LEVEL].theme === 'wasteland'){
+    for (var f2 = 0; f2 < flakes.length; f2++){ var fl2 = flakes[f2]; fl2.y -= fl2.v * .7 * dt; fl2.x += 14 * dt + Math.sin(G.t * 1.3 + fl2.p) * 16 * dt; if (fl2.y < -5) { fl2.y = LH + 5; fl2.x = Math.random() * LW; } }
+  } else {
+    for (var f = 0; f < flakes.length; f++){ var fl = flakes[f]; fl.y += fl.v * dt; fl.x += 6 * dt + Math.sin(G.t + fl.p) * 10 * dt; if (fl.y > LH) { fl.y = -5; fl.x = Math.random() * LW; } }
+  }
   pressed = {};
 }
 
@@ -905,7 +1011,7 @@ function drawHUD(){
   ctx.font = '700 15px ' + 'Nunito, sans-serif'; ctx.textBaseline = 'top';
   // player bar
   bar(24, 22, 330, 20, p.hp / p.maxhp, '#6fe3a0', '#c8262c', p.def.name.toUpperCase(), 'left');
-  bar(LW - 354, 22, 330, 20, r.hp / r.maxhp, r.angry ? '#ff5a3c' : '#f2c56b', '#c8262c', 'THE RHINO · false positive', 'right');
+  bar(LW - 354, 22, 330, 20, r.hp / r.maxhp, r.mutant ? (r.angry ? '#ccff66' : '#8dff5a') : (r.angry ? '#ff5a3c' : '#f2c56b'), '#c8262c', LEVELS[LEVEL].hud, 'right');
   // special meter
   ctx.fillStyle = 'rgba(10,14,30,.55)'; roundRect(24, 66, 200, 10, 5); ctx.fill();
   ctx.fillStyle = p.meter >= 100 ? '#6fe3a0' : '#93a0bf'; roundRect(24, 66, 200 * p.meter / 100, 10, 5); ctx.fill();
@@ -962,10 +1068,11 @@ function drawFX(){
 }
 function draw(){
   var sc = Math.min(canvas.width / LW, canvas.height / LH), offx = (canvas.width - LW * sc) / 2, offy = (canvas.height - LH * sc) / 2;
-  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#0c1434'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  var wl = LEVELS[LEVEL].theme === 'wasteland';
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = wl ? '#2a1a14' : '#0c1434'; ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.setTransform(sc, 0, 0, sc, offx, offy);
   var EXT = offy / sc + 10;   // extra logical rows visible above/below in portrait
-  ctx.fillStyle = '#c6d0e6'; ctx.fillRect(-10, LH, LW + 20, EXT + 10);
+  ctx.fillStyle = wl ? '#6f5238' : '#c6d0e6'; ctx.fillRect(-10, LH, LW + 20, EXT + 10);
   var t = G ? G.t : performance.now() / 1000;
   var ox = 0, oy = 0;
   if (shake > 0){ ox = (Math.random() - .5) * shake; oy = (Math.random() - .5) * shake; }
@@ -977,6 +1084,15 @@ function draw(){
     ctx.fillStyle = 'rgba(70,80,120,.28)';
     if (rr.state !== 'gone'){ var rc = rhinoRect(rr); ctx.beginPath(); ctx.ellipse((rc.x0 + rc.x1) / 2, GROUND, (rc.x1 - rc.x0) / 2, 12, 0, 0, 6.283); ctx.fill(); }
     var js = 1 - Math.min(1, p.y / 220), pscl = (p.state === 'special' && p.scale) ? p.scale : 1; ctx.beginPath(); ctx.ellipse(p.x, GROUND, (40 * js + 8) * pscl, 8 * pscl, 0, 0, 6.283); ctx.fill();
+    // radioactive hot spots
+    for (var hh = 0; hh < hot.length; hh++){
+      var hs = hot[hh], ha = Math.min(1, hs.t * 3) * (1 - smooth(hs.life - 1.5, hs.life, hs.t)) * (.75 + .25 * Math.sin(G.t * 6 + hh));
+      var hg = ctx.createRadialGradient(hs.x, GROUND - 2, 4, hs.x, GROUND - 2, hs.r); hg.addColorStop(0, 'rgba(180,255,120,' + (.85 * ha) + ')'); hg.addColorStop(.7, 'rgba(120,255,90,' + (.5 * ha) + ')'); hg.addColorStop(1, 'rgba(120,255,90,0)');
+      ctx.fillStyle = hg; ctx.beginPath(); ctx.ellipse(hs.x, GROUND - 2, hs.r, hs.r * .28, 0, 0, 6.283); ctx.fill();
+      ctx.fillStyle = 'rgba(220,255,180,' + (.8 * ha) + ')'; for (var bb = 0; bb < 3; bb++){ var bt = (G.t * .8 + bb * .37 + hh * .2) % 1; ctx.beginPath(); ctx.arc(hs.x + Math.sin(bb * 2.1 + hh) * hs.r * .5, GROUND - 4 - bt * 26, 3 * (1 - bt) + 1, 0, 6.283); ctx.fill(); }
+    }
+    // radiation glow around a mutant that is about to vent
+    if (rr.mutant && rr.glow > 0 && rr.state !== 'gone'){ var gl = ctx.createRadialGradient(rr.x, GROUND - 110, 20, rr.x, GROUND - 110, 260); gl.addColorStop(0, 'rgba(160,255,110,' + (.55 * rr.glow) + ')'); gl.addColorStop(1, 'rgba(160,255,110,0)'); ctx.fillStyle = gl; ctx.fillRect(rr.x - 260, GROUND - 370, 520, 380); }
     // warning marker when the rhino is about to charge
     if (rr.state === 'paw'){ ctx.font = '400 40px Bangers, Impact, sans-serif'; ctx.fillStyle = '#ff5a3c'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 5; ctx.textAlign = 'center'; var yy = GROUND - 2.4 * RS - 10 + 6 * Math.sin(rr.st * 30); ctx.strokeText('!', rr.x, yy); ctx.fillText('!', rr.x, yy); ctx.textAlign = 'left'; }
     if (rr.state !== 'gone') drawRhino(rr);
@@ -1000,11 +1116,13 @@ function draw(){
       ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 2;
       for (var i = 0; i < 9; i++){ var y = 120 + i * 40 + (i * 37) % 23, x0 = ((i * 211 + G.t * 900) % (LW + 200)) - 100; ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + 80 + i * 10, y); ctx.stroke(); }
     }
+    // radiation burst rings
+    for (var ri = 0; ri < rings.length; ri++){ var rn = rings[ri], ru = rn.t / .6; ctx.strokeStyle = 'rgba(160,255,110,' + (1 - ru) + ')'; ctx.lineWidth = 14 * (1 - ru) + 2; ctx.beginPath(); ctx.ellipse(rn.x, GROUND - 60, 40 + 420 * ru, 20 + 150 * ru, 0, 0, 6.283); ctx.stroke(); }
     drawFX();
   }
-  // snowflakes
-  ctx.fillStyle = '#f6f9ff';
-  for (var f = 0; f < flakes.length; f++){ var fl = flakes[f]; ctx.beginPath(); ctx.arc(fl.x, fl.y, fl.r, 0, 6.283); ctx.fill(); }
+  // snowflakes (round 1) or rising embers (round 2)
+  ctx.fillStyle = wl ? 'rgba(255,170,80,.75)' : '#f6f9ff';
+  for (var f = 0; f < flakes.length; f++){ var fl = flakes[f]; ctx.beginPath(); ctx.arc(fl.x, fl.y, wl ? fl.r * .8 : fl.r, 0, 6.283); ctx.fill(); }
   ctx.restore();
   // vignette
   var vg = ctx.createRadialGradient(LW / 2, LH / 2, LH * .45, LW / 2, LH / 2, LH * .95); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.42)');
@@ -1017,7 +1135,12 @@ function draw(){
     if (G.over && G.won && G.r.state !== 'gone'){ bigText('K.O.!', LW / 2, 200, 120); }
     if (G.over && G.won && G.r.state === 'gone'){ bigText('FALSE POSITIVE', LW / 2, 190, 78); }
     if (G.over && !G.won){ bigText('TRAMPLED', LW / 2, 200, 100); }
-    if (!G.over && G.elapsed < 1.6){ var a = 1 - smooth(1.1, 1.6, G.elapsed); ctx.globalAlpha = a; bigText(G.elapsed < .8 ? 'ROUND 1' : 'FIGHT!', LW / 2, 220, 96); ctx.globalAlpha = 1; }
+    if (!G.over && G.elapsed < 1.6){ var a = 1 - smooth(1.1, 1.6, G.elapsed); ctx.globalAlpha = a; bigText(G.elapsed < .8 ? LEVELS[LEVEL].name : 'FIGHT!', LW / 2, 220, 96); ctx.globalAlpha = 1; }
+    if (wl){
+      // CRT look: green cast, scanlines, faint flicker
+      ctx.fillStyle = 'rgba(80,255,120,' + (.05 + .015 * Math.sin(G.t * 37)) + ')'; ctx.fillRect(0, 0, LW, LH);
+      ctx.fillStyle = 'rgba(0,0,0,.14)'; for (var sy = 0; sy < LH; sy += 3) ctx.fillRect(0, sy, LW, 1);
+    }
   }
 }
 function bigText(s, x, y, size){
@@ -1047,14 +1170,14 @@ var Scores = (function(){
   }); }
   return {load: load, add: add, mode: function(){ return dbNs ? 'shared' : 'local'; }};
 })();
-function scoreFor(g){ var p = g.p; return Math.round(1000 + p.hp * 10 + Math.max(0, 120 - g.elapsed) * 20 + p.hitsLanded * 5); }
+function scoreFor(g){ var p = g.p; return Math.round(1000 + p.hp * 10 + Math.max(0, 120 - g.elapsed) * 20 + p.hitsLanded * 5 + LEVEL * 1500); }
 var lastEntry = null;
 function renderScores(list){
   var tb = document.querySelector('#scoresTable tbody'); tb.innerHTML = '';
   if (!list.length){ var tr0 = document.createElement('tr'); var td0 = document.createElement('td'); td0.colSpan = 5; td0.textContent = 'No rhinos removed yet. Be the first.'; tr0.appendChild(td0); tb.appendChild(tr0); }
   list.forEach(function(e, i){
     var tr = document.createElement('tr'); if (lastEntry && e.name === lastEntry.name && e.score === lastEntry.score && e.t === lastEntry.t) tr.className = 'me';
-    [[i + 1, 'num'], [e.name, ''], [e.fighter, ''], [(e.time || 0).toFixed(1) + ' s', 'num'], [e.score, 'num']].forEach(function(cell){ var td = document.createElement('td'); td.textContent = cell[0]; td.className = cell[1]; tr.appendChild(td); });
+    [[i + 1, 'num'], [e.name, ''], [e.fighter + (e.level ? ' · R' + e.level : ''), ''], [(e.time || 0).toFixed(1) + ' s', 'num'], [e.score, 'num']].forEach(function(cell){ var td = document.createElement('td'); td.textContent = cell[0]; td.className = cell[1]; tr.appendChild(td); });
     tb.appendChild(tr);
   });
   $('scoresMode').textContent = Scores.mode() === 'shared' ? 'Shared leaderboard — everyone with access to this page.' : 'Stored on this device only (no shared leaderboard on this page yet).';
@@ -1063,7 +1186,7 @@ function openScores(){ show('scores'); scene = 'scores'; Scores.load().then(rend
 
 // ------------------------------------------------------------ screens
 var $ = function(id){ return document.getElementById(id); };
-function show(id){ ['title', 'select', 'result', 'scores'].forEach(function(s){ $(s).hidden = s !== id; }); }
+function show(id){ ['title', 'select', 'result', 'scores', 'levelCard'].forEach(function(s){ $(s).hidden = s !== id; }); }
 function buildRoster(){
   var host = $('roster'); host.innerHTML = ''; $('selName').textContent = ROSTER[selected].name.toUpperCase(); $('selName2').textContent = ROSTER[selected].name.toUpperCase();
   ROSTER.forEach(function(d, i){
@@ -1079,21 +1202,47 @@ function buildRoster(){
     host.appendChild(el);
   });
 }
-function startFight(){
+function beginRound(){
   newFight(ROSTER[selected]); scene = 'fight'; show(null);
-  unlockAudio(); sfx('gong', {f: 96, v: .6}); setTimeout(function(){ sfx('drum'); }, 800);
+  unlockAudio(); sfx('gong', {f: LEVEL ? 70 : 96, v: .6}); setTimeout(function(){ sfx('drum'); }, 800);
+  if (LEVEL) setTimeout(function(){ sfx('geiger'); }, 300);
+}
+var termTimer = null;
+function showLevelCard(){
+  var lv = LEVELS[LEVEL]; show('levelCard'); scene = 'card';
+  var el = $('termText'), html = lv.card, i = 0; el.innerHTML = '';
+  if (termTimer) clearInterval(termTimer);
+  // typewriter over the raw text; tags are inserted whole so the markup stays valid
+  termTimer = setInterval(function(){
+    if (i >= html.length){ clearInterval(termTimer); termTimer = null; return; }
+    if (html[i] === '<'){ var j = html.indexOf('>', i); i = j + 1; } else i++;
+    el.innerHTML = html.slice(0, i) + '<span style="opacity:' + (Math.floor(Date.now() / 300) % 2) + '">█</span>';
+    if (i % 3 === 0) sfx('geiger');
+  }, 18);
+  $('btnLevelGo').textContent = 'FIGHT ' + lv.name;
+}
+function startFight(){
+  LEVEL = $('startR2').checked ? 1 : 0;
+  if (LEVELS[LEVEL].card) showLevelCard(); else beginRound();
 }
 function showResult(){
   var p = G.p, r = G.r;
   $('scoreLine').hidden = !G.won; $('nameBox').hidden = !G.won; $('btnSave').disabled = false; $('btnSave').textContent = 'SAVE SCORE';
+  var hasNext = G.won && LEVEL < LEVELS.length - 1;
+  $('btnNext').hidden = !hasNext; $('btnNext').textContent = hasNext ? 'NEXT ROUND: THE WASTELAND' : '';
   if (G.won){
     var sc = scoreFor(G); $('scoreLine').textContent = 'SCORE ' + sc.toLocaleString();
     try { $('playerName').value = localStorage.getItem('swebits_name') || ''; } catch (e) {}
-    $('resBig').textContent = 'K.O.!'; $('resTitle').textContent = 'FALSE POSITIVE REMOVED';
-    $('resReadout').innerHTML = '> read: <b>Rhinoceros (98.7%)</b> — status: <b>REMOVED</b><br>> fighter: <b>' + p.def.name + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + p.hp + '/' + p.maxhp + '</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · finisher: <b>' + p.def.special.name + '</b><br>> no rhinos were harmed. It was one short read that looked like a horse.';
+    if (LEVEL === 0){
+      $('resBig').textContent = 'K.O.!'; $('resTitle').textContent = 'FALSE POSITIVE REMOVED';
+      $('resReadout').innerHTML = '> read: <b>Rhinoceros (98.7%)</b> — status: <b>REMOVED</b><br>> fighter: <b>' + p.def.name + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · finisher: <b>' + p.def.special.name + '</b><br>> no rhinos were harmed. It was one short read that looked like a horse.<br>> next: the reference genome itself is <b>contaminated</b>. Round 2.';
+    } else {
+      $('resBig').textContent = 'CLEAN'; $('resTitle').textContent = 'REFERENCE DECONTAMINATED';
+      $('resReadout').innerHTML = '> mutant read: <b>Rhinoceros (contaminant match)</b> — status: <b>REMOVED</b><br>> fighter: <b>' + p.def.name + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · round bonus: <b>+1500</b><br>> lesson: a read can match a contaminant inside a reference genome, not the species the genome is named after.';
+    }
   } else {
     $('resBig').textContent = 'TRAMPLED'; $('resTitle').textContent = 'THE RHINO STAYS IN THE DATASET';
-    $('resReadout').innerHTML = '> read: <b>Rhinoceros (98.7%)</b> — status: <b>still there</b><br>> fighter: <b>' + p.def.name + '</b> · survived <b>' + G.elapsed.toFixed(1) + ' s</b> · rhino HP left: <b>' + r.hp + '</b><br>> tip: jump the charge when you see the <b>!</b>, duck the horn sweep, and hit it while it skids (or sleeps).';
+    $('resReadout').innerHTML = '> read: <b>Rhinoceros' + (LEVEL ? ' (contaminant match)' : ' (98.7%)') + '</b> — status: <b>still there</b><br>> fighter: <b>' + p.def.name + '</b> · survived <b>' + G.elapsed.toFixed(1) + ' s</b> · rhino HP left: <b>' + r.hp + '</b><br>> tip: jump the charge when you see the <b>!</b>, duck the horn sweep, and hit it while it skids (or sleeps).';
   }
   show('result'); scene = 'result';
 }
@@ -1125,13 +1274,16 @@ $('btnSave').addEventListener('click', function(){
   if (!G || !G.won) return;
   var name = ($('playerName').value || G.p.def.name).trim().slice(0, 16) || G.p.def.name;
   try { localStorage.setItem('swebits_name', name); } catch (e) {}
-  lastEntry = {name: name, fighter: G.p.def.name, score: scoreFor(G), time: Math.round(G.elapsed * 10) / 10, t: Date.now()};
+  lastEntry = {name: name, fighter: G.p.def.name, score: scoreFor(G), time: Math.round(G.elapsed * 10) / 10, level: LEVEL + 1, t: Date.now()};
   $('btnSave').disabled = true; $('btnSave').textContent = 'SAVING…';
   Scores.add(lastEntry).then(function(list){ $('btnSave').textContent = 'SAVED'; sfx('chime', {f: 2093}); renderScores(list); show('scores'); scene = 'scores'; });
 });
 $('btnStart').addEventListener('click', function(){ unlockAudio(); sfx('gong', {f: 120, v: .4}); buildRoster(); show('select'); scene = 'select'; });
 $('btnFight').addEventListener('click', startFight);
-$('btnAgain').addEventListener('click', startFight);
+$('btnAgain').addEventListener('click', function(){ if (LEVELS[LEVEL].card) showLevelCard(); else beginRound(); });
+$('btnNext').addEventListener('click', function(){ unlockAudio(); LEVEL = Math.min(LEVELS.length - 1, LEVEL + 1); showLevelCard(); });
+$('btnLevelGo').addEventListener('click', function(){ unlockAudio(); if (termTimer){ clearInterval(termTimer); termTimer = null; } beginRound(); });
+$('btnLevelBack').addEventListener('click', function(){ if (termTimer){ clearInterval(termTimer); termTimer = null; } buildRoster(); show('select'); scene = 'select'; });
 $('btnChoose').addEventListener('click', function(){ buildRoster(); show('select'); scene = 'select'; G = null; });
 
 // ------------------------------------------------------------ loop

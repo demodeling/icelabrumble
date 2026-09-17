@@ -18,6 +18,7 @@ A single-page HTML5 canvas fighting game (Swebits crew vs a false-positive rhino
 ## Rules of thumb
 - Safari first: no optional chaining or `??` in page JS, Web Audio only after a user gesture (`unlockAudio()`), pointer events for touch buttons.
 - Keep `dist/` out of git; it is a build product.
+- Levels live in the `LEVELS` array (theme, rhino HP, `mutant` behaviours, intro card text); `LEVEL` is the current index. Round 2 = wasteland theme, feints, hot spots, radiation burst, CRT overlay.
 - Fighters live in the `ROSTER` array; looks in `LOOK`; specials in `specialUpdate()`; rhino behaviour in `updateRhino()`.
 - Adding a fighter: ROSTER entry + LOOK entry + a video (`CHAR=<id> tools/video/render_cutout.py` after adding the sprite via `export_sprites.js`) + the test count in `tests/smoke.spec.js`.
 - Scores: `Scores` adapter (`load()` / `add(entry)`) — swap its body to point at a backend; keep the localStorage fallback.
