@@ -151,7 +151,7 @@
       <div class="row"><button class="btn" id="btnStart">CHOOSE YOUR FIGHTER</button><button class="btn secondary" id="btnScores">HIGH SCORES</button><button class="btn secondary" id="btnCoop">CO-OP</button><button class="btn secondary" id="btnIntro">▶ FALSE POSITIVE?</button></div>
       <p class="small" id="titleBest"></p>
       <p class="small">Sound on for the full kung-fu experience. Works on Safari, iPhone and iPad — tap ⛶ FULLSCREEN for a widescreen arena on your phone.</p>
-      <p class="small ver" id="verLine">v1.1.0 · build 44dcb3a</p>
+      <p class="small ver" id="verLine">v1.2.0 · build ae71056</p>
     </div></div>
 
     <div id="select" class="overlay" hidden><div class="panel">
@@ -1602,7 +1602,7 @@ function applySnap(d){
 
 // ------------------------------------------------------------ screens
 var $ = function(id){ return document.getElementById(id); };
-function show(id){ ['title', 'select', 'result', 'scores', 'levelCard', 'coop'].forEach(function(s){ $(s).hidden = s !== id; }); $('menuBtn').hidden = id === 'title'; $('topBtns').classList.toggle('compact', id === null); }
+function show(id){ ['title', 'select', 'result', 'scores', 'levelCard', 'coop'].forEach(function(s){ $(s).hidden = s !== id; }); $('menuBtn').hidden = id === 'title'; $('topBtns').classList.toggle('compact', id === null); document.body.setAttribute('data-scene', id || 'fight'); }
 // back to the main menu from anywhere (Esc, or the ☰ MENU button): abandons a running fight
 function goMenu(){
   if (scene === 'title') return;
@@ -1746,7 +1746,15 @@ requestAnimationFrame(frame);
 </script>
 
 <script>
-if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch(function(){}); }
+if ('serviceWorker' in navigator) {
+  // When a newer build takes over (a deploy since the last visit), reload once — only while idle on the title screen.
+  var hadController = !!navigator.serviceWorker.controller, reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', function(){
+    if (!hadController || reloaded) return;
+    if ((document.body.getAttribute('data-scene') || 'title') === 'title'){ reloaded = true; location.reload(); }
+  });
+  navigator.serviceWorker.register('sw.js').catch(function(){});
+}
 </script>
 </body>
 </html>
