@@ -143,3 +143,24 @@ test('falls back to this device when the table is unreachable', async ({ page })
   await expect(page.locator('#scoresTable tbody tr')).toHaveCount(1);   // the "be the first" row
   expect(errors).toEqual([]);
 });
+
+test('Esc and the MENU button return to the main menu', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  await expect(page.locator('#title h1')).toHaveText(/SWEBITS\s*RUMBLE/);
+  await expect(page.locator('#menuBtn')).toBeHidden();          // not on the title screen
+  await page.click('#btnStart');
+  await expect(page.locator('#menuBtn')).toBeVisible();
+  await page.click('#menuBtn');
+  await expect(page.locator('#title')).toBeVisible();
+  await page.click('#btnStart');
+  await page.click('.fighter:nth-child(5)');
+  await page.click('#btnFight');
+  await page.waitForTimeout(800);
+  await page.keyboard.press('Escape');                          // mid-fight
+  await expect(page.locator('#title')).toBeVisible();
+  await expect(page.locator('#menuBtn')).toBeHidden();
+  await page.waitForTimeout(400);
+  expect(errors).toEqual([]);
+});

@@ -1,4 +1,4 @@
--- Shared high scores for Swebits Cutout Rumble (applied to the "demodeling" Supabase project on 2026-09-17).
+-- Shared high scores for Swebits Rumble (applied to the "demodeling" Supabase project on 2026-09-17).
 -- The page inserts with the publishable key and reads the top entries; nothing else is allowed from the client.
 create table public.scores (
   id          bigint generated always as identity primary key,
@@ -12,7 +12,7 @@ create table public.scores (
   created_at  timestamptz not null default now()
 );
 
-comment on table public.scores is 'Swebits Cutout Rumble leaderboard. Insert-only from the game page; report_score() hides silly entries.';
+comment on table public.scores is 'Swebits Rumble leaderboard. Insert-only from the game page; report_score() hides silly entries.';
 
 alter table public.scores enable row level security;
 

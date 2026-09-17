@@ -15,7 +15,7 @@
 <style>[hidden]{display:none!important}html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box}</style>
 </head>
 <body>
-<title>Swebits Cutout Rumble</title>
+<title>Swebits Rumble</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;700;900&display=swap">
 <style>
   :root{
@@ -80,9 +80,12 @@
   .readout b{color:var(--gold);font-weight:400;}
   .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
   .small{font-size:clamp(11px,1.3vw,13px);color:var(--muted);margin:0;}
-  #fsBtn{position:absolute;top:8px;right:8px;z-index:5;font-family:var(--display);font-size:14px;letter-spacing:.06em;color:var(--snow);
+  #topBtns{position:absolute;top:8px;right:8px;z-index:5;display:flex;gap:6px;}
+  #fsBtn,#menuBtn{font-family:var(--display);font-size:14px;letter-spacing:.06em;color:var(--snow);
          background:rgba(20,26,52,.7);border:2px solid rgba(255,255,255,.35);border-radius:8px;padding:4px 10px;cursor:pointer;}
-  #fsBtn:focus-visible{outline:3px solid var(--aurora);}
+  #fsBtn:focus-visible,#menuBtn:focus-visible{outline:3px solid var(--aurora);}
+  #topBtns.compact button span{display:none;}   /* icon-only during a fight so the HUD stays readable */
+  #topBtns.compact button{padding:4px 8px;}
   #stage.fs-fill{position:fixed;inset:0;width:100vw;height:100vh;max-width:none;aspect-ratio:auto;border-radius:0;z-index:50;}
   #stage.fs-rot{position:fixed;top:0;left:0;width:100vh;height:100vw;max-width:none;aspect-ratio:auto;border-radius:0;z-index:50;
                 transform:rotate(90deg) translateY(-100%);transform-origin:top left;}
@@ -116,7 +119,10 @@
 <div id="app">
   <div id="stage">
     <canvas id="c"></canvas>
-    <button id="fsBtn" type="button" aria-label="Fullscreen">⛶ FULLSCREEN</button>
+    <div id="topBtns">
+      <button id="menuBtn" type="button" aria-label="Main menu" title="Back to the main menu (Esc)" hidden>☰<span> MENU</span></button>
+      <button id="fsBtn" type="button" aria-label="Fullscreen">⛶<span> FULLSCREEN</span></button>
+    </div>
 
     <div id="touch" aria-hidden="true">
       <div class="pad left">
@@ -138,7 +144,7 @@
     </div>
 
     <div id="title" class="overlay"><div class="panel">
-      <h1>SWEBITS<br>CUTOUT RUMBLE</h1>
+      <h1>SWEBITS<br>RUMBLE</h1>
       <p class="sub">An airborne eDNA sampler in Kiruna reported a rhino. One read, 98.7% match. Somebody has to remove it from the dataset by hand.</p>
       <div class="row"><button class="btn" id="btnStart">CHOOSE YOUR FIGHTER</button><button class="btn secondary" id="btnScores">HIGH SCORES</button></div>
       <p class="small" id="titleBest"></p>
@@ -154,7 +160,7 @@
       <p class="small">Tap a fighter to select — tap again to fight.</p>
       <label class="check">Start at <select id="startLevel"><option value="0">Round 1 — Kiruna</option><option value="1">Round 2 — The Wasteland</option><option value="2">Round 3 — The Asteroid</option></select></label>
       <div class="roster" id="roster"></div>
-      <div class="controls" id="ctrlHelp"><kbd>←</kbd><kbd>→</kbd> move · <kbd>↑</kbd>/<kbd>space</kbd> jump · <kbd>↓</kbd> duck · <kbd>J</kbd> punch · <kbd>K</kbd> kick · <kbd>L</kbd> special (when the meter is full)</div>
+      <div class="controls" id="ctrlHelp"><kbd>←</kbd><kbd>→</kbd> move · <kbd>↑</kbd>/<kbd>space</kbd> jump · <kbd>↓</kbd> duck · <kbd>J</kbd> punch · <kbd>K</kbd> kick · <kbd>L</kbd> special (when the meter is full) · <kbd>Esc</kbd> menu</div>
     </div></div>
 
     <div id="levelCard" class="overlay" hidden><div class="panel">
@@ -322,14 +328,15 @@ function toggleFS(){
   if (fsOn && m){ try { var pr = stage[m](); if (pr && pr.catch) pr.catch(function(){}); } catch (e) {} }
   if (!fsOn){ var ex = document.exitFullscreen || document.webkitExitFullscreen; if (ex && (document.fullscreenElement || document.webkitFullscreenElement)) { try { ex.call(document); } catch (e) {} } }
   applyFS(); setTimeout(resize, 50); setTimeout(resize, 400);
-  document.getElementById('fsBtn').textContent = fsOn ? '✕ EXIT' : '⛶ FULLSCREEN';
+  document.getElementById('fsBtn').innerHTML = fsOn ? '✕<span> EXIT</span>' : '⛶<span> FULLSCREEN</span>';
 }
 ['fullscreenchange', 'webkitfullscreenchange'].forEach(function(ev){ document.addEventListener(ev, function(){
   var inFS = !!(document.fullscreenElement || document.webkitFullscreenElement);
-  if (!inFS && fsOn && nativeFS()){ fsOn = false; applyFS(); document.getElementById('fsBtn').textContent = '⛶ FULLSCREEN'; }
+  if (!inFS && fsOn && nativeFS()){ fsOn = false; applyFS(); document.getElementById('fsBtn').innerHTML = '⛶<span> FULLSCREEN</span>'; }
   setTimeout(resize, 50);
 }); });
 document.getElementById('fsBtn').addEventListener('click', function(){ unlockAudio(); toggleFS(); });
+document.getElementById('menuBtn').addEventListener('click', function(){ unlockAudio(); goMenu(); });
 var isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 if (isTouch) { document.getElementById('touch').classList.add('on'); document.getElementById('ctrlHelp').textContent = 'Use the on-screen buttons. Fill the meter with hits to unlock your special.'; }
 
@@ -469,7 +476,7 @@ var keys = {};
 var KEYMAP = {ArrowLeft:'left', a:'left', A:'left', ArrowRight:'right', d:'right', D:'right', ArrowUp:'jump', w:'jump', W:'jump', ' ':'jump',
               ArrowDown:'down', s:'down', S:'down', j:'punch', J:'punch', z:'punch', Z:'punch', k:'kick', K:'kick', x:'kick', X:'kick', l:'special', L:'special', c:'special', C:'special'};
 var pressed = {};   // edge-triggered
-window.addEventListener('keydown', function(e){ if (e.target && e.target.tagName === 'INPUT') return; var k = KEYMAP[e.key]; if (k){ if (!keys[k]) pressed[k] = true; keys[k] = true; e.preventDefault(); } });
+window.addEventListener('keydown', function(e){ if (e.target && e.target.tagName === 'INPUT') return; if (e.key === 'Escape' || e.key === 'Esc'){ goMenu(); return; } var k = KEYMAP[e.key]; if (k){ if (!keys[k]) pressed[k] = true; keys[k] = true; e.preventDefault(); } });
 window.addEventListener('keyup', function(e){ if (e.target && e.target.tagName === 'INPUT') return; var k = KEYMAP[e.key]; if (k){ keys[k] = false; e.preventDefault(); } });
 Array.prototype.forEach.call(document.querySelectorAll('.tb'), function(b){
   var k = b.getAttribute('data-k');
@@ -878,6 +885,7 @@ function rhinoReveal(){
   setTimeout(showResult, 6200);
 }
 function explodeRhino(){
+  if (!G || scene !== 'fight') return;
   var r = G.r; r.state = 'gone'; flashA = 1; shake = 30; sfx('boom');
   var rc = rhinoRect(r), cx = (rc.x0 + rc.x1) / 2, cy = (rc.y0 + rc.y1) / 2;
   for (var i = 0; i < 230; i++){
@@ -1389,7 +1397,15 @@ function openScores(){ show('scores'); scene = 'scores'; Scores.load().then(func
 
 // ------------------------------------------------------------ screens
 var $ = function(id){ return document.getElementById(id); };
-function show(id){ ['title', 'select', 'result', 'scores', 'levelCard'].forEach(function(s){ $(s).hidden = s !== id; }); }
+function show(id){ ['title', 'select', 'result', 'scores', 'levelCard'].forEach(function(s){ $(s).hidden = s !== id; }); $('menuBtn').hidden = id === 'title'; $('topBtns').classList.toggle('compact', id === null); }
+// back to the main menu from anywhere (Esc, or the ☰ MENU button): abandons a running fight
+function goMenu(){
+  if (scene === 'title') return;
+  if (termTimer){ clearInterval(termTimer); termTimer = null; }
+  if (!$('videoBox').hidden) closeVideo();
+  G = null; keys = {}; pressed = {}; slowmo = 0; shake = 0; flashA = 0;
+  show('title'); scene = 'title'; refreshBoard();
+}
 function buildRoster(){
   var host = $('roster'); host.innerHTML = ''; $('selName').textContent = ROSTER[selected].name.toUpperCase(); $('selName2').textContent = ROSTER[selected].name.toUpperCase();
   ROSTER.forEach(function(d, i){
@@ -1430,6 +1446,7 @@ function startFight(){
   if (LEVELS[LEVEL].card) showLevelCard(); else beginRound();
 }
 function showResult(){
+  if (!G || scene !== 'fight') return;   // the fight was abandoned via the menu
   var p = G.p, r = G.r;
   $('scoreLine').hidden = !G.won; $('nameBox').hidden = !G.won; $('btnSave').disabled = false; $('btnSave').textContent = 'SAVE SCORE';
   var hasNext = G.won && LEVEL < LEVELS.length - 1;
