@@ -55,3 +55,19 @@ test('all three rounds start', async ({ page }) => {
   }
   expect(errors).toEqual([]);
 });
+
+test('pacifist ending: outlast the rhino without hitting it', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL + '#pacifist=2');            // debug hook: shortens the 60 s pacifist timer to 2 s
+  await page.click('#btnStart');
+  await page.click('.fighter:nth-child(5)');
+  await page.click('#btnFight');
+  // dodge only: never press punch / kick / special
+  for (let i = 0; i < 25; i++) { await page.keyboard.press('ArrowUp'); await page.waitForTimeout(160); }
+  await expect(page.locator('#result')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('#resBig')).toHaveText('PEACE');
+  await expect(page.locator('#resReadout')).toContainText(/RECLASSIFIED → (tapir|horse|zebra)/);
+  await expect(page.locator('#btnNext')).toBeVisible();
+  expect(errors).toEqual([]);
+});

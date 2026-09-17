@@ -620,33 +620,50 @@ function drawTree(x, y, size, depth, seed){
 // ------------------------------------------------------------ rhino rig (port of the video rig)
 var RS = 84;  // rhino scale (px per unit)
 var RB = '#6c686c', RD = '#4e4a50', RL = '#868286', RH = '#b0a89c';
+var RPAL = {body: RB, dark: RD, light: RL, horn: RH, hoof: RD, eye: '#1e1c20', eyeAngry: '#e0302a', nose: '#343236'};
+// pacifist reveal: what the "rhino" turns out to be if you never hit it (colours + which rig parts to swap)
+var ANIMALS = {
+  tapir: {name: 'tapir', label: 'THE TAPIR · reclassified', pal: {body: '#3b353d', dark: '#27232a', light: '#3b353d', horn: null, hoof: '#1e1a1e', eye: '#1e1c20', eyeAngry: '#1e1c20', nose: '#1e1a1e'}, saddle: '#e9e3dc', trunk: true, ear: 'round'},
+  horse: {name: 'horse', label: 'THE HORSE · reclassified', pal: {body: '#a0673d', dark: '#7a4a28', light: '#b57a4e', horn: null, hoof: '#2e2420', eye: '#1e1c20', eyeAngry: '#1e1c20', nose: '#3a2a24'}, mane: '#3a2416', tail: '#3a2416', ear: 'point'},
+  zebra: {name: 'zebra', label: 'THE ZEBRA · reclassified', pal: {body: '#f4f0ea', dark: '#d8d2c8', light: '#ffffff', horn: null, hoof: '#2a262a', eye: '#1e1c20', eyeAngry: '#1e1c20', nose: '#1e1a1e'}, mane: '#2a262a', tail: '#2a262a', stripes: '#2a262a', ear: 'point'}
+};
 function ell(cx, cy, rx, ry){ var p = []; for (var k = 0; k < 28; k++){ var a = 6.283 * k / 28; p.push([cx + rx * Math.cos(a), cy + ry * Math.sin(a)]); } return p; }
 function rot(pts, cx, cy, ang){ var c = Math.cos(ang), s = Math.sin(ang); return pts.map(function(p){ return [cx + (p[0]-cx)*c - (p[1]-cy)*s, cy + (p[0]-cx)*s + (p[1]-cy)*c]; }); }
+function rhinoWorld(p, pts){
+  // rig space (units, y up, 0 = ground) -> arena pixels, with the rig's tilt / facing / squash applied
+  var tilt = p.tilt || 0, fac = p.facing, sq = p.squash || 0, X = p.x, Y = GROUND - (p.jump || 0);
+  return rot(pts, 0, -1.2, tilt).map(function(v){ return [X + v[0] * (-fac) * (1 + sq) * RS, Y + v[1] * (1 - sq) * RS]; });
+}
 function rhinoParts(p){
   var A = 0.49 * (p.run || 0), ph = p.phase || 0, hd = p.head || 0, parts = [];
+  var an = (p.morph && p.revealed) ? ANIMALS[p.morph] : null, C = an ? an.pal : RPAL;
   function leg(lx, ang, col){
     var w = 0.18, pts = [[lx-w,-0.95],[lx+w,-0.95],[lx+w+0.04,-0.02],[lx-w-0.06,-0.02]];
     var hoof = [[lx-w-0.06,-0.14],[lx+w+0.04,-0.14],[lx+w+0.04,-0.02],[lx-w-0.06,-0.02]];
-    parts.push([rot(pts, lx, -0.9, ang), col]); parts.push([rot(hoof, lx, -0.9, ang), RD]);
+    parts.push([rot(pts, lx, -0.9, ang), col]); parts.push([rot(hoof, lx, -0.9, ang), C.hoof]);
   }
-  leg(0.62, A * Math.sin(ph + 1.57), RD); leg(-0.62, A * Math.sin(ph + 4.71), RD);
-  parts.push([ell(-0.025,-1.175,1.325,0.675), RB]); parts.push([ell(-0.8,-1.59,0.5,0.39), RB]); parts.push([ell(0.885,-1.45,0.435,0.45), RB]);
-  parts.push([ell(0.025,-0.8,1.125,0.3), RD]); parts.push([ell(-0.075,-1.31,1.175,0.41), RB]); parts.push([ell(-0.1,-1.675,1.0,0.225), RL]); parts.push([ell(-0.05,-1.465,1.0,0.315), RB]);
-  leg(0.92, A * Math.sin(ph + 3.14), RB); leg(-0.9, A * Math.sin(ph), RB);
+  leg(0.62, A * Math.sin(ph + 1.57), C.dark); leg(-0.62, A * Math.sin(ph + 4.71), C.dark);
+  parts.push([ell(-0.025,-1.175,1.325,0.675), C.body, 'body']); parts.push([ell(-0.8,-1.59,0.5,0.39), C.body, 'body']); parts.push([ell(0.885,-1.45,0.435,0.45), C.body, 'body']);
+  parts.push([ell(0.025,-0.8,1.125,0.3), C.dark]); parts.push([ell(-0.075,-1.31,1.175,0.41), C.body, 'body']); parts.push([ell(-0.1,-1.675,1.0,0.225), C.light, 'body']); parts.push([ell(-0.05,-1.465,1.0,0.315), C.body, 'body']);
+  if (an && an.saddle) parts.push([ell(0.55,-1.2,0.78,0.6), an.saddle]);   // tapir: pale rear half
+  if (an && an.mane) parts.push([[[-1.15,-1.86],[-0.95,-2.08],[-0.6,-2.12],[-0.25,-2.06],[0.05,-1.9],[-0.3,-1.9],[-0.7,-1.92],[-1.0,-1.86]], an.mane]);
+  leg(0.92, A * Math.sin(ph + 3.14), C.body); leg(-0.9, A * Math.sin(ph), C.body);
   var head = [[-0.85,-1.95],[-1.25,-1.9],[-1.7,-1.7],[-2.05,-1.35],[-2.3,-1.0],[-2.5,-0.72],[-2.42,-0.5],[-2.1,-0.42],[-1.75,-0.5],[-1.45,-0.72],[-1.1,-1.0],[-0.9,-1.3]];
   var jaw = [[-1.55,-0.62],[-2.1,-0.45],[-2.42,-0.5],[-2.38,-0.66],[-1.9,-0.72]];
   var horn1 = [[-2.47,-0.88],[-2.05,-0.95],[-2.62,-1.7],[-2.6,-1.5]], horn2 = [[-2.02,-1.02],[-1.75,-1.15],[-2.0,-1.45]];
   var ear = [[-1.25,-1.88],[-1.32,-2.2],[-1.12,-2.12],[-1.05,-1.9]];
+  if (an && an.ear === 'point') ear = [[-1.22,-1.9],[-1.34,-2.32],[-1.06,-2.18],[-1.0,-1.9]];
+  if (an && an.ear === 'round') ear = ell(-1.2,-2.05,0.13,0.16);
   var eye = ell(-1.77,-1.27,0.055,0.055), nos = ell(-2.385,-0.585,0.035,0.035);
-  [[head,RB],[jaw,RD],[horn1,RH],[horn2,RH],[ear,RB],[eye,p.angry ? '#e0302a' : '#1e1c20'],[nos,'#343236']].forEach(function(q){ parts.push([rot(q[0], -1.0, -1.55, -hd), q[1]]); });
+  var hp = [[head,C.body,'head'],[jaw,C.dark]];
+  if (C.horn){ hp.push([horn1,C.horn]); hp.push([horn2,C.horn]); }
+  if (an && an.trunk){ hp.push([[[-2.3,-1.0],[-2.5,-0.72],[-2.8,-0.62],[-2.92,-0.42],[-2.78,-0.34],[-2.58,-0.44],[-2.42,-0.5]], C.body]); nos = ell(-2.84,-0.4,0.035,0.035); }
+  hp.push([ear,C.body]); hp.push([eye,p.angry ? C.eyeAngry : C.eye]); hp.push([nos,C.nose]);
+  hp.forEach(function(q){ parts.push([rot(q[0], -1.0, -1.55, -hd), q[1], q[2]]); });
   var sw = p.tail || 0;
-  parts.push([[[1.2,-1.65],[1.32,-1.55],[1.45+sw,-1.2],[1.55+sw*2,-0.85],[1.48+sw*2,-0.82],[1.36+sw,-1.18],[1.22,-1.5]], RB]);
-  parts.push([ell(1.51+sw*2,-0.85,0.09,0.13), RD]);
-  var tilt = p.tilt || 0, fac = p.facing, sq = p.squash || 0, X = p.x, Y = GROUND - (p.jump || 0);
-  return parts.map(function(q){
-    var pts = rot(q[0], 0, -1.2, tilt).map(function(v){ return [X + v[0] * (-fac) * (1 + sq) * RS, Y + v[1] * (1 - sq) * RS]; });
-    return [pts, q[1]];
-  });
+  if (an && an.tail){ parts.push([[[1.2,-1.65],[1.36,-1.58],[1.52+sw,-1.25],[1.66+sw*2,-0.75],[1.5+sw*2,-0.6],[1.32+sw,-1.05],[1.2,-1.45]], an.tail]); }
+  else { parts.push([[[1.2,-1.65],[1.32,-1.55],[1.45+sw,-1.2],[1.55+sw*2,-0.85],[1.48+sw*2,-0.82],[1.36+sw,-1.18],[1.22,-1.5]], C.body]); parts.push([ell(1.51+sw*2,-0.85,0.09,0.13), C.dark]); }
+  return parts.map(function(q){ return [rhinoWorld(p, q[0]), q[1], q[2]]; });
 }
 function drawPoly(pts, fill, stroke, lw){
   ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); ctx.closePath();
@@ -658,8 +675,22 @@ function drawRhino(p){
   var parts = rhinoParts(p);
   // ink outline pass
   for (var i = 0; i < parts.length; i++) drawPoly(parts[i][0], '#1a141e', '#1a141e', 7);
-  for (var k = 0; k < parts.length; k++){ var col = parts[k][1]; if (p.mutant && MUTANT[col]) col = MUTANT[col]; drawPoly(parts[k][0], p.flash > 0 ? '#ffffff' : col, null, 0); }
-  if (p.mutant && p.state !== 'gone'){
+  var an = (p.morph && p.revealed) ? ANIMALS[p.morph] : null, mut = p.mutant && !an;
+  for (var k = 0; k < parts.length; k++){ var col = parts[k][1]; if (mut && MUTANT[col]) col = MUTANT[col]; drawPoly(parts[k][0], p.flash > 0 ? '#ffffff' : col, null, 0); }
+  if (an && an.stripes && p.flash <= 0){
+    // zebra: dark bands clipped to the body, then to the head (separate clips so the overlap does not cancel out)
+    var hd = p.head || 0, bands = [], hb = [];
+    for (var sb = 0; sb < 10; sb++){ var bx = -1.3 + sb * .29; bands.push([[bx-.05,-2.1],[bx+.05,-2.1],[bx+.16,-0.45],[bx+.02,-0.45]]); }
+    for (var sh = 0; sh < 4; sh++){ var hx = -0.95 - sh * .22; hb.push(rot([[hx-.04,-2.1],[hx+.04,-2.1],[hx-.45,-1.3],[hx-.55,-1.3]], -1.0, -1.55, -hd)); }
+    [['body', bands], ['head', hb]].forEach(function(grp){
+      ctx.save(); ctx.beginPath();
+      for (var c = 0; c < parts.length; c++){ if (parts[c][2] !== grp[0]) continue; var cp = parts[c][0]; ctx.moveTo(cp[0][0], cp[0][1]); for (var ci = 1; ci < cp.length; ci++) ctx.lineTo(cp[ci][0], cp[ci][1]); ctx.closePath(); }
+      ctx.clip();
+      for (var b = 0; b < grp[1].length; b++) drawPoly(rhinoWorld(p, grp[1][b]), an.stripes, null, 0);
+      ctx.restore();
+    });
+  }
+  if (mut && p.state !== 'gone'){
     // glowing veins / drips
     ctx.strokeStyle = 'rgba(141,255,90,.75)'; ctx.lineWidth = 2; ctx.lineCap = 'round';
     for (var v = 0; v < 4; v++){ var vx = p.x - p.facing * (20 + v * 38), vy = GROUND - 150 + (v % 2) * 18; ctx.beginPath(); ctx.moveTo(vx, vy); ctx.lineTo(vx + 8, vy + 22 + 6 * Math.sin(G.t * 3 + v)); ctx.lineTo(vx - 4, vy + 40); ctx.stroke(); }
@@ -784,7 +815,7 @@ function newFight(def){
   var p = {def:def, x:200, y:0, vy:0, facing:1, hp:def.hp, maxhp:def.hp, meter:0, state:'idle', st:0, pose:POSE.guard, inv:0, flash:0, combo:0, hitsLanded:0, handPt:[0,0], footPt:[0,0], headPt:[0,0], attackHit:false, dashDir:1, specialHits:0, scale:1};
   var lv = LEVELS[LEVEL];
   var r = {x:720, facing:-1, hp:lv.rhino.hp, maxhp:lv.rhino.hp, mutant:lv.rhino.mutant, space:!!lv.rhino.space, glow:0, willFeint:false, targetX:0, state:'idle', st:0, timer:1.4, run:0, phase:0, tilt:0, head:0, jump:0, squash:0, tail:0, flash:0, angry:false, rage:0, dir:-1, chargeHit:false, vx:0};
-  G = {p:p, r:r, t:0, over:false, won:false, elapsed:0, koT:0};
+  G = {p:p, r:r, t:0, over:false, won:false, elapsed:0, koT:0, pacifist:false};
   particles = []; fx = []; dna = []; puffs = []; hot = []; rings = []; bolts = []; shake = 0; flashA = 0; slowmo = 0; impactFrame = 0;
 }
 
@@ -829,6 +860,17 @@ function rhinoKO(){
   sfx('bighit'); sfx('gong', {f: 70, v: .7});
   setTimeout(function(){ explodeRhino(); }, 1500);
   setTimeout(showResult, 5200);
+}
+// pacifist ending: never land a hit and outlast the rhino (60 s in round 1, +30 s per round) and the read turns out to be something else
+var PACIFIST_DEBUG = parseFloat((location.hash.match(/pacifist=(\d+(?:\.\d+)?)/) || [])[1]);
+function pacifistTime(){ return PACIFIST_DEBUG > 0 ? PACIFIST_DEBUG : 60 + 30 * LEVEL; }
+function rhinoReveal(){
+  var r = G.r, p = G.p; if (G.over) return;
+  var kinds = ['tapir', 'horse', 'zebra']; r.morph = kinds[Math.floor(Math.random() * kinds.length)]; r.revealed = false;
+  r.state = 'morph'; r.st = 0; r.run = 0; r.jump = 0; r.glow = 0; r.angry = false; r.chargeHit = true; bolts = [];
+  G.over = true; G.won = true; G.pacifist = true; p.state = 'win'; p.st = 0; G.koT = 0;
+  sfx('gong', {f: 96, v: .5}); sfx('drum');
+  setTimeout(showResult, 6200);
 }
 function explodeRhino(){
   var r = G.r; r.state = 'gone'; flashA = 1; shake = 30; sfx('boom');
@@ -975,6 +1017,25 @@ function updateRhino(dt){
   if (r.jump > 0 && r.state !== 'jetstomp'){ r.jump = Math.max(0, r.jump - 140 * dt); }
   if (r.state === 'ko'){ var a = r.st; r.tilt = -.5 * Math.exp(-a * 1.2) * Math.cos(a * 7); r.head = .4 * Math.exp(-a * 2) * Math.cos(a * 9); r.squash = .1 * Math.exp(-a * 6); return; }
   if (r.state === 'gone') return;
+  if (r.state === 'morph'){
+    // shudder, vanish in a cloud, come back as something harmless
+    r.squash = .05 * Math.sin(r.st * 45) * (1 - smooth(.5, .9, r.st)); r.tilt = .04 * Math.sin(r.st * 30); r.head *= Math.pow(.05, dt);
+    if (r.st > .3 && Math.random() < .7) puffs.push({x: r.x + rnd(-150, 150), y: GROUND - rnd(0, 170), t: 0, r: rnd(14, 30)});
+    if (!r.revealed && r.st >= .9){ r.revealed = true; r.flash = .1; flashA = .7; shake = 8; sfx('chime', {f: 1568}); sfx('chime', {f: 2093}); for (var pm = 0; pm < 26; pm++) puffs.push({x: r.x + rnd(-190, 190), y: GROUND - rnd(0, 200), t: 0, r: rnd(16, 34)}); }
+    if (r.st > 1.6){ r.state = 'graze'; r.st = 0; r.squash = 0; r.tilt = 0; }
+    return;
+  }
+  if (r.state === 'graze'){
+    r.run = 0; r.head = lerp(r.head, -.32, Math.min(1, dt * 2.5)); r.squash = .015 * Math.sin(r.st * 3);
+    if (r.st > 1.8){ r.state = 'trot'; r.st = 0; r.dir = r.x > p.x ? 1 : -1; r.facing = r.dir; r.squash = 0; }
+    return;
+  }
+  if (r.state === 'trot'){
+    r.head = lerp(r.head, 0, Math.min(1, dt * 3)); r.run = .7; r.phase += dt * 11; r.tilt = .02 * Math.sin(r.phase); r.x += r.dir * 210 * dt;
+    if (Math.random() < .25) puffs.push({x: r.x - r.dir * rnd(60, 130), y: GROUND - rnd(0, 20), t: 0, r: rnd(5, 10)});
+    if (r.x < -300 || r.x > LW + 300) r.state = 'gone';
+    return;
+  }
   if (r.state !== 'burst' && r.glow > 0) r.glow = Math.max(0, r.glow - dt * 3);
   var dist = p.x - r.x, adist = Math.abs(dist);
   r.angry = r.hp < r.maxhp * .45;
@@ -1059,6 +1120,7 @@ function update(dt){
   G.t += dt * ts; if (!G.over) G.elapsed += dt;
   if (slowmo > 0) slowmo -= dt;
   updatePlayer(dt * ts); updateRhino(dt * ts);
+  if (!G.over && G.p.hitsLanded === 0 && G.elapsed >= pacifistTime()) rhinoReveal();
   // effects
   for (var i = fx.length - 1; i >= 0; i--){ fx[i].t += dt; if (fx[i].t > fx[i].life) fx.splice(i, 1); }
   for (var j = puffs.length - 1; j >= 0; j--){ puffs[j].t += dt; if (puffs[j].t > .55) puffs.splice(j, 1); }
@@ -1089,7 +1151,7 @@ function drawHUD(){
   ctx.font = '700 15px ' + 'Nunito, sans-serif'; ctx.textBaseline = 'top';
   // player bar
   bar(24, 22, 330, 20, p.hp / p.maxhp, '#6fe3a0', '#c8262c', p.def.name.toUpperCase(), 'left');
-  bar(LW - 354, 22, 330, 20, r.hp / r.maxhp, r.space ? (r.angry ? '#ff8ad0' : '#7fe7ff') : r.mutant ? (r.angry ? '#ccff66' : '#8dff5a') : (r.angry ? '#ff5a3c' : '#f2c56b'), '#c8262c', LEVELS[LEVEL].hud, 'right');
+  bar(LW - 354, 22, 330, 20, r.hp / r.maxhp, r.space ? (r.angry ? '#ff8ad0' : '#7fe7ff') : r.mutant ? (r.angry ? '#ccff66' : '#8dff5a') : (r.angry ? '#ff5a3c' : '#f2c56b'), '#c8262c', (r.morph && r.revealed) ? ANIMALS[r.morph].label : LEVELS[LEVEL].hud, 'right');
   // special meter
   ctx.fillStyle = 'rgba(10,14,30,.55)'; roundRect(24, 66, 200, 10, 5); ctx.fill();
   ctx.fillStyle = p.meter >= 100 ? '#6fe3a0' : '#93a0bf'; roundRect(24, 66, 200 * p.meter / 100, 10, 5); ctx.fill();
@@ -1221,8 +1283,13 @@ function draw(){
     if (slowmo > 0){ ctx.fillStyle = 'rgba(40,60,120,.22)'; ctx.fillRect(0, 0, LW, LH); }
     if (impactFrame > 0){ ctx.globalCompositeOperation = 'difference'; ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, LW, LH); ctx.globalCompositeOperation = 'source-over'; }
     if (flashA > 0){ ctx.fillStyle = 'rgba(255,255,255,' + flashA + ')'; ctx.fillRect(0, 0, LW, LH); }
-    if (G.over && G.won && G.r.state !== 'gone'){ bigText('K.O.!', LW / 2, 200, 120); }
-    if (G.over && G.won && G.r.state === 'gone'){ bigText('FALSE POSITIVE', LW / 2, 190, 78); }
+    if (G.over && G.won && G.pacifist){
+      if (G.r.state === 'morph' && !G.r.revealed) bigText('?!', LW / 2, 200, 120);
+      else if (G.r.state !== 'gone') bigText('JUST A ' + ANIMALS[G.r.morph].name.toUpperCase(), LW / 2, 200, 90);
+      else bigText('FALSE POSITIVE', LW / 2, 190, 78);
+    }
+    else if (G.over && G.won && G.r.state !== 'gone'){ bigText('K.O.!', LW / 2, 200, 120); }
+    else if (G.over && G.won && G.r.state === 'gone'){ bigText('FALSE POSITIVE', LW / 2, 190, 78); }
     if (G.over && !G.won){ bigText('TRAMPLED', LW / 2, 200, 100); }
     if (!G.over && G.elapsed < 1.6){ var a = 1 - smooth(1.1, 1.6, G.elapsed); ctx.globalAlpha = a; bigText(G.elapsed < .8 ? LEVELS[LEVEL].name : 'FIGHT!', LW / 2, 220, 96); ctx.globalAlpha = 1; }
     if (wl){
@@ -1259,7 +1326,7 @@ var Scores = (function(){
   }); }
   return {load: load, add: add, mode: function(){ return dbNs ? 'shared' : 'local'; }};
 })();
-function scoreFor(g){ var p = g.p; return Math.round(1000 + p.hp * 10 + Math.max(0, 120 - g.elapsed) * 20 + p.hitsLanded * 5 + LEVEL * 1500); }
+function scoreFor(g){ var p = g.p; return Math.round(1000 + p.hp * 10 + Math.max(0, 120 - g.elapsed) * 20 + p.hitsLanded * 5 + LEVEL * 1500 + (g.pacifist ? 2500 : 0)); }
 var lastEntry = null;
 function renderScores(list){
   var tb = document.querySelector('#scoresTable tbody'); tb.innerHTML = '';
@@ -1322,7 +1389,11 @@ function showResult(){
   if (G.won){
     var sc = scoreFor(G); $('scoreLine').textContent = 'SCORE ' + sc.toLocaleString();
     try { $('playerName').value = localStorage.getItem('swebits_name') || ''; } catch (e) {}
-    if (LEVEL === 0){
+    if (G.pacifist){
+      var an = ANIMALS[r.morph], readLabel = 'Rhinoceros' + (LEVEL === 2 ? ' (wrong sample)' : LEVEL ? ' (contaminant match)' : ' (98.7%)');
+      $('resBig').textContent = 'PEACE'; $('resTitle').textContent = 'FALSE POSITIVE RECLASSIFIED';
+      $('resReadout').innerHTML = '> read: <b>' + readLabel + '</b> — status: <b>RECLASSIFIED → ' + an.name + '</b><br>> fighter: <b>' + p.def.name + '</b> · waited <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>0</b> · pacifist bonus: <b>+2500</b><br>> lesson: you never had to hit it. Look at the alignment long enough and the rhino is a ' + an.name + ' — a related sequence that scored high, not a rhino. Never was.' + (LEVEL < LEVELS.length - 1 ? '<br>> next: round ' + (LEVEL + 2) + '.' : '<br>> dataset clean. The crew can go home.');
+    } else if (LEVEL === 0){
       $('resBig').textContent = 'K.O.!'; $('resTitle').textContent = 'FALSE POSITIVE REMOVED';
       $('resReadout').innerHTML = '> read: <b>Rhinoceros (98.7%)</b> — status: <b>REMOVED</b><br>> fighter: <b>' + p.def.name + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · finisher: <b>' + p.def.special.name + '</b><br>> no rhinos were harmed. It was one short read that looked like a horse.<br>> next: the reference genome itself is <b>contaminated</b>. Round 2.';
     } else if (LEVEL === 2){
