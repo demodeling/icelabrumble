@@ -4,9 +4,9 @@
 A single-page HTML5 canvas fighting game (Swebits crew vs a false-positive rhino), deployed to GitHub Pages by the workflow in `.github/workflows/pages.yml`.
 
 ## Layout
-- `src/index.html` — the whole game (CSS + JS in one file). The token `__VIDEOS__` is replaced by `tools/build.py`; never hardcode it.
+- `src/index.html` — the whole game (CSS + JS in one file). The tokens `__VIDEOS__`, `__APPVER__` (package.json version, shown on the title screen) and `__VERSION__` (git hash) are replaced by `tools/build.py`; never hardcode them. Bump `"version"` in `package.json` when releasing.
 - `src/sw.js`, `src/manifest.webmanifest`, `src/icons/` — installable web-app bits. `__VERSION__` in sw.js is replaced at build time.
-- `assets/videos/<fighter>.mp4` — the nine 20 s clips (640x360). Regenerate with `tools/video/render_all.sh`. `assets/videos/intro.mp4` is the menu clip ("False positive: a real sequence, the wrong label", rhino turns into a zebra) from `tools/video/render_intro.sh`; `tools/build.py` copies `CLIPS` = fighters + intro.
+- `assets/videos/<fighter>.mp4` — the eleven 20 s clips (640x360). Regenerate with `tools/video/render_all.sh`. `assets/videos/intro.mp4` is the menu clip ("False positive: a real sequence, the wrong label", rhino turns into a zebra) from `tools/video/render_intro.sh`; `tools/build.py` copies `CLIPS` = fighters + intro.
 - `tools/build.py` — assembles `dist/`. `--inline` embeds the videos as base64 (single-file build for claude.ai artifacts).
 - `tests/smoke.spec.js` — Playwright smoke test. Keep it green.
 

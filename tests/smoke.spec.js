@@ -9,7 +9,7 @@ test('game boots and a fight runs', async ({ page }) => {
   await page.goto(URL);
   await expect(page.locator('#btnStart')).toBeVisible();
   await page.click('#btnStart');
-  await expect(page.locator('.fighter')).toHaveCount(9);
+  await expect(page.locator('.fighter')).toHaveCount(11);
   await page.click('.fighter:nth-child(5)');          // Per (not pre-selected, so one click only selects)
   await page.click('#btnFight');
   await page.waitForTimeout(1500);
@@ -23,8 +23,8 @@ test('every fighter has a video', async ({ page }) => {
   await page.goto(URL);
   await page.click('#btnStart');
   const fighters = page.locator('.fighter');
-  await expect(fighters).toHaveCount(9);
-  for (let i = 0; i < 9; i++) {
+  await expect(fighters).toHaveCount(11);
+  for (let i = 0; i < 11; i++) {
     const f = fighters.nth(i);
     // clicking an already-selected fighter starts the fight, so only click when it is not selected yet
     if (!(await f.evaluate(el => el.classList.contains('sel')))) await f.click();
@@ -177,4 +177,9 @@ test('the menu has the false-positive clip', async ({ page }) => {
   await page.click('#btnVideoClose');
   await expect(page.locator('#title')).toBeVisible();
   expect(errors).toEqual([]);
+});
+
+test('the title screen shows the version', async ({ page }) => {
+  await page.goto(URL);
+  await expect(page.locator('#verLine')).toHaveText(/^v\d+\.\d+\.\d+ · build \S+$/);
 });

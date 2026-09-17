@@ -355,7 +355,8 @@ STRIDE = 92.0
 JACKET = (52, 64, 98)
 JACKET_D = (36, 46, 74)
 CHAR = os.environ.get('CHAR', 'albertas')
-SHIRTS = {'albertas': (47, 58, 90), 'bjorn': (62, 60, 72), 'bea': (90, 94, 110), 'annamia': (233, 229, 220), 'per': (58, 58, 66), 'marco': (38, 38, 46), 'jose': (45, 51, 70), 'mike': (31, 31, 38), 'daniel': (31, 61, 52)}
+SHIRTS = {'albertas': (47, 58, 90), 'bjorn': (62, 60, 72), 'bea': (90, 94, 110), 'annamia': (233, 229, 220), 'per': (58, 58, 66), 'marco': (38, 38, 46), 'jose': (45, 51, 70), 'mike': (31, 31, 38), 'daniel': (31, 61, 52), 'henrik': (59, 95, 168), 'anton': (110, 58, 58)}
+PROPS = {'anton': 'stick'}   # innebandy stick in the near hand
 SPRITES = {m: Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sprites', 'sprite_%s_%s.png' % (CHAR, m))).convert('RGBA') for m in ('flat', 'open', 'smile')}
 IMG_REF = [None]
 JACKET = SHIRTS[CHAR]
@@ -433,6 +434,16 @@ def draw_man(d, t):
         seg(d, elbow, hand, col, armw * 0.9)
         r = 0.035 * Hm
         d.ellipse([P(hand[0] - r, hand[1] - r), P(hand[0] + r, hand[1] + r)], fill=GLOVE)
+        if near and PROPS.get(CHAR) == 'stick':
+            # innebandy stick hangs from the near hand, blade forward; lifts a little while reaching
+            sw_a = 1.05 - 0.5 * reach
+            sl = 0.5 * Hm
+            tip = (hand[0] + math.cos(sw_a) * sl, hand[1] + math.sin(sw_a) * sl)
+            bl = (tip[0] + 20 * math.cos(sw_a - 1.1), tip[1] + 20 * math.sin(sw_a - 1.1))
+            d.line([P(*hand), P(*tip), P(*bl)], fill=(26, 20, 30), width=int(9 * SS), joint="curve")
+            d.line([P(*hand), P(*tip)], fill=(244, 244, 240), width=int(4 * SS))
+            d.line([P(*hand), P(hand[0] + math.cos(sw_a) * sl * .28, hand[1] + math.sin(sw_a) * sl * .28)], fill=(42, 125, 225), width=int(4 * SS))
+            d.line([P(*tip), P(*bl)], fill=(28, 28, 34), width=int(5 * SS))
 
     # far leg, far arm, torso, near leg, head, near arm
     leg(ph + math.pi, False)

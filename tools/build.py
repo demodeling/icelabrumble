@@ -9,7 +9,7 @@ import base64, json, os, shutil, subprocess, sys, time
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC, VIDS = os.path.join(ROOT, 'src'), os.path.join(ROOT, 'assets', 'videos')
 DIST = os.path.join(ROOT, 'docs' if '--docs' in sys.argv else 'dist')
-FIGHTERS = ['albertas', 'bjorn', 'bea', 'annamia', 'per', 'marco', 'jose', 'mike', 'daniel']
+FIGHTERS = ['albertas', 'bjorn', 'bea', 'annamia', 'per', 'marco', 'jose', 'mike', 'daniel', 'henrik', 'anton']
 CLIPS = FIGHTERS + ['intro']   # + the menu clip (tools/video/render_intro.sh)
 inline = '--inline' in sys.argv
 try:
@@ -27,9 +27,10 @@ else:
     for c in CLIPS:
         shutil.copy(os.path.join(VIDS, c + '.mp4'), os.path.join(DIST, 'assets', 'videos', c + '.mp4'))
     html = html.replace('__VIDEOS__', json.dumps({'mode': 'files', 'base': 'assets/videos/'}))
-html = html.replace('__VERSION__', version)
+appver = json.load(open(os.path.join(ROOT, 'package.json')))['version']   # bump package.json "version" when releasing
+html = html.replace('__VERSION__', version).replace('__APPVER__', appver)
 open(os.path.join(DIST, 'index.html'), 'w', encoding='utf-8').write(html)
 sw = open(os.path.join(SRC, 'sw.js')).read().replace('__VERSION__', version)
 open(os.path.join(DIST, 'sw.js'), 'w').write(sw)
 open(os.path.join(DIST, '.nojekyll'), 'w').write('')
-print('built %s/ (version %s, %d clips as %s)' % (os.path.basename(DIST), version, len(CLIPS), 'inline' if inline else 'files'))
+print('built %s/ (v%s build %s, %d clips as %s)' % (os.path.basename(DIST), appver, version, len(CLIPS), 'inline' if inline else 'files'))

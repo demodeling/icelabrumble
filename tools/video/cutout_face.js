@@ -7,7 +7,9 @@ var LOOK = {
   marco:   {skin:'#e9c0a0', hair:{type:'curly', color:'#2b2320', big:true}, beard:{type:'mustache', color:'#2b2320'}, mouth:'smile'},
   jose:    {skin:'#e8bfa0', hair:{type:'buzz', color:'#2f2620'}, beard:{type:'full', color:'#2a221e', big:true}, mouth:'smile'},
   mike:    {skin:'#f0c7a8', hair:{type:'short', color:'#8a6a48', messy:true}, beard:{type:'full', color:'#a86f45'}, mouth:'open'},
-  daniel:  {skin:'#f1c9ad', hair:{type:'short', color:'#4a3a2e', receding:true}, beard:null, glasses:true, mouth:'smile', chain:true}
+  daniel:  {skin:'#f1c9ad', hair:{type:'short', color:'#4a3a2e', receding:true}, beard:null, glasses:true, mouth:'smile', chain:true},
+  henrik:  {skin:'#f2c9ae', hair:{type:'bald'}, beard:{type:'full', color:'#c4652e', big:true}, mouth:'flat', brow:true},
+  anton:   {skin:'#f0c8ae', hair:{type:'short', color:'#5a3d26', messy:true}, beard:{type:'goatee', color:'#7a5236'}, mouth:'smile'}
 };
 function drawCutoutFace(c, cx, cy, S, look, fac, opt){
   // S = head width. Big round head, big oval eyes, thick paper-cut outline.
@@ -62,6 +64,11 @@ function drawCutoutFace(c, cx, cy, S, look, fac, opt){
   c.fillStyle = INKC; [-1, 1].forEach(function(sd){ c.beginPath(); c.arc(sd * ex * .95 + sh + S * .05, eyy + S * .02, S * .04, 0, 6.283); c.fill(); });
   if (look.brow || opt.angry){ c.lineWidth = lw; [-1, 1].forEach(function(sd){ c.beginPath(); c.moveTo(sd * ex * 1.7 + sh, eyy - ey * 1.05 + (opt.angry ? sd * -S * .03 : 0)); c.lineTo(sd * ex * .3 + sh, eyy - ey * 1.25 + (opt.angry ? S * .04 : 0)); c.stroke(); }); }
   if (look.glasses){ c.lineWidth = lw * .7; c.strokeStyle = '#3a2f2a'; [-1, 1].forEach(function(sd){ c.beginPath(); c.ellipse(sd * ex * .95 + sh, eyy, ex * 1.12, ey * 1.1, 0, 0, 6.283); c.stroke(); }); c.beginPath(); c.moveTo(sh - ex * .05, eyy - ey * .3); c.lineTo(sh + ex * .05, eyy - ey * .3); c.stroke(); }
+  // goatee: a chin patch (drawn before the mouth) + a thin mustache
+  if (bd && bd.type === 'goatee'){
+    outlined(bd.color, function(){ c.moveTo(-S * .2, S * .3); c.quadraticCurveTo(-S * .2, ry * 1.12, S * .04, ry * 1.14); c.quadraticCurveTo(S * .28, ry * 1.12, S * .28, S * .3); c.quadraticCurveTo(S * .04, S * .36, -S * .2, S * .3); });
+    outlined(bd.color, function(){ c.moveTo(-S * .16, S * .21); c.quadraticCurveTo(S * .04, S * .14, S * .24, S * .21); c.quadraticCurveTo(S * .14, S * .25, S * .04, S * .23); c.quadraticCurveTo(-S * .06, S * .25, -S * .16, S * .21); });
+  }
   // mustache
   if (bd && bd.type === 'mustache'){ outlined(bd.color, function(){ c.moveTo(-S * .2, S * .2); c.quadraticCurveTo(0, S * .1, S * .2, S * .2); c.quadraticCurveTo(S * .1, S * .28, 0, S * .24); c.quadraticCurveTo(-S * .1, S * .28, -S * .2, S * .2); }); }
   // mouth
