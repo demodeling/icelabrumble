@@ -1,4 +1,4 @@
-# Swebits Cutout Rumble
+# Swebits Rumble
 
 An airborne eDNA sampler in Kiruna reported a rhino. One read, 98.7 % match. Somebody has to remove it from the dataset by hand.
 
@@ -14,7 +14,7 @@ Two ways to switch it on. Either works; A is automatic, B needs no Actions at al
 
 **A. GitHub Actions (recommended — rebuilds on every push)**
 
-1. Push this folder to a new repository (`git init`, `git add .`, `git commit -m "Swebits Cutout Rumble"`, `git branch -M main`, `git remote add origin …`, `git push -u origin main`).
+1. Push this folder to a new repository (`git init`, `git add .`, `git commit -m "Swebits Rumble"`, `git branch -M main`, `git remote add origin …`, `git push -u origin main`).
 2. On GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 3. Open the **Actions** tab. The workflow *Build, test and deploy to GitHub Pages* should be running (or run it with *Run workflow* if it isn't). It takes 2–4 minutes the first time because it installs a browser for the tests.
 4. When the job is green, the game is at `https://<your-username>.github.io/<repo-name>/`. The Actions run also prints the URL under the *deploy* job.
