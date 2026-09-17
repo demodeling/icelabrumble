@@ -151,7 +151,7 @@
       <div class="row"><button class="btn" id="btnStart">CHOOSE YOUR FIGHTER</button><button class="btn secondary" id="btnScores">HIGH SCORES</button><button class="btn secondary" id="btnCoop">CO-OP</button><button class="btn secondary" id="btnIntro">▶ FALSE POSITIVE?</button></div>
       <p class="small" id="titleBest"></p>
       <p class="small">Sound on for the full kung-fu experience. Works on Safari, iPhone and iPad — tap ⛶ FULLSCREEN for a widescreen arena on your phone.</p>
-      <p class="small ver" id="verLine">v1.2.0 · build 3213373</p>
+      <p class="small ver" id="verLine">v1.2.0 · build e6489dd</p>
     </div></div>
 
     <div id="select" class="overlay" hidden><div class="panel">
@@ -162,7 +162,7 @@
       </div>
       <p class="small">Tap a fighter to select — tap again to fight.</p>
       <p class="small coop" id="selCoop" hidden></p>
-      <label class="check">Start at <select id="startLevel"><option value="0">Round 1 — Kiruna</option><option value="1">Round 2 — The Wasteland</option><option value="2">Round 3 — The Asteroid</option></select></label>
+      <label class="check">Start at <select id="startLevel"><option value="0">Round 1 — Kiruna</option><option value="1">Round 2 — The Wasteland</option><option value="2">Round 3 — The Asteroid</option><option value="3">Round 4 — The Duplicates</option></select></label>
       <div class="roster" id="roster"></div>
       <div class="controls" id="ctrlHelp"><kbd>←</kbd><kbd>→</kbd> move · <kbd>↑</kbd>/<kbd>space</kbd> jump · <kbd>↓</kbd> duck · <kbd>J</kbd> punch · <kbd>K</kbd> kick · <kbd>L</kbd> special (when the meter is full) · <kbd>Esc</kbd> menu</div>
     </div></div>
@@ -327,7 +327,8 @@ ROSTER.forEach(function(d){ FACES[d.face] = portraitURL(d); });
 // ------------------------------------------------------------ canvas
 var canvas = document.getElementById('c');
 var ctx = canvas.getContext('2d');
-var LW = 960, LH = 600;       // logical size
+var LW = 960, LH = 600;       // logical (screen) size
+var AW = LW, camX = 0;        // arena width for the current round (round 4 is twice as wide) and the camera's left edge
 var GROUND = 470;
 var dpr = 1;
 function resize(){
@@ -852,7 +853,9 @@ var LEVELS = [
   {name: 'ROUND 2', theme: 'wasteland', rhino: {hp: 460, mutant: true}, hud: 'THE MUTANT RHINO · contaminated reference',
    next: 'NEXT ROUND: THE WASTELAND', card: "> ROUND 2 — THE WASTELAND\n> reference genome: <b>CONTAMINATED</b>\n\nSome reference genomes carry bits of other organisms. A read can match the contaminant, not the rhino — and the rhino gets the credit.\n\nThe mutant rhino <b>feints</b> before it charges, leaves <b>hot spots</b> where it skids, and <b>vents radiation</b> up close.\n\n> jump the real charge, not the feint\n> stay out of the green\n> jump the burst"},
   {name: 'ROUND 3', theme: 'space', rhino: {hp: 520, mutant: false, space: true}, hud: 'THE SPACE RHINO · index hopping', gravity: .5, next: 'NEXT ROUND: THE ASTEROID', blue: true,
-   card: "> ROUND 3 — THE ASTEROID\n> sample barcode: <b>WRONG</b>\n\nDuring sequencing a single read can <b>hop</b> onto another sample's barcode and turn up somewhere it never was. The rhino hitched a ride on an asteroid and is drifting into the next sample.\n\n> gravity is low: jumps go high and land late\n> jump or duck the horn laser\n> the red ring is where it lands — be in the air\n> knock it off the rock before it reaches the next sample"}
+   card: "> ROUND 3 — THE ASTEROID\n> sample barcode: <b>WRONG</b>\n\nDuring sequencing a single read can <b>hop</b> onto another sample's barcode and turn up somewhere it never was. The rhino hitched a ride on an asteroid and is drifting into the next sample.\n\n> gravity is low: jumps go high and land late\n> jump or duck the horn laser\n> the red ring is where it lands — be in the air\n> knock it off the rock before it reaches the next sample"},
+  {name: 'ROUND 4', theme: 'kiruna', rhino: {hp: 400, mutant: false}, rhinos: 2, width: 1920, hud: 'THE DUPLICATES · PCR duplicate', next: 'NEXT ROUND: THE DUPLICATES',
+   card: "> ROUND 4 — THE DUPLICATES\n> read: <b>PCR DUPLICATE</b>\n\nDuring library prep one molecule can be copied and sequenced twice. One wrong read shows up as two, and both get counted.\n\nTwo rhinos on a field <b>twice as wide</b>. The camera follows you.\n\n> split them up: hit one while the other skids\n> the <b>!</b> marks the one about to charge\n> both have to go"}
 ];
 var bolts = [];
 var LEVEL = 0, hot = [], rings = [];
@@ -867,8 +870,11 @@ function mkPlayer(def, x){
 function newFight(def, def2){
   var p = mkPlayer(def, def2 ? 150 : 200), p2 = def2 ? mkPlayer(def2, 290) : null;
   var lv = LEVELS[LEVEL];
-  var r = {x:720, facing:-1, hp:lv.rhino.hp, maxhp:lv.rhino.hp, mutant:lv.rhino.mutant, space:!!lv.rhino.space, glow:0, willFeint:false, targetX:0, state:'idle', st:0, timer:1.4, run:0, phase:0, tilt:0, head:0, jump:0, squash:0, tail:0, flash:0, angry:false, rage:0, dir:-1, chargeHit:false, vx:0};
-  G = {p:p, p2:p2, players: p2 ? [p, p2] : [p], r:r, t:0, over:false, won:false, elapsed:0, koT:0, pacifist:false};
+  AW = lv.width || LW;
+  var rhinos = [], n = lv.rhinos || 1;
+  for (var ri = 0; ri < n; ri++) rhinos.push({x: 720 + ri * (AW - 1140) / Math.max(1, n - 1), facing:-1, hp:lv.rhino.hp, maxhp:lv.rhino.hp, mutant:lv.rhino.mutant, space:!!lv.rhino.space, glow:0, willFeint:false, targetX:0, state:'idle', st:0, timer:1.4 + ri * .9, run:0, phase:0, tilt:0, head:0, jump:0, squash:0, tail:0, flash:0, angry:false, rage:0, dir:-1, chargeHit:false, vx:0, trampled:{}});
+  G = {p:p, p2:p2, players: p2 ? [p, p2] : [p], r:rhinos[0], rhinos:rhinos, t:0, over:false, won:false, elapsed:0, koT:0, pacifist:false};
+  camX = clamp(p.x - LW / 2, 0, AW - LW);
   particles = []; fx = []; dna = []; puffs = []; hot = []; rings = []; bolts = []; shake = 0; flashA = 0; slowmo = 0; impactFrame = 0;
 }
 
@@ -884,8 +890,9 @@ function rhinoRect(r){
   return {x0: Math.min(front, back), x1: Math.max(front, back), y0: GROUND - 2.2 * RS - r.jump, y1: GROUND - r.jump};
 }
 function inRect(pt, rc, pad){ pad = pad || 0; return pt[0] > rc.x0 - pad && pt[0] < rc.x1 + pad && pt[1] > rc.y0 - pad && pt[1] < rc.y1 + pad; }
-function hitRhino(pt, dmg, big, label){
-  var r = G.r, p = G.p;
+function liveRhinos(){ return G.rhinos.filter(function(r){ return r.state !== 'ko' && r.state !== 'gone'; }); }
+function rhinoAt(pt, pad){ var rs = liveRhinos(); for (var i = 0; i < rs.length; i++) if (inRect(pt, rhinoRect(rs[i]), pad)) return rs[i]; return null; }
+function hitRhino(r, p, pt, dmg, big, label){
   var vuln = (r.state === 'skid' || r.state === 'sleep') ? 1.6 : 1;
   dmg = Math.round(dmg * p.def.power * vuln);
   r.hp = Math.max(0, r.hp - dmg); r.flash = 0.12; r.rage += 1;
@@ -895,12 +902,12 @@ function hitRhino(pt, dmg, big, label){
   sfx(big ? 'bighit' : 'hit');
   if (r.state === 'idle' || r.state === 'paw' || r.state === 'stagger'){ r.state = 'stagger'; r.st = 0; r.x -= r.facing * (big ? 26 : 10); }
   if (r.state === 'sleep'){ r.x -= r.facing * 6; }
-  if (r.hp <= 0) rhinoKO();
+  if (r.hp <= 0) rhinoKO(r);
 }
 function alivePlayers(){ return G.players.filter(function(q){ return q.state !== 'ko'; }); }
-function rhinoTarget(){
-  // the rhino goes for the nearest fighter still standing
-  var r = G.r, best = null, bd = 1e9;
+function rhinoTarget(r){
+  // a rhino goes for the nearest fighter still standing
+  var best = null, bd = 1e9;
   G.players.forEach(function(q){ if (q.state === 'ko') return; var d = Math.abs(q.x - r.x); if (d < bd){ bd = d; best = q; } });
   return best || G.p;
 }
@@ -916,28 +923,34 @@ function playerKO(p){
   p.state = 'ko'; p.st = 0; sfx('gong', {f: 70, v: .6});
   if (!alivePlayers().length){ G.over = true; G.won = false; setTimeout(showResult, 1800); }
 }
-function rhinoKO(){
-  var r = G.r; r.state = 'ko'; r.st = 0; G.over = true; G.won = true; G.koT = 0;
+function rhinoKO(r){
+  r.state = 'ko'; r.st = 0; sfx('bighit');
+  setTimeout(function(){ explodeRhino(r); }, 1500);
+  if (liveRhinos().length){ fx.push({x: r.x, y: GROUND - 200, t: 0, life: .8, r: 80, label: 'ONE DOWN!', big: true}); return; }
+  G.over = true; G.won = true; G.koT = 0;
   alivePlayers().forEach(function(q){ q.state = 'win'; q.st = 0; });
-  sfx('bighit'); sfx('gong', {f: 70, v: .7});
-  setTimeout(function(){ explodeRhino(); }, 1500);
+  sfx('gong', {f: 70, v: .7});
   setTimeout(showResult, 5200);
 }
 // pacifist ending: never land a hit and outlast the rhino (60 s in round 1, +30 s per round) and the read turns out to be something else
 var PACIFIST_DEBUG = parseFloat((location.hash.match(/pacifist=(\d+(?:\.\d+)?)/) || [])[1]);
 function pacifistTime(){ return PACIFIST_DEBUG > 0 ? PACIFIST_DEBUG : 60 + 30 * LEVEL; }
 function rhinoReveal(){
-  var r = G.r, p = rhinoTarget(); if (G.over) return;
-  var kinds = ['tapir', 'horse', 'zebra']; r.morph = kinds[Math.floor(Math.random() * kinds.length)]; r.revealed = false;
-  r.state = 'morph'; r.st = 0; r.run = 0; r.jump = 0; r.glow = 0; r.angry = false; r.chargeHit = true; bolts = [];
+  if (G.over) return;
+  var kinds = ['tapir', 'horse', 'zebra'];
+  liveRhinos().forEach(function(r){
+    r.morph = kinds[Math.floor(Math.random() * kinds.length)]; r.revealed = false;
+    r.state = 'morph'; r.st = 0; r.run = 0; r.jump = 0; r.glow = 0; r.angry = false; r.chargeHit = true;
+  });
+  bolts = [];
   G.over = true; G.won = true; G.pacifist = true; G.koT = 0;
   alivePlayers().forEach(function(q){ q.state = 'win'; q.st = 0; });
   sfx('gong', {f: 96, v: .5}); sfx('drum');
   setTimeout(showResult, 6200);
 }
-function explodeRhino(){
+function explodeRhino(r){
   if (!G || scene !== 'fight') return;
-  var r = G.r; r.state = 'gone'; flashA = 1; shake = 30; sfx('boom');
+  r.state = 'gone'; flashA = 1; shake = 30; sfx('boom');
   var rc = rhinoRect(r), cx = (rc.x0 + rc.x1) / 2, cy = (rc.y0 + rc.y1) / 2;
   for (var i = 0; i < 230; i++){
     var x = rnd(rc.x0, rc.x1), y = rnd(rc.y0 + 10, rc.y1 - 5);
@@ -951,7 +964,8 @@ function explodeRhino(){
 
 // ------------------------------------------------------------ update
 function updatePlayer(p, dt){
-  var r = G.r, def = p.def, keys = p.inp.keys, pressed = p.inp.pressed;
+  var def = p.def, keys = p.inp.keys, pressed = p.inp.pressed;
+  var r = nearestRhino(p.x) || G.r;
   p.st += dt; if (p.inv > 0) p.inv -= dt; if (p.flash > 0) p.flash -= dt;
   var busy = p.state === 'punch' || p.state === 'kick' || p.state === 'special' || p.state === 'hurt' || p.state === 'ko' || p.state === 'win';
   var speed = 300 * def.speed;
@@ -970,7 +984,8 @@ function updatePlayer(p, dt){
   // gravity
   if (p.y > 0 || p.vy > 0){ p.vy -= 1500 * (LEVELS[LEVEL].gravity || 1) * dt; p.y += p.vy * dt; if (p.y <= 0){ p.y = 0; p.vy = 0; if (p.state === 'hurt' && p.st > .3){ p.state = 'idle'; } } }
   if (p.state === 'hurt' && p.kx){ p.x += p.kx * dt; p.kx *= Math.pow(0.02, dt); }
-  p.x = clamp(p.x, 40, LW - 40);
+  p.x = clamp(p.x, 40, AW - 40);
+  if (AW > LW) p.x = clamp(p.x, camX + 24, camX + LW - 24);   // stay inside the camera's view on the wide field
   // pose selection
   var pose;
   if (p.state === 'ko') pose = POSE.ko;
@@ -979,15 +994,15 @@ function updatePlayer(p, dt){
   else if (p.state === 'punch'){
     var k = p.alt ? POSE.punch : POSE.punch2; var u = p.st < .1 ? p.st / .1 : 1 - smooth(.18, .32, p.st);
     pose = mixPose(POSE.guard, k, u);
-    if (p.st > .06 && p.st < .2 && !p.attackHit){ var hp = p.stickPt || p.handPt; if (inRect(hp, rhinoRect(r), 14)){ p.attackHit = true; hitRhino(hp, 7, false); } }
+    if (p.st > .06 && p.st < .2 && !p.attackHit){ var hp = p.stickPt || p.handPt, hr = rhinoAt(hp, 14); if (hr){ p.attackHit = true; hitRhino(hr, p, hp, 7, false); } }
     if (p.st > .32) p.state = 'idle';
   } else if (p.state === 'kick'){
     var u2 = p.st < .12 ? 0 : (p.st < .22 ? (p.st - .12) / .1 : 1 - smooth(.34, .5, p.st));
     pose = p.st < .12 ? mixPose(POSE.guard, POSE.kickWind, p.st / .12) : mixPose(POSE.kickWind, POSE.kick, u2);
-    if (p.st > .17 && p.st < .32 && !p.attackHit && inRect(p.footPt, rhinoRect(r), 16)){ p.attackHit = true; hitRhino(p.footPt, 12, true); }
+    if (p.st > .17 && p.st < .32 && !p.attackHit){ var kr = rhinoAt(p.footPt, 16); if (kr){ p.attackHit = true; hitRhino(kr, p, p.footPt, 12, true); } }
     if (p.st > .5) p.state = 'idle';
   } else if (p.state === 'special'){
-    pose = specialUpdate(p, r, dt);
+    pose = specialUpdate(p, dt);
   } else {
     if (moving && onGround){
       var ph = G.t * 11 * def.speed; p.state = 'walk';
@@ -1010,19 +1025,20 @@ function updatePlayer(p, dt){
     } else p.radLabel = false;
   }
 }
-function specialUpdate(p, r, dt){
+function nearestRhino(x){ var rs = liveRhinos(), best = null, bd = 1e9; for (var i = 0; i < rs.length; i++){ var d = Math.abs(rs[i].x - x); if (d < bd){ bd = d; best = rs[i]; } } return best; }
+function specialUpdate(p, dt){
   var sp = p.def.special, kind = sp.kind, st = p.st, pose = POSE.guard;
   if (kind === 'dash' || kind === 'grab'){
     var dur = kind === 'dash' ? .55 : .7, spd = kind === 'dash' ? 900 : 520;
     if (st < .12) pose = mixPose(POSE.guard, POSE.kickWind, st / .12);
-    else if (st < dur - .15){ p.x += p.dashDir * spd * dt; pose = kind === 'dash' ? POSE.punch : POSE.grab; if (!p.attackHit && inRect(kind === 'dash' ? (p.stickPt || p.handPt) : p.headPt, rhinoRect(r), kind === 'dash' ? 20 : 40)){ p.attackHit = true; hitRhino(p.handPt, sp.dmg, true, kind === 'grab' ? 'SUPLEX!' : 'PURGED!'); if (kind === 'grab'){ r.jump = 60; r.tilt = -.6; } } }
+    else if (st < dur - .15){ p.x += p.dashDir * spd * dt; pose = kind === 'dash' ? POSE.punch : POSE.grab; var dr = p.attackHit ? null : rhinoAt(kind === 'dash' ? (p.stickPt || p.handPt) : p.headPt, kind === 'dash' ? 20 : 40); if (dr){ p.attackHit = true; hitRhino(dr, p, p.handPt, sp.dmg, true, kind === 'grab' ? 'SUPLEX!' : 'PURGED!'); if (kind === 'grab'){ dr.jump = 60; dr.tilt = -.6; } } }
     else pose = mixPose(POSE.punch, POSE.guard, smooth(dur - .15, dur, st));
     if (st > dur) p.state = 'idle';
   } else if (kind === 'fly' || kind === 'upper'){
     pose = kind === 'fly' ? POSE.fly : POSE.upper;
     if (kind === 'fly') p.x += p.dashDir * 380 * dt;
     var pt = kind === 'fly' ? p.footPt : p.handPt;
-    if (!p.attackHit && inRect(pt, rhinoRect(r), 22)){ p.attackHit = true; hitRhino(pt, sp.dmg, true, kind === 'fly' ? 'K.O. KICK!' : 'AURORA!'); slowmo = 0; }
+    var fr = p.attackHit ? null : rhinoAt(pt, 22); if (fr){ p.attackHit = true; hitRhino(fr, p, pt, sp.dmg, true, kind === 'fly' ? 'K.O. KICK!' : 'AURORA!'); slowmo = 0; }
     if (p.y <= 0 && p.vy <= 0 && st > .3){ p.state = 'idle'; slowmo = 0; }
   } else if (kind === 'combo' || kind === 'spin'){
     var hits = sp.hits, per = kind === 'combo' ? .17 : .26, idx = Math.floor(st / per);
@@ -1030,7 +1046,7 @@ function specialUpdate(p, r, dt){
     var u = (st - idx * per) / per;
     if (kind === 'combo') pose = mixPose(POSE.guard, idx % 2 ? POSE.punch2 : POSE.punch, u < .5 ? u * 2 : 2 - u * 2);
     else { pose = mixPose(POSE.kickWind, POSE.kick, u < .5 ? u * 2 : 2 - u * 2); p.facing = (idx % 2 ? -1 : 1) * p.dashDir; }
-    if (u > .35 && u < .7 && p.specialHits === idx){ p.specialHits++; var pt2 = kind === 'combo' ? p.handPt : p.footPt; if (inRect(pt2, rhinoRect(r), 18)) hitRhino(pt2, sp.dmg, idx === hits - 1, idx === hits - 1 ? (kind === 'combo' ? 'ESPRESSO!' : 'TORNADO!') : null); }
+    if (u > .35 && u < .7 && p.specialHits === idx){ p.specialHits++; var pt2 = kind === 'combo' ? p.handPt : p.footPt, cr = rhinoAt(pt2, 18); if (cr) hitRhino(cr, p, pt2, sp.dmg, idx === hits - 1, idx === hits - 1 ? (kind === 'combo' ? 'ESPRESSO!' : 'TORNADO!') : null); }
     if (kind === 'spin') p.x += p.dashDir * 120 * dt;
   } else if (kind === 'godzilla'){
     p.inv = Math.max(p.inv, .1); slowmo = 0;
@@ -1044,8 +1060,8 @@ function specialUpdate(p, r, dt){
       if (!p.attackHit){
         p.attackHit = true; shake = 48; impactFrame = 4; flashA = .55; sfx('bighit'); sfx('boom'); sfx('drum');
         for (var gi = 0; gi < 30; gi++) puffs.push({x: p.x + rnd(-460, 460), y: GROUND - rnd(0, 30), t: 0, r: rnd(12, 30)});
-        var rc2 = rhinoRect(r), rcx = (rc2.x0 + rc2.x1) / 2;
-        if (Math.abs(p.x - rcx) < 620){ hitRhino([rcx, GROUND - 90], sp.dmg, true, 'PER-ZILLA!'); r.jump = 110; r.tilt = -.5; if (r.state === 'charge' || r.state === 'paw' || r.state === 'horn'){ r.state = 'stagger'; r.st = 0; } }
+        liveRhinos().forEach(function(r){ var rc2 = rhinoRect(r), rcx = (rc2.x0 + rc2.x1) / 2;
+          if (Math.abs(p.x - rcx) < 620){ hitRhino(r, p, [rcx, GROUND - 90], sp.dmg, true, 'PER-ZILLA!'); r.jump = 110; r.tilt = -.5; if (r.state === 'charge' || r.state === 'paw' || r.state === 'horn'){ r.state = 'stagger'; r.st = 0; } } });
       }
     }
     else pose = mixPose(POSE.slam, POSE.guard, smooth(1.9, 2.5, st));
@@ -1057,9 +1073,9 @@ function specialUpdate(p, r, dt){
       pose = POSE.grab; pose = mixPose(POSE.grab, POSE.punch, .5 + .5 * Math.sin(st * 6));   // rocking motion
       if (!p.attackHit && st > .6){
         p.attackHit = true;
-        var rc3 = rhinoRect(r), rcx3 = (rc3.x0 + rc3.x1) / 2;
-        if (Math.abs(p.x - rcx3) < 420){
-          hitRhino([rcx3, GROUND - 120], sp.dmg, true, 'NAP TIME!');
+        var r = nearestRhino(p.x), rc3 = r ? rhinoRect(r) : null, rcx3 = r ? (rc3.x0 + rc3.x1) / 2 : 1e9;
+        if (r && Math.abs(p.x - rcx3) < 420){
+          hitRhino(r, p, [rcx3, GROUND - 120], sp.dmg, true, 'NAP TIME!');
           if (r.state !== 'ko' && r.state !== 'gone'){ r.state = 'sleep'; r.st = 0; r.run = 0; r.facing = p.x > r.x ? 1 : -1; }
         } else { fx.push({x: p.headPt[0], y: p.headPt[1] - 30, t: 0, life: .7, r: 40, label: 'too far…', big: false}); }
       }
@@ -1068,14 +1084,14 @@ function specialUpdate(p, r, dt){
     if (st > 2.3) p.state = 'idle';
   } else if (kind === 'slam'){
     if (st < .25){ pose = mixPose(POSE.guard, POSE.upper, st / .25); p.y = 40 * Math.sin(st / .25 * 3.14); }
-    else if (st < .4){ pose = POSE.slam; if (!p.attackHit){ p.attackHit = true; shake = 22; sfx('drum'); sfx('bighit'); for (var i = 0; i < 12; i++) puffs.push({x: p.x + rnd(-120, 120), y: GROUND - rnd(0, 20), t: 0, r: rnd(8, 18)}); var rc = rhinoRect(r); if (Math.abs(p.x - (rc.x0 + rc.x1) / 2) < 320){ hitRhino([ (rc.x0 + rc.x1) / 2, GROUND - 60 ], sp.dmg, true, 'SLAM!'); r.jump = 40; } } }
+    else if (st < .4){ pose = POSE.slam; if (!p.attackHit){ p.attackHit = true; shake = 22; sfx('drum'); sfx('bighit'); for (var i = 0; i < 12; i++) puffs.push({x: p.x + rnd(-120, 120), y: GROUND - rnd(0, 20), t: 0, r: rnd(8, 18)}); liveRhinos().forEach(function(r){ var rc = rhinoRect(r); if (Math.abs(p.x - (rc.x0 + rc.x1) / 2) < 320){ hitRhino(r, p, [ (rc.x0 + rc.x1) / 2, GROUND - 60 ], sp.dmg, true, 'SLAM!'); r.jump = 40; } }); } }
     else pose = mixPose(POSE.slam, POSE.guard, smooth(.4, .7, st));
     if (st > .7) p.state = 'idle';
   }
   return pose;
 }
-function updateRhino(dt){
-  var r = G.r, p = rhinoTarget();
+function updateRhino(r, dt){
+  var p = rhinoTarget(r);
   r.st += dt; if (r.flash > 0) r.flash -= dt;
   r.tail = .12 * Math.sin(G.t * 1.4);
   if (r.jump > 0 && r.state !== 'jetstomp'){ r.jump = Math.max(0, r.jump - 140 * dt); }
@@ -1097,7 +1113,7 @@ function updateRhino(dt){
   if (r.state === 'trot'){
     r.head = lerp(r.head, 0, Math.min(1, dt * 3)); r.run = .7; r.phase += dt * 11; r.tilt = .02 * Math.sin(r.phase); r.x += r.dir * 210 * dt;
     if (Math.random() < .25) puffs.push({x: r.x - r.dir * rnd(60, 130), y: GROUND - rnd(0, 20), t: 0, r: rnd(5, 10)});
-    if (r.x < -300 || r.x > LW + 300) r.state = 'gone';
+    if (r.x < -300 || r.x > AW + 300) r.state = 'gone';
     return;
   }
   if (r.state !== 'burst' && r.glow > 0) r.glow = Math.max(0, r.glow - dt * 3);
@@ -1119,7 +1135,7 @@ function updateRhino(dt){
     var pw = Math.max(0, Math.sin(r.st * 6.28 * 1.4)); r.tilt = .03 * pw; r.head = -.12 * pw;
     if (r.st > .15 && Math.floor(r.st * 10) % 3 === 0 && Math.random() < .5) puffs.push({x: r.x + r.facing * 95 + rnd(-20, 20), y: GROUND - rnd(0, 20), t: 0, r: rnd(5, 10)});
     if (r.willFeint && r.st > .45){ r.willFeint = false; r.state = 'feint'; r.st = 0; r.dir = r.facing; sfx('drum'); }
-    else if (r.st > (r.angry ? .55 : .85)){ r.state = 'charge'; r.st = 0; r.dir = r.facing; r.chargeHit = false; G.players.forEach(function(q){ q.trampled = false; }); sfx('drum'); sfx('whoosh'); }
+    else if (r.st > (r.angry ? .55 : .85)){ r.state = 'charge'; r.st = 0; r.dir = r.facing; r.chargeHit = false; r.trampled = {}; sfx('drum'); sfx('whoosh'); }
   } else if (r.state === 'feint'){
     // fake start: lurches forward, then stops and paws again
     r.x += r.dir * 380 * dt * (1 - r.st / .3); r.run = 1; r.phase += dt * 20; r.tilt = .06;
@@ -1156,9 +1172,9 @@ function updateRhino(dt){
     r.x += r.dir * sp * dt; r.run = 1; r.phase += dt * 20; r.tilt = .06 + .03 * Math.sin(r.phase); r.head = -.15;
     if (Math.random() < .6) puffs.push({x: r.x - r.dir * rnd(60, 150), y: GROUND - rnd(0, 30), t: 0, r: rnd(6, 14)});
     // hit the player?
-    G.players.forEach(function(q){ if (!q.trampled && Math.abs(q.x - (r.x + r.dir * 120)) < 110 && q.y < 84 && q.inv <= 0 && !(q.state === 'special' && (q.def.special.kind === 'dash'))){ q.trampled = true; hitPlayer(q, r.angry ? 26 : 20, 'TRAMPLED!', r.dir * 520); } });
-    if ((r.dir > 0 && r.x > LW - 120) || (r.dir < 0 && r.x < 120)){ r.state = 'skid'; r.st = 0; r.x = clamp(r.x, 120, LW - 120); sfx('whoosh'); for (var i = 0; i < 10; i++) puffs.push({x: r.x + r.dir * rnd(-40, 100), y: GROUND - rnd(0, 30), t: 0, r: rnd(10, 22)});
-      if (r.mutant){ for (var hk = 0; hk < 3; hk++) hot.push({x: clamp(r.x - r.dir * (90 + hk * 120), 60, LW - 60), r: rnd(48, 70), t: 0, life: 9}); if (hot.length > 6) hot.splice(0, hot.length - 6); } }
+    G.players.forEach(function(q, qi){ if (!r.trampled[qi] && Math.abs(q.x - (r.x + r.dir * 120)) < 110 && q.y < 84 && q.inv <= 0 && !(q.state === 'special' && (q.def.special.kind === 'dash'))){ r.trampled[qi] = true; hitPlayer(q, r.angry ? 26 : 20, 'TRAMPLED!', r.dir * 520); } });
+    if ((r.dir > 0 && r.x > AW - 120) || (r.dir < 0 && r.x < 120)){ r.state = 'skid'; r.st = 0; r.x = clamp(r.x, 120, AW - 120); sfx('whoosh'); for (var i = 0; i < 10; i++) puffs.push({x: r.x + r.dir * rnd(-40, 100), y: GROUND - rnd(0, 30), t: 0, r: rnd(10, 22)});
+      if (r.mutant){ for (var hk = 0; hk < 3; hk++) hot.push({x: clamp(r.x - r.dir * (90 + hk * 120), 60, AW - 60), r: rnd(48, 70), t: 0, life: 9}); if (hot.length > 6) hot.splice(0, hot.length - 6); } }
   } else if (r.state === 'skid'){
     r.run = .3 * (1 - r.st); r.tilt = -.22 * (1 - smooth(.3, .8, r.st)) * smooth(0, .12, r.st); r.head = .05;
     if (r.st > .9){ r.state = 'idle'; r.st = 0; r.timer = r.angry ? .5 : .9; r.facing = -r.dir; }
@@ -1175,7 +1191,7 @@ function updateRhino(dt){
     r.squash = .06 * Math.exp(-r.st * 8); r.tilt = -.08 * Math.exp(-r.st * 6);
     if (r.st > .28){ r.state = 'idle'; r.st = 0; r.timer = Math.max(.25, (r.angry ? .5 : 1.0) - r.rage * .04); }
   }
-  r.x = clamp(r.x, 100, LW - 100);
+  r.x = clamp(r.x, 100, AW - 100);
 }
 function update(dt){
   if (!G) return;
@@ -1183,7 +1199,8 @@ function update(dt){
   G.t += dt * ts; if (!G.over) G.elapsed += dt;
   if (slowmo > 0) slowmo -= dt;
   G.p.inp.keys = keys; G.p.inp.pressed = pressed;   // player 1 is always the local keyboard / touch pads
-  G.players.forEach(function(q){ updatePlayer(q, dt * ts); }); updateRhino(dt * ts);
+  G.players.forEach(function(q){ updatePlayer(q, dt * ts); }); G.rhinos.forEach(function(r){ updateRhino(r, dt * ts); });
+  updateCamera(dt);
   var hitsTotal = 0; G.players.forEach(function(q){ hitsTotal += q.hitsLanded; });
   if (!G.over && hitsTotal === 0 && G.elapsed >= pacifistTime()) rhinoReveal();
   // effects
@@ -1197,9 +1214,16 @@ function update(dt){
   for (var bi = bolts.length - 1; bi >= 0; bi--){
     var bo = bolts[bi]; bo.t += dt; bo.x += bo.dir * 720 * dt;
     if (!G.over && !bo.hit){ G.players.forEach(function(q){ if (!bo.hit && Math.abs(bo.x - q.x) < 34 && q.y < 60 && !q.ducking && q.inv <= 0){ bo.hit = true; hitPlayer(q, 14, 'ZAPPED!', bo.dir * 300); } }); }
-    if (bo.x < -60 || bo.x > LW + 60 || bo.hit) bolts.splice(bi, 1);
+    if (bo.x < -60 || bo.x > AW + 60 || bo.hit) bolts.splice(bi, 1);
   }
   pressed = {};
+}
+// the camera follows the fighters on a wide field (round 4); on the normal field it stays at 0
+function updateCamera(dt){
+  if (!G || AW <= LW){ camX = 0; return; }
+  var sx = 0, n = 0; G.players.forEach(function(q){ sx += q.x; n++; });
+  var target = clamp(sx / n - LW / 2, 0, AW - LW);
+  camX += (target - camX) * Math.min(1, dt * 6);
 }
 // cosmetic motion that both the host and a co-op guest run locally: snow puffs, DNA bits, the weather
 function tickAmbient(dt){
@@ -1228,7 +1252,10 @@ function drawHUD(){
     ctx.fillText(q.meter >= 100 ? 'SPECIAL READY — ' + q.def.special.name.toUpperCase() : 'SPECIAL ' + Math.floor(q.meter) + '%', 232, 63 + oy);
     ctx.font = '700 15px Nunito, sans-serif';
   });
-  bar(LW - 354, 22, 330, 20, r.hp / r.maxhp, r.space ? (r.angry ? '#ff8ad0' : '#7fe7ff') : r.mutant ? (r.angry ? '#ccff66' : '#8dff5a') : (r.angry ? '#ff5a3c' : '#f2c56b'), '#c8262c', (r.morph && r.revealed) ? ANIMALS[r.morph].label : LEVELS[LEVEL].hud, 'right');
+  G.rhinos.forEach(function(r, i){
+    var oy = i * 42, w = i ? 260 : 330, h = i ? 16 : 20;
+    bar(LW - 24 - w, 22 + oy, w, h, r.hp / r.maxhp, r.space ? (r.angry ? '#ff8ad0' : '#7fe7ff') : r.mutant ? (r.angry ? '#ccff66' : '#8dff5a') : (r.angry ? '#ff5a3c' : '#f2c56b'), '#c8262c', (r.morph && r.revealed) ? ANIMALS[r.morph].label : (LEVELS[LEVEL].hud + (i ? ' #' + (i + 1) : '')), 'right');
+  });
   // timer
   ctx.textAlign = 'center'; ctx.font = '400 30px Bangers, Impact, sans-serif'; ctx.fillStyle = '#eef2f8'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 4;
   var s = Math.floor(G.elapsed); var tt = (s < 10 ? '0' : '') + s;
@@ -1289,12 +1316,17 @@ function draw(){
   var ox = 0, oy = 0;
   if (shake > 0){ ox = (Math.random() - .5) * shake; oy = (Math.random() - .5) * shake; }
   ctx.save(); ctx.translate(ox, oy);
+  // background: on a wide field it scrolls at half speed (parallax), stretched so it always covers the view
+  ctx.save();
+  if (G && AW > LW){ ctx.translate(-camX * .5, 0); ctx.scale(1 + .5 * (AW - LW) / LW, 1); }
   drawBackground(t);
+  ctx.restore();
+  ctx.save(); ctx.translate(G ? -camX : 0, 0);   // world layer
   if (G){
     var p = G.p, rr = G.r;
     // shadows
     ctx.fillStyle = 'rgba(70,80,120,.28)';
-    if (rr.state !== 'gone'){ var rc = rhinoRect(rr); ctx.beginPath(); ctx.ellipse((rc.x0 + rc.x1) / 2, GROUND, (rc.x1 - rc.x0) / 2, 12, 0, 0, 6.283); ctx.fill(); }
+    G.rhinos.forEach(function(r0){ if (r0.state !== 'gone'){ var rc = rhinoRect(r0); ctx.beginPath(); ctx.ellipse((rc.x0 + rc.x1) / 2, GROUND, (rc.x1 - rc.x0) / 2, 12, 0, 0, 6.283); ctx.fill(); } });
     G.players.forEach(function(q){ var js = 1 - Math.min(1, q.y / 220), pscl = (q.state === 'special' && q.scale) ? q.scale : 1; ctx.beginPath(); ctx.ellipse(q.x, GROUND, (40 * js + 8) * pscl, 8 * pscl, 0, 0, 6.283); ctx.fill(); });
     // radioactive hot spots
     for (var hh = 0; hh < hot.length; hh++){
@@ -1303,6 +1335,7 @@ function draw(){
       ctx.fillStyle = hg; ctx.beginPath(); ctx.ellipse(hs.x, GROUND - 2, hs.r, hs.r * .28, 0, 0, 6.283); ctx.fill();
       ctx.fillStyle = 'rgba(220,255,180,' + (.8 * ha) + ')'; for (var bb = 0; bb < 3; bb++){ var bt = (G.t * .8 + bb * .37 + hh * .2) % 1; ctx.beginPath(); ctx.arc(hs.x + Math.sin(bb * 2.1 + hh) * hs.r * .5, GROUND - 4 - bt * 26, 3 * (1 - bt) + 1, 0, 6.283); ctx.fill(); }
     }
+    G.rhinos.forEach(function(rr){
     // radiation glow around a mutant that is about to vent
     if (rr.mutant && rr.glow > 0 && rr.state !== 'gone'){ var gl = ctx.createRadialGradient(rr.x, GROUND - 110, 20, rr.x, GROUND - 110, 260); gl.addColorStop(0, 'rgba(160,255,110,' + (.55 * rr.glow) + ')'); gl.addColorStop(1, 'rgba(160,255,110,0)'); ctx.fillStyle = gl; ctx.fillRect(rr.x - 260, GROUND - 370, 520, 380); }
     if (rr.state === 'jetstomp' && rr.st > .4 && rr.st < 1.4){ var ta = .5 + .5 * Math.sin(G.t * 18); ctx.strokeStyle = 'rgba(255,70,60,' + (.5 + .5 * ta) + ')'; ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(rr.targetX, GROUND - 2, 150, 26, 0, 0, 6.283); ctx.stroke(); ctx.beginPath(); ctx.ellipse(rr.targetX, GROUND - 2, 60, 11, 0, 0, 6.283); ctx.stroke(); }
@@ -1318,8 +1351,9 @@ function draw(){
       ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(hx - .3 * RS, hy - .4 * RS, .45 * RS, .25 * RS, -.6, 3.4, 5.6); ctx.stroke();
       if (rr.glow > 0){ var tipx = rr.x + rr.facing * 2.55 * RS, tipy = GROUND - rr.jump - 1.3 * RS; var lg = ctx.createRadialGradient(tipx, tipy, 2, tipx, tipy, 40 * rr.glow); lg.addColorStop(0, 'rgba(255,90,60,.9)'); lg.addColorStop(1, 'rgba(255,90,60,0)'); ctx.fillStyle = lg; ctx.fillRect(tipx - 50, tipy - 50, 100, 100); }
     }
+    });
     for (var bl = 0; bl < bolts.length; bl++){ var bo2 = bolts[bl]; ctx.strokeStyle = 'rgba(255,120,80,.45)'; ctx.lineWidth = 12; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(bo2.x - bo2.dir * 34, GROUND - 95); ctx.lineTo(bo2.x + bo2.dir * 8, GROUND - 95); ctx.stroke(); ctx.strokeStyle = '#ff4d3a'; ctx.lineWidth = 5; ctx.stroke(); ctx.strokeStyle = '#fff1c0'; ctx.lineWidth = 2; ctx.stroke(); }
-    if (rr.state === 'sleep'){
+    G.rhinos.forEach(function(rr){ if (rr.state !== 'sleep') return;
       // blanket over the back + pacifier + floating Zzz
       var rc4 = rhinoRect(rr), bx0 = rr.x - rr.facing * 20, bw = 150;
       ctx.fillStyle = '#ffd1e0'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 3;
@@ -1331,19 +1365,22 @@ function draw(){
       ctx.font = '400 30px Bangers, Impact, sans-serif'; ctx.fillStyle = '#eef2f8'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 4;
       for (var zi = 0; zi < 3; zi++){ var zt = (G.t * .7 + zi * .33) % 1; var zx = rr.x + rr.facing * 1.6 * RS + zi * 12 + zt * 30, zy = GROUND - 2.0 * RS - zt * 80; ctx.globalAlpha = 1 - zt; ctx.strokeText('z', zx, zy); ctx.fillText('z', zx, zy); }
       ctx.globalAlpha = 1;
-    }
+    });
     for (var pi = G.players.length - 1; pi >= 0; pi--){ var q2 = G.players[pi];
       if (q2.inv > 0 && q2.state !== 'ko' && q2.state !== 'special' && Math.floor(G.t * 20) % 2 === 0) ctx.globalAlpha = .4;
       fighterDraw(q2, t); ctx.globalAlpha = 1; }
-    // speed lines during charge / fly
-    var anyFly = G.players.some(function(q){ return q.state === 'special' && q.def.special.kind === 'fly'; });
-    if (rr.state === 'charge' || anyFly){
-      ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 2;
-      for (var i = 0; i < 9; i++){ var y = 120 + i * 40 + (i * 37) % 23, x0 = ((i * 211 + G.t * 900) % (LW + 200)) - 100; ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + 80 + i * 10, y); ctx.stroke(); }
-    }
     // radiation burst rings
     for (var ri = 0; ri < rings.length; ri++){ var rn = rings[ri], ru = rn.t / .6; ctx.strokeStyle = (rn.grey ? 'rgba(200,205,215,' : 'rgba(160,255,110,') + (1 - ru) + ')'; ctx.lineWidth = 14 * (1 - ru) + 2; ctx.beginPath(); ctx.ellipse(rn.x, GROUND - 60, 40 + 420 * ru, 20 + 150 * ru, 0, 0, 6.283); ctx.stroke(); }
     drawFX();
+  }
+  ctx.restore();   // end of the world layer
+  if (G){
+    // speed lines during a charge / the flying kick (screen space)
+    var anyFly = G.players.some(function(q){ return q.state === 'special' && q.def.special.kind === 'fly'; }), anyCharge = G.rhinos.some(function(r0){ return r0.state === 'charge'; });
+    if (anyCharge || anyFly){
+      ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 2;
+      for (var i = 0; i < 9; i++){ var y = 120 + i * 40 + (i * 37) % 23, x0 = ((i * 211 + G.t * 900) % (LW + 200)) - 100; ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + 80 + i * 10, y); ctx.stroke(); }
+    }
   }
   // snowflakes (round 1), rising embers (round 2) or space dust streaming past (round 3)
   ctx.fillStyle = sp ? 'rgba(200,220,255,.5)' : (wl ? 'rgba(255,170,80,.75)' : '#f6f9ff');
@@ -1357,13 +1394,14 @@ function draw(){
     if (slowmo > 0){ ctx.fillStyle = 'rgba(40,60,120,.22)'; ctx.fillRect(0, 0, LW, LH); }
     if (impactFrame > 0){ ctx.globalCompositeOperation = 'difference'; ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, LW, LH); ctx.globalCompositeOperation = 'source-over'; }
     if (flashA > 0){ ctx.fillStyle = 'rgba(255,255,255,' + flashA + ')'; ctx.fillRect(0, 0, LW, LH); }
+    var allGone = G.rhinos.every(function(r0){ return r0.state === 'gone'; });
     if (G.over && G.won && G.pacifist){
-      if (G.r.state === 'morph' && !G.r.revealed) bigText('?!', LW / 2, 200, 120);
-      else if (G.r.state !== 'gone') bigText('JUST A ' + ANIMALS[G.r.morph].name.toUpperCase(), LW / 2, 200, 90);
+      if (G.rhinos.some(function(r0){ return r0.state === 'morph' && !r0.revealed; })) bigText('?!', LW / 2, 200, 120);
+      else if (!allGone) bigText('JUST A ' + G.rhinos.filter(function(r0){ return r0.morph; }).map(function(r0){ return ANIMALS[r0.morph].name.toUpperCase(); }).join(' & A '), LW / 2, 200, G.rhinos.length > 1 ? 64 : 90);
       else bigText('FALSE POSITIVE', LW / 2, 190, 78);
     }
-    else if (G.over && G.won && G.r.state !== 'gone'){ bigText('K.O.!', LW / 2, 200, 120); }
-    else if (G.over && G.won && G.r.state === 'gone'){ bigText('FALSE POSITIVE', LW / 2, 190, 78); }
+    else if (G.over && G.won && !allGone){ bigText('K.O.!', LW / 2, 200, 120); }
+    else if (G.over && G.won && allGone){ bigText('FALSE POSITIVE', LW / 2, 190, 78); }
     if (G.over && !G.won){ bigText('TRAMPLED', LW / 2, 200, 100); }
     if (!G.over && G.elapsed < 1.6){ var a = 1 - smooth(1.1, 1.6, G.elapsed); ctx.globalAlpha = a; bigText(G.elapsed < .8 ? LEVELS[LEVEL].name : 'FIGHT!', LW / 2, 220, 96); ctx.globalAlpha = 1; }
     if (wl){
@@ -1616,7 +1654,8 @@ function hostTick(dt){
 function guestTick(dt){
   if (!G) return;
   tickAmbient(dt);
-  if (G.r.state === 'charge' && Math.random() < .6) puffs.push({x: G.r.x - G.r.dir * rnd(60, 150), y: GROUND - rnd(0, 30), t: 0, r: rnd(6, 14)});
+  G.rhinos.forEach(function(r){ if (r.state === 'charge' && Math.random() < .6) puffs.push({x: r.x - r.dir * rnd(60, 150), y: GROUND - rnd(0, 30), t: 0, r: rnd(6, 14)}); });
+  updateCamera(dt);
   var kl = [], pl = [], k;
   for (k in keys) if (keys[k]) kl.push(k);
   for (k in pressed) if (pressed[k]) pl.push(k);
@@ -1633,7 +1672,7 @@ function packR(r){ return [r1(r.x), r.facing, r.hp, r.state, r2(r.st), r1(r.jump
 function unpackR(r, a){ r.x = a[0]; r.facing = a[1]; r.hp = a[2]; r.state = a[3]; r.st = a[4]; r.jump = a[5]; r.tilt = a[6]; r.head = a[7]; r.squash = a[8]; r.run = a[9]; r.phase = a[10]; r.tail = a[11]; r.flash = a[12]; r.glow = a[13]; r.angry = !!a[14]; r.dir = a[15]; r.targetX = a[16]; r.morph = a[17] || null; r.revealed = !!a[18]; r.willFeint = !!a[19]; }
 function sendSnap(){
   var snap = {t:'s', T: r2(G.t), e: r2(G.elapsed), o: G.over ? 1 : 0, w: G.won ? 1 : 0, pf: G.pacifist ? 1 : 0,
-    P: G.players.map(packP), R: packR(G.r),
+    P: G.players.map(packP), R: G.rhinos.map(packR),
     fx: fx.map(function(e){ return [r1(e.x), r1(e.y), r2(e.t), e.life, e.r, e.label, e.big ? 1 : 0, e.red ? 1 : 0]; }),
     hot: hot.map(function(h){ return [r1(h.x), r1(h.r), r2(h.t), h.life]; }),
     rg: rings.map(function(g){ return [r1(g.x), r2(g.t), g.grey ? 1 : 0]; }),
@@ -1645,8 +1684,10 @@ function applySnap(d){
   if (!G || !d.P) return;
   G.t = d.T; G.elapsed = d.e; G.over = !!d.o; G.won = !!d.w; G.pacifist = !!d.pf;
   for (var i = 0; i < G.players.length && i < d.P.length; i++) unpackP(G.players[i], d.P[i]);
-  var r = G.r, wasGone = r.state === 'gone'; unpackR(r, d.R);
-  if (r.state === 'gone' && !wasGone){ r.state = 'ko'; explodeRhino(); }   // the DNA burst is local
+  for (var ri = 0; ri < G.rhinos.length && ri < d.R.length; ri++){
+    var r = G.rhinos[ri], wasGone = r.state === 'gone'; unpackR(r, d.R[ri]);
+    if (r.state === 'gone' && !wasGone){ r.state = 'ko'; explodeRhino(r); }   // the DNA burst is local
+  }
   fx = d.fx.map(function(a){ return {x: a[0], y: a[1], t: a[2], life: a[3], r: a[4], label: a[5], big: !!a[6], red: !!a[7]}; });
   hot = d.hot.map(function(a){ return {x: a[0], r: a[1], t: a[2], life: a[3]}; });
   rings = d.rg.map(function(a){ return {x: a[0], t: a[1], grey: !!a[2]}; });
@@ -1721,22 +1762,25 @@ function showResult(){
     var sc = scoreFor(G); $('scoreLine').textContent = 'SCORE ' + sc.toLocaleString();
     $('playerName').value = p.def.name;
     if (G.pacifist){
-      var an = ANIMALS[r.morph], readLabel = 'Rhinoceros' + (LEVEL === 2 ? ' (wrong sample)' : LEVEL ? ' (contaminant match)' : ' (98.7%)');
+      var animals = G.rhinos.filter(function(r0){ return r0.morph; }).map(function(r0){ return ANIMALS[r0.morph].name; }).join(' + '), readLabel = 'Rhinoceros' + (LEVEL === 3 ? ' ×2 (PCR duplicate)' : LEVEL === 2 ? ' (wrong sample)' : LEVEL ? ' (contaminant match)' : ' (98.7%)');
       $('resBig').textContent = 'PEACE'; $('resTitle').textContent = 'FALSE POSITIVE RECLASSIFIED';
-      $('resReadout').innerHTML = '> read: <b>' + readLabel + '</b> — status: <b>RECLASSIFIED → ' + an.name + '</b><br>> fighter: <b>' + teamName(G) + '</b> · waited <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>0</b> · pacifist bonus: <b>+2500</b><br>> lesson: you never had to hit it. Look at the alignment long enough and the rhino is a ' + an.name + ' — a related sequence that scored high, not a rhino. Never was.' + (LEVEL < LEVELS.length - 1 ? '<br>> next: round ' + (LEVEL + 2) + '.' : '<br>> dataset clean. The crew can go home.');
+      $('resReadout').innerHTML = '> read: <b>' + readLabel + '</b> — status: <b>RECLASSIFIED → ' + animals + '</b><br>> fighter: <b>' + teamName(G) + '</b> · waited <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>0</b> · pacifist bonus: <b>+2500</b><br>> lesson: you never had to hit it. Look at the alignment long enough and the rhino is a ' + animals + ' — a related sequence that scored high, not a rhino. Never was.' + (LEVEL < LEVELS.length - 1 ? '<br>> next: round ' + (LEVEL + 2) + '.' : '<br>> dataset clean. The crew can go home.');
     } else if (LEVEL === 0){
       $('resBig').textContent = 'K.O.!'; $('resTitle').textContent = 'FALSE POSITIVE REMOVED';
       $('resReadout').innerHTML = '> read: <b>Rhinoceros (98.7%)</b> — status: <b>REMOVED</b><br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · finisher: <b>' + p.def.special.name + '</b><br>> no rhinos were harmed. It was one short read that looked like a horse.<br>> next: the reference genome itself is <b>contaminated</b>. Round 2.';
     } else if (LEVEL === 2){
       $('resBig').textContent = 'CLEAN'; $('resTitle').textContent = 'BARCODE CORRECTED';
-      $('resReadout').innerHTML = '> hopped read: <b>Rhinoceros (wrong sample)</b> — status: <b>SENT HOME</b><br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · round bonus: <b>+3000</b><br>> lesson: one read can hop onto another sample\'s barcode during sequencing and appear where it never was. Dataset clean. The crew can go home.';
+      $('resReadout').innerHTML = '> hopped read: <b>Rhinoceros (wrong sample)</b> — status: <b>SENT HOME</b><br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · round bonus: <b>+3000</b><br>> lesson: one read can hop onto another sample\'s barcode during sequencing and appear where it never was.<br>> next: the read shows up <b>twice</b>. Round 4.';
+    } else if (LEVEL === 3){
+      $('resBig').textContent = 'CLEAN'; $('resTitle').textContent = 'DUPLICATES REMOVED';
+      $('resReadout').innerHTML = '> duplicate reads: <b>Rhinoceros ×2 (PCR duplicate)</b> — status: <b>REMOVED</b><br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · round bonus: <b>+4500</b><br>> lesson: PCR copies of one molecule are not independent evidence. Deduplicate before you count. Dataset clean. The crew can go home.';
     } else {
       $('resBig').textContent = 'CLEAN'; $('resTitle').textContent = 'REFERENCE DECONTAMINATED';
       $('resReadout').innerHTML = '> mutant read: <b>Rhinoceros (contaminant match)</b> — status: <b>REMOVED</b><br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · round bonus: <b>+1500</b><br>> lesson: a read can match a contaminant inside a reference genome, not the species the genome is named after.<br>> next: the read is on the move. Round 3.';
     }
   } else {
     $('resBig').textContent = 'TRAMPLED'; $('resTitle').textContent = 'THE RHINO STAYS IN THE DATASET';
-    $('resReadout').innerHTML = '> read: <b>Rhinoceros' + (LEVEL === 2 ? ' (wrong sample)' : LEVEL ? ' (contaminant match)' : ' (98.7%)') + '</b> — status: <b>still there</b><br>> fighter: <b>' + teamName(G) + '</b> · survived <b>' + G.elapsed.toFixed(1) + ' s</b> · rhino HP left: <b>' + r.hp + '</b><br>> tip: jump the charge when you see the <b>!</b>, duck the horn sweep, and hit it while it skids (or sleeps).';
+    $('resReadout').innerHTML = '> read: <b>Rhinoceros' + (LEVEL === 3 ? ' ×2 (PCR duplicate)' : LEVEL === 2 ? ' (wrong sample)' : LEVEL ? ' (contaminant match)' : ' (98.7%)') + '</b> — status: <b>still there</b><br>> fighter: <b>' + teamName(G) + '</b> · survived <b>' + G.elapsed.toFixed(1) + ' s</b> · rhino HP left: <b>' + G.rhinos.map(function(r0){ return r0.hp; }).join(' + ') + '</b><br>> tip: jump the charge when you see the <b>!</b>, duck the horn sweep, and hit it while it skids (or sleeps).';
   }
   show('result'); scene = 'result';
 }
