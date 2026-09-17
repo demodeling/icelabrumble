@@ -10,6 +10,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC, VIDS = os.path.join(ROOT, 'src'), os.path.join(ROOT, 'assets', 'videos')
 DIST = os.path.join(ROOT, 'docs' if '--docs' in sys.argv else 'dist')
 FIGHTERS = ['albertas', 'bjorn', 'bea', 'annamia', 'per', 'marco', 'jose', 'mike', 'daniel']
+CLIPS = FIGHTERS + ['intro']   # + the menu clip (tools/video/render_intro.sh)
 inline = '--inline' in sys.argv
 try:
     version = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'], cwd=ROOT, stderr=subprocess.DEVNULL).decode().strip()
@@ -19,11 +20,11 @@ shutil.rmtree(DIST, ignore_errors=True)
 shutil.copytree(SRC, DIST)
 html = open(os.path.join(SRC, 'index.html'), encoding='utf-8').read()
 if inline:
-    data = {c: base64.b64encode(open(os.path.join(VIDS, c + '.mp4'), 'rb').read()).decode() for c in FIGHTERS}
+    data = {c: base64.b64encode(open(os.path.join(VIDS, c + '.mp4'), 'rb').read()).decode() for c in CLIPS}
     html = html.replace('__VIDEOS__', json.dumps({'mode': 'inline', 'data': data}))
 else:
     os.makedirs(os.path.join(DIST, 'assets', 'videos'))
-    for c in FIGHTERS:
+    for c in CLIPS:
         shutil.copy(os.path.join(VIDS, c + '.mp4'), os.path.join(DIST, 'assets', 'videos', c + '.mp4'))
     html = html.replace('__VIDEOS__', json.dumps({'mode': 'files', 'base': 'assets/videos/'}))
 html = html.replace('__VERSION__', version)
@@ -31,4 +32,4 @@ open(os.path.join(DIST, 'index.html'), 'w', encoding='utf-8').write(html)
 sw = open(os.path.join(SRC, 'sw.js')).read().replace('__VERSION__', version)
 open(os.path.join(DIST, 'sw.js'), 'w').write(sw)
 open(os.path.join(DIST, '.nojekyll'), 'w').write('')
-print('built %s/ (version %s, %s videos)' % (os.path.basename(DIST), version, 'inline' if inline else 'files'))
+print('built %s/ (version %s, %d clips as %s)' % (os.path.basename(DIST), version, len(CLIPS), 'inline' if inline else 'files'))

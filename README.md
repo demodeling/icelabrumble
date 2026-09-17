@@ -50,7 +50,7 @@ Keyboard: ← → / A D move · ↑ / W / space jump · ↓ / S duck · **J** pu
 
 ## Videos
 
-`assets/videos/<fighter>.mp4` are the 20-second "False positive" clips, one per fighter, rendered by `tools/video/render_all.sh` (Python 3 + Pillow + numpy + ffmpeg; the face sprites come from the game's own drawing code via `export_sprites.js`, which needs Playwright). `assets/trailer/trailer.mp4` is the 20-second trailer.
+`assets/videos/<fighter>.mp4` are the 20-second "False positive" clips, one per fighter, rendered by `tools/video/render_all.sh` (Python 3 + Pillow + numpy + ffmpeg; the face sprites come from the game's own drawing code via `export_sprites.js`, which needs Playwright). `assets/videos/intro.mp4` is the menu clip behind the ▶ FALSE POSITIVE? button (the crew member looks back, walks on, touches the rhino and it turns out to be a zebra), rendered by `tools/video/render_intro.sh`. `assets/trailer/trailer.mp4` is the 20-second trailer.
 
 ## High scores
 

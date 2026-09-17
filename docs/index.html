@@ -146,7 +146,7 @@
     <div id="title" class="overlay"><div class="panel">
       <h1>SWEBITS<br>RUMBLE</h1>
       <p class="sub">An airborne eDNA sampler in Kiruna reported a rhino. One read, 98.7% match. Somebody has to remove it from the dataset by hand.</p>
-      <div class="row"><button class="btn" id="btnStart">CHOOSE YOUR FIGHTER</button><button class="btn secondary" id="btnScores">HIGH SCORES</button></div>
+      <div class="row"><button class="btn" id="btnStart">CHOOSE YOUR FIGHTER</button><button class="btn secondary" id="btnScores">HIGH SCORES</button><button class="btn secondary" id="btnIntro">▶ FALSE POSITIVE?</button></div>
       <p class="small" id="titleBest"></p>
       <p class="small">Sound on for the full kung-fu experience. Works on Safari, iPhone and iPad — tap ⛶ FULLSCREEN for a widescreen arena on your phone.</p>
     </div></div>
@@ -1474,9 +1474,9 @@ function showResult(){
   }
   show('result'); scene = 'result';
 }
-var VIDEOS = {"mode": "files", "base": "assets/videos/"}, videoURLs = {};   // one 20 s clip per fighter: {mode:'files', base:'assets/videos/'} or {mode:'inline', data:{key: base64}}
-function openVideo(){
-  var v = $('theVideo'), key = ROSTER[selected].face;
+var VIDEOS = {"mode": "files", "base": "assets/videos/"}, videoURLs = {};   // one 20 s clip per fighter plus 'intro' (the menu clip): {mode:'files', base:'assets/videos/'} or {mode:'inline', data:{key: base64}}
+function openVideo(key){
+  var v = $('theVideo');
   if (!videoURLs[key]){
     if (VIDEOS.mode === 'files'){ videoURLs[key] = VIDEOS.base + key + '.mp4'; }
     else {
@@ -1493,7 +1493,8 @@ function openVideo(){
   var pr = v.play(); if (pr && pr.catch) pr.catch(function(){});
 }
 function closeVideo(){ var v = $('theVideo'); v.pause(); $('videoBox').hidden = true; }
-$('btnVideo').addEventListener('click', function(){ unlockAudio(); openVideo(); });
+$('btnVideo').addEventListener('click', function(){ unlockAudio(); openVideo(ROSTER[selected].face); });
+$('btnIntro').addEventListener('click', function(){ unlockAudio(); openVideo('intro'); });
 $('btnVideoClose').addEventListener('click', closeVideo);
 $('theVideo').addEventListener('ended', function(){ setTimeout(closeVideo, 800); });
 $('btnScores').addEventListener('click', function(){ unlockAudio(); openScores(); });
