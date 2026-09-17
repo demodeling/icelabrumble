@@ -3,10 +3,12 @@
 
   python3 tools/build.py            -> dist/ with videos served as files (GitHub Pages)
   python3 tools/build.py --inline   -> dist/index.html with the videos embedded as base64 (single-file build, e.g. for a claude.ai artifact)
+  python3 tools/build.py --docs     -> build into docs/ instead of dist/ (for GitHub Pages "deploy from a branch", main /docs)
 """
 import base64, json, os, shutil, subprocess, sys, time
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRC, DIST, VIDS = os.path.join(ROOT, 'src'), os.path.join(ROOT, 'dist'), os.path.join(ROOT, 'assets', 'videos')
+SRC, VIDS = os.path.join(ROOT, 'src'), os.path.join(ROOT, 'assets', 'videos')
+DIST = os.path.join(ROOT, 'docs' if '--docs' in sys.argv else 'dist')
 FIGHTERS = ['albertas', 'bjorn', 'bea', 'annamia', 'per', 'marco', 'jose', 'mike', 'daniel']
 inline = '--inline' in sys.argv
 try:
@@ -29,4 +31,4 @@ open(os.path.join(DIST, 'index.html'), 'w', encoding='utf-8').write(html)
 sw = open(os.path.join(SRC, 'sw.js')).read().replace('__VERSION__', version)
 open(os.path.join(DIST, 'sw.js'), 'w').write(sw)
 open(os.path.join(DIST, '.nojekyll'), 'w').write('')
-print('built dist/ (version %s, %s videos)' % (version, 'inline' if inline else 'files'))
+print('built %s/ (version %s, %s videos)' % (os.path.basename(DIST), version, 'inline' if inline else 'files'))

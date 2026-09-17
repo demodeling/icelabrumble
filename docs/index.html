@@ -1338,7 +1338,7 @@ function showResult(){
   }
   show('result'); scene = 'result';
 }
-var VIDEOS = __VIDEOS__, videoURLs = {};   // one 20 s clip per fighter: {mode:'files', base:'assets/videos/'} or {mode:'inline', data:{key: base64}}
+var VIDEOS = {"mode": "files", "base": "assets/videos/"}, videoURLs = {};   // one 20 s clip per fighter: {mode:'files', base:'assets/videos/'} or {mode:'inline', data:{key: base64}}
 function openVideo(){
   var v = $('theVideo'), key = ROSTER[selected].face;
   if (!videoURLs[key]){

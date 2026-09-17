@@ -4,20 +4,30 @@ An airborne eDNA sampler in Kiruna reported a rhino. One read, 98.7 % match. Som
 
 A single-page HTML5 canvas fighter: pick one of the nine Swebits crew members, dodge the charge, duck the horn, fill the meter, land your special (Godzilla Smash, Babysitter Mode, Finger Guns…) and watch the false positive explode into DNA. Works in Safari, Chrome, iPhone, iPad and desktop; installable as a home-screen app; keyboard or touch.
 
-## Put it on GitHub Pages (5 minutes)
+## Put it on GitHub Pages
 
-1. Create a new repository on GitHub (public is simplest for Pages). Do not add a README — this folder has one.
-2. In this folder:
-   ```sh
-   git init
-   git add .
-   git commit -m "Swebits Cutout Rumble"
-   git branch -M main
-   git remote add origin https://github.com/<you>/<repo>.git
-   git push -u origin main
-   ```
-3. On GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-4. The workflow **Build, test and deploy to GitHub Pages** runs on every push to `main` (test → build → deploy). The game appears at `https://<you>.github.io/<repo>/` after the first run (1–3 minutes). Check the **Actions** tab if it does not.
+The repository page on github.com only ever shows this README — that is normal. The playable game is served by **GitHub Pages** at a different address:
+
+    https://<your-username>.github.io/<repo-name>/
+
+Two ways to switch it on. Either works; A is automatic, B needs no Actions at all.
+
+**A. GitHub Actions (recommended — rebuilds on every push)**
+
+1. Push this folder to a new repository (`git init`, `git add .`, `git commit -m "Swebits Cutout Rumble"`, `git branch -M main`, `git remote add origin …`, `git push -u origin main`).
+2. On GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+3. Open the **Actions** tab. The workflow *Build, test and deploy to GitHub Pages* should be running (or run it with *Run workflow* if it isn't). It takes 2–4 minutes the first time because it installs a browser for the tests.
+4. When the job is green, the game is at `https://<your-username>.github.io/<repo-name>/`. The Actions run also prints the URL under the *deploy* job.
+
+**B. Deploy from a branch (no Actions)**
+
+The `docs/` folder in this repo is a pre-built copy of the game.
+
+1. **Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch: `main`, Folder: `/docs` → Save**.
+2. Wait a minute; the game is at `https://<your-username>.github.io/<repo-name>/`.
+3. After changing `src/`, run `python3 tools/build.py --docs` and commit `docs/` again.
+
+If the page shows a 404 for a few minutes after enabling, that is GitHub warming up — reload. If the Actions tab says workflows are disabled for the repository, use option B or enable them under **Settings → Actions → General**.
 
 ## Develop locally
 
@@ -32,7 +42,7 @@ Edit `src/index.html` — everything (CSS, JS, fighters, rhino AI, sound) is in 
 
 ## Rounds
 
-Round 1 is the Kiruna snowfield. Beat it and Round 2 opens: the Wasteland, where the reference genome is contaminated — a mutant rhino that feints before charging, leaves radioactive hot spots when it skids, and vents radiation up close. Tick *Start at Round 2* on the fighter screen to jump straight there.
+Round 1 is the Kiruna snowfield. Beat it and Round 2 opens: the Wasteland, where the reference genome is contaminated — a mutant rhino that feints before charging, leaves radioactive hot spots when it skids, and vents radiation up close. Beat that and Round 3 opens: the Asteroid — low gravity, a helmeted space rhino with a horn laser and a jetpack stomp, drifting into the wrong sample (index hopping). Use *Start at* on the fighter screen to jump straight to any round.
 
 ## Controls
 
