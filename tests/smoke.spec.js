@@ -314,3 +314,84 @@ test('co-op falls back to the Supabase relay when P2P never connects', async ({ 
   expect(errors).toEqual([]);
   await ctx.close();
 });
+
+// ---------------------------------------------------------------- regressions from the QA sweep
+test('leaderboard names never become markup in the roster cards', async ({ page }) => {
+  const rows = [{ id: 1, name: '<img src=x onerror=window.__X=1>', fighter: 'Per', score: 9999, time_s: 10, level: 1, created_at: '2026-09-17T10:00:00Z' },
+                { id: 2, name: '<style>*{zoom:9}', fighter: 'Bea', score: 9998, time_s: 10, level: 1, created_at: '2026-09-17T10:00:00Z' }];
+  await page.route(/\/rest\/v1\//, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(rows) }));
+  await page.goto(URL);
+  await page.click('#btnStart');
+  await expect(page.locator('.fighter:nth-child(5) .best')).toContainText('<img src=x');       // shown as text
+  expect(await page.evaluate(() => window.__X === 1)).toBe(false);
+  expect(await page.evaluate(() => getComputedStyle(document.body).zoom)).not.toBe('9');
+  await expect(page.locator('.fighter:nth-child(5) .stats')).toBeVisible();                        // card markup intact
+});
+
+test('a finished round\'s timers do not fire into the next fight', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.route(/\/rest\/v1\//, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+  await page.goto(URL + '#pacifist=2');
+  await page.click('#btnStart'); await page.click('.fighter:nth-child(5)'); await page.click('#btnFight');
+  await page.waitForTimeout(3200);                    // reveal at 2 s; its result screen is armed for 6.2 s
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#title')).toBeVisible();
+  await page.click('#btnStart'); await page.click('.fighter:nth-child(2)'); await page.click('#btnFight');   // a different fighter: tapping the selected one starts at once
+  await page.waitForTimeout(3600);                    // the stale timer would have fired by now
+  await expect(page.locator('#result')).toBeHidden();
+  await expect(page.locator('#result')).toBeVisible({ timeout: 8000 });   // this fight's own ending
+  await expect(page.locator('#resBig')).toHaveText('PEACE');
+  expect(errors).toEqual([]);
+});
+
+test('phone portrait: the result screen buttons are reachable without scrolling', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  const page = await ctx.newPage();
+  await page.route(/\/rest\/v1\//, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+  await page.goto(URL + '#pacifist=2');
+  await page.tap('#btnStart'); await page.tap('.fighter:nth-child(5)'); await page.tap('#btnFight');
+  await expect(page.locator('#result')).toBeVisible({ timeout: 12000 });
+  const stage = await page.locator('#stage').boundingBox(), btn = await page.locator('#btnAgain').boundingBox();
+  expect(btn.y + btn.height).toBeLessThanOrEqual(stage.y + stage.height + 1);
+  await page.tap('#btnAgain');                        // and it works
+  await expect(page.locator('#result')).toBeHidden();
+  await ctx.close();
+});
+
+test('co-op: a third player on the same code is told the room is full and never joins the round', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 1100, height: 720 } });
+  const pages = { a: await ctx.newPage(), b: await ctx.newPage(), c: await ctx.newPage() };
+  const errors = []; Object.values(pages).forEach(p => p.on('pageerror', e => errors.push(e.message)));
+  for (const [id, p] of Object.entries(pages)) {
+    // like the real data channel, a targeted send reaches that one page only; an untargeted one reaches everybody else
+    await p.exposeFunction('__coopOut', async (json, target) => { for (const [oid, o] of Object.entries(pages)) if (oid !== id && (!target || target === oid)) await o.evaluate(([j, from]) => window.__coopIn(j, from), [json, id]).catch(() => {}); });
+    await p.addInitScript(([id]) => {
+      window.__coopTransport = { join(code, h) {
+        window.__coopIn = (json, from) => h.onData(JSON.parse(json), from);
+        window.__coopPeer = pid => h.onPeerJoin(pid); window.__coopPeerLeave = pid => h.onPeerLeave(pid);
+        return { send: (m, target) => window.__coopOut(JSON.stringify(m), target || null), selfId: id, leave() {} };
+      }, noRelay: true };
+    }, [id]);
+    await p.route(/\/rest\/v1\//, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await p.goto(URL); await p.click('#btnCoop'); await p.fill('#coopCode', 'kiruna'); await p.click('#btnCoopJoin');
+    await expect(p.locator('#select')).toBeVisible();
+  }
+  const { a, b, c } = pages;
+  await a.evaluate(() => window.__coopPeer('b')); await b.evaluate(() => window.__coopPeer('a'));        // a and b pair up
+  await expect(a.locator('#selCoop')).toContainText('you are the host');
+  await a.evaluate(() => window.__coopPeer('c')); await b.evaluate(() => window.__coopPeer('c'));
+  await c.evaluate(() => window.__coopPeer('a')); await c.evaluate(() => window.__coopPeer('b'));      // c arrives late
+  await expect(c.locator('#selCoop')).toContainText('already has two players');
+  await a.click('.fighter:nth-child(5)'); await a.click('#btnFight');
+  await b.click('.fighter:nth-child(2)'); await b.click('#btnFight');
+  await expect(a.locator('#select')).toBeHidden(); await expect(b.locator('#select')).toBeHidden();
+  await c.waitForTimeout(800);
+  await expect(c.locator('#select')).toBeVisible();                                                     // c never got a start
+  await a.evaluate(() => window.__coopPeerLeave('c')); await b.evaluate(() => window.__coopPeerLeave('c'));   // c leaves
+  await b.keyboard.press('ArrowRight'); await b.waitForTimeout(1500);
+  await expect(a.locator('#select')).toBeHidden(); await expect(b.locator('#select')).toBeHidden();     // the real pair keeps fighting
+  await expect(a.locator('#result')).toBeHidden(); await expect(b.locator('#result')).toBeHidden();
+  expect(errors).toEqual([]);
+  await ctx.close();
+});
