@@ -139,6 +139,72 @@ test('versus (beta): a player-controlled rhino charges and hurts the other side'
   expect(errors).toEqual([]);
 });
 
+test('the horn sweep covers the whole horn: it connects at the chin and stops at the tip', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  const hpAfterSweep = async (d) => {
+    await page.goto(URL);
+    await page.click('#btnStart');
+    await page.click('#btnFight');
+    await page.waitForTimeout(400);
+    return page.evaluate(async (dd) => {
+      const g = window.__fight(), r = g.rhinos[0];
+      r.timer = 99999; r.x = 460; g.p.x = 460 + dd; g.p.hp = 100; g.p.inv = 0;
+      r.facing = dd > 0 ? 1 : -1; r.state = 'horn'; r.st = 0; r.chargeHit = false;
+      await new Promise(res => setTimeout(res, 900));
+      return window.__fight().p.hp;
+    }, d);
+  };
+  expect(await hpAfterSweep(60)).toBe(85);     // standing inside the rhino used to be a safe spot
+  expect(await hpAfterSweep(-60)).toBe(85);
+  expect(await hpAfterSweep(200)).toBe(85);
+  expect(await hpAfterSweep(330)).toBe(100);   // and it used to reach far past the drawn horn
+  expect(errors).toEqual([]);
+});
+
+test('a cornered rhino sweeps instead of charging on the spot', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  await page.click('#btnStart');
+  await page.click('#btnFight');
+  await page.waitForTimeout(400);
+  const seen = await page.evaluate(async () => {
+    const g = window.__fight(); g.p.x = 40; g.rhinos[0].x = 120;
+    const states = {}; let last = null, cx = 0, zeroTravel = 0;
+    await new Promise(res => { let n = 0; const t = setInterval(() => {
+      const G = window.__fight(); if (!G) return; const r = G.rhinos[0];
+      G.p.x = 40; G.p.hp = 100;                        // pinned in the corner, kept alive
+      if (r.state === 'charge' && last !== 'charge') cx = r.x;
+      if (last === 'charge' && r.state !== 'charge' && Math.abs(r.x - cx) < 5) zeroTravel++;
+      states[r.state] = (states[r.state] || 0) + 1; last = r.state;
+      if (++n > 300) { clearInterval(t); res(); }
+    }, 16); });
+    return { states: Object.keys(states), zeroTravel };
+  });
+  expect(seen.zeroTravel).toBe(0);
+  expect(seen.states).toContain('horn');
+  expect(errors).toEqual([]);
+});
+
+test('NEXT ROUND then BACK keeps the round you unlocked', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.route(/\/rest\/v1\//, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+  await page.goto(URL);
+  await page.click('#btnStart');
+  await page.click('#btnFight');
+  await page.waitForTimeout(400);
+  await page.evaluate(() => { const g = window.__fight(); g.rhinos[0].hp = 1; g.rhinos[0].timer = 999; g.p.x = g.rhinos[0].x - 150; });
+  for (let i = 0; i < 6 && await page.evaluate(() => !window.__fight().over); i++) { await page.keyboard.press('j'); await page.waitForTimeout(250); }
+  await expect(page.locator('#result')).toBeVisible({ timeout: 15000 });
+  await page.click('#btnNext');
+  await expect(page.locator('#btnLevelGo')).toBeVisible();
+  await page.click('#btnLevelBack');
+  await expect(page.locator('#startLevel')).toHaveValue('1');
+  expect(errors).toEqual([]);
+});
+
 test('pacifist ending: outlast the rhino without hitting it', async ({ page }) => {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
