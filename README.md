@@ -42,7 +42,7 @@ Edit `src/index.html` — everything (CSS, JS, fighters, rhino AI, sound) is in 
 
 ## Rounds
 
-Round 1 is the Kiruna snowfield. Beat it and Round 2 opens: the Wasteland, where the reference genome is contaminated — a mutant rhino that feints before charging, leaves radioactive hot spots when it skids, and vents radiation up close. Beat that and Round 3 opens: the Asteroid — low gravity, a helmeted space rhino with a horn laser and a jetpack stomp, drifting into the wrong sample (index hopping). Round 4 is the Duplicates: the same read sequenced twice (a PCR duplicate), so two rhinos on a field twice as wide, with the camera following you. Use *Start at* on the fighter screen to jump straight to any round.
+Round 1 is the Kiruna snowfield. Beat it and Round 2 opens: the Wasteland, where the reference genome is contaminated — a mutant rhino that feints before charging, leaves radioactive hot spots when it skids, and vents radiation up close. Beat that and Round 3 opens: the Asteroid — low gravity, a helmeted space rhino with a horn laser and a jetpack stomp, drifting into the wrong sample (index hopping). Round 4 is the Duplicates: the same read sequenced twice (a PCR duplicate), so two rhinos on a field twice as wide, with the camera following you. Round 5 is Compositional: a rhino, a zebra and you share one ring and your sizes always add up to one — whoever takes damage shrinks and everyone else grows, and a false positive is gone once its share drops below the detection limit (6 %). Outlast that round for a minute without hitting anything and they turn out to be a brown bear and a moose. Use *Start at* on the fighter screen to jump straight to any round.
 
 ## Co-op
 
