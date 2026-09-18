@@ -36,7 +36,18 @@
   .overlay{position:absolute;inset:0;display:flex;overflow-y:auto;-webkit-overflow-scrolling:touch;
            background:rgba(10,14,30,.8);text-align:center;padding:14px 16px;box-sizing:border-box;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);}
   .panel{margin:auto;display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;}
-  @media (orientation:portrait){#stage{aspect-ratio:1/1;width:100%;}}
+  @media (orientation:portrait){#stage{aspect-ratio:4/5;width:100%;}}   /* taller than square: room for the overlays and the pads */
+  /* small stages (phones): tighter panels, the action buttons come before the long readout so nothing important needs a scroll,
+     the corner buttons shrink to icons so they cannot sit on a heading or on the SPECIAL pad, and the scores table scrolls sideways */
+  @media (max-width:480px), (max-height:560px){
+    .panel{gap:7px;} h1{font-size:clamp(30px,8vw,52px);} h2{font-size:clamp(18px,4vw,26px);margin:0;} .sub{font-size:12px;}
+    #result .readout,#result #resCoop{order:2;} #result .row{order:1;} #scores .row{order:-1;}
+    .result-big{font-size:clamp(34px,9vw,56px);} .btn{padding:8px 12px;font-size:16px;} .namebox{gap:6px;} .readout{font-size:11px;line-height:1.35;}
+  }
+  @media (max-width:480px), (max-height:420px){
+    #topBtns button span{display:none;} #topBtns button{padding:4px 8px;}
+  }
+  @media (max-width:640px){ table.scores{display:block;overflow-x:auto;max-width:100%;font-size:11px;} table.scores th,table.scores td{padding:4px 5px;} }
   h1{font-family:var(--display);font-size:clamp(40px,8vw,88px);letter-spacing:.04em;margin:0;line-height:.95;
      color:var(--gold);text-shadow:4px 4px 0 var(--ember),8px 8px 0 rgba(0,0,0,.45);text-wrap:balance;}
   h2{font-family:var(--display);font-size:clamp(26px,4.5vw,44px);letter-spacing:.05em;margin:0;color:var(--snow);}
@@ -765,7 +776,7 @@ function fighterDraw(f, t){
   ctx.restore();
   if (scl !== 1){
     var oy0 = GROUND - f.y;
-    [ 'handPt', 'footPt', 'headPt' ].forEach(function(k){ var q = f[k]; f[k] = [f.x + (q[0] - f.x) * scl, oy0 + (q[1] - oy0) * scl]; });
+    [ 'handPt', 'farHandPt', 'footPt', 'headPt' ].forEach(function(k){ var q = f[k]; f[k] = [f.x + (q[0] - f.x) * scl, oy0 + (q[1] - oy0) * scl]; });
   }
 }
 function fighterDrawInner(f, t){
@@ -842,7 +853,7 @@ function fighterDrawInner(f, t){
   }
   function foot(a, fc, col){ ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(a[0] - fc * 6, a[1] - 3); ctx.lineTo(a[0] + fc * 16, a[1] - 1); ctx.lineTo(a[0] + fc * 16, a[1] + 6); ctx.lineTo(a[0] - fc * 7, a[1] + 6); ctx.closePath(); ctx.fill(); }
   function hand(a, watch){ if (watch){ ctx.fillStyle = '#141418'; ctx.beginPath(); ctx.arc(a[0], a[1], 7.5, 0, 6.283); ctx.fill(); } ctx.fillStyle = '#e8bea5'; ctx.beginPath(); ctx.arc(a[0], a[1], 6, 0, 6.283); ctx.fill(); }
-  f.handPt = armNear[2]; f.footPt = legNear[2]; f.headPt = hc;
+  f.handPt = armNear[2]; f.farHandPt = armFar[2]; f.footPt = legNear[2]; f.headPt = hc;
 }
 function shade(hex, d){
   var n = parseInt(hex.slice(1), 16), r = clamp((n >> 16) + d, 0, 255), g = clamp(((n >> 8) & 255) + d, 0, 255), b = clamp((n & 255) + d, 0, 255);
@@ -867,15 +878,18 @@ var selected = 0;
 var particles = [], fx = [], dna = [], puffs = [], shake = 0, flashA = 0, slowmo = 0, impactFrame = 0;
 
 function mkPlayer(def, x){
-  return {def:def, x:x, y:0, vy:0, facing:1, hp:def.hp, maxhp:def.hp, meter:0, state:'idle', st:0, pose:POSE.guard, inv:0, flash:0, combo:0, hitsLanded:0, handPt:[0,0], footPt:[0,0], headPt:[0,0], attackHit:false, dashDir:1, specialHits:0, scale:1, inp:{keys:{}, pressed:{}}};
+  return {def:def, x:x, y:0, vy:0, facing:1, hp:def.hp, maxhp:def.hp, meter:0, state:'idle', st:0, pose:POSE.guard, inv:0, flash:0, combo:0, hitsLanded:0, handPt:[0,0], farHandPt:[0,0], footPt:[0,0], headPt:[0,0], attackHit:false, dashDir:1, specialHits:0, scale:1, inp:{keys:{}, pressed:{}}};
 }
+var fightSeq = 0;
+// a timer that only fires if the fight that armed it is still the one on screen (Esc + new fight must not inherit it)
+function fightTimeout(fn, ms){ var id = G.fid; setTimeout(function(){ if (G && G.fid === id && scene === 'fight') fn(); }, ms); }
 function newFight(def, def2){
   var p = mkPlayer(def, def2 ? 150 : 200), p2 = def2 ? mkPlayer(def2, 290) : null;
   var lv = LEVELS[LEVEL];
   AW = lv.width || LW;
   var rhinos = [], n = lv.rhinos || 1;
   for (var ri = 0; ri < n; ri++) rhinos.push({x: 720 + ri * (AW - 1140) / Math.max(1, n - 1), facing:-1, hp:lv.rhino.hp, maxhp:lv.rhino.hp, mutant:lv.rhino.mutant, space:!!lv.rhino.space, glow:0, willFeint:false, targetX:0, state:'idle', st:0, timer:1.4 + ri * .9, run:0, phase:0, tilt:0, head:0, jump:0, squash:0, tail:0, flash:0, angry:false, rage:0, dir:-1, chargeHit:false, vx:0, trampled:{}});
-  G = {p:p, p2:p2, players: p2 ? [p, p2] : [p], r:rhinos[0], rhinos:rhinos, t:0, over:false, won:false, elapsed:0, koT:0, pacifist:false};
+  G = {fid: ++fightSeq, p:p, p2:p2, players: p2 ? [p, p2] : [p], r:rhinos[0], rhinos:rhinos, t:0, over:false, won:false, elapsed:0, koT:0, pacifist:false};
   camX = clamp(p.x - LW / 2, 0, AW - LW);
   particles = []; fx = []; dna = []; puffs = []; hot = []; rings = []; bolts = []; shake = 0; flashA = 0; slowmo = 0; impactFrame = 0;
 }
@@ -893,7 +907,9 @@ function rhinoRect(r){
 }
 function inRect(pt, rc, pad){ pad = pad || 0; return pt[0] > rc.x0 - pad && pt[0] < rc.x1 + pad && pt[1] > rc.y0 - pad && pt[1] < rc.y1 + pad; }
 function liveRhinos(){ return G.rhinos.filter(function(r){ return r.state !== 'ko' && r.state !== 'gone'; }); }
-function rhinoAt(pt, pad){ var rs = liveRhinos(); for (var i = 0; i < rs.length; i++) if (inRect(pt, rhinoRect(rs[i]), pad)) return rs[i]; return null; }
+function rhinoAt(pt, pad){ var rs = liveRhinos(), best = null, bd = 1e9; for (var i = 0; i < rs.length; i++) if (inRect(pt, rhinoRect(rs[i]), pad)){ var d = Math.abs(rs[i].x - pt[0]); if (d < bd){ bd = d; best = rs[i]; } } return best; }
+// with several rhinos each keeps its own lane (they cannot cross), so they can never stack into one silhouette
+function rhinoBounds(r){ var n = G.rhinos.length, i = G.rhinos.indexOf(r); return [100 + i * 360, AW - 100 - (n - 1 - i) * 360]; }   // 360 = one rhino body
 function hitRhino(r, p, pt, dmg, big, label){
   var vuln = (r.state === 'skid' || r.state === 'sleep') ? 1.6 : 1;
   dmg = Math.round(dmg * p.def.power * vuln);
@@ -923,32 +939,33 @@ function hitPlayer(p, dmg, label, knock){
 function playerKO(p){
   if (G.over || p.state === 'ko') return;
   p.state = 'ko'; p.st = 0; sfx('gong', {f: 70, v: .6});
-  if (!alivePlayers().length){ G.over = true; G.won = false; setTimeout(showResult, 1800); }
+  if (!alivePlayers().length){ G.over = true; G.won = false; fightTimeout(showResult, 1800); }
 }
 function rhinoKO(r){
   r.state = 'ko'; r.st = 0; sfx('bighit');
-  setTimeout(function(){ explodeRhino(r); }, 1500);
+  fightTimeout(function(){ explodeRhino(r); }, 1500);
   if (liveRhinos().length){ fx.push({x: r.x, y: GROUND - 200, t: 0, life: .8, r: 80, label: 'ONE DOWN!', big: true}); return; }
   G.over = true; G.won = true; G.koT = 0;
   alivePlayers().forEach(function(q){ q.state = 'win'; q.st = 0; });
   sfx('gong', {f: 70, v: .7});
-  setTimeout(showResult, 5200);
+  fightTimeout(showResult, 5200);
 }
 // pacifist ending: never land a hit and outlast the rhino (60 s in round 1, +30 s per round) and the read turns out to be something else
-var PACIFIST_DEBUG = parseFloat((location.hash.match(/pacifist=(\d+(?:\.\d+)?)/) || [])[1]);
+var LOCAL_BUILD = /^(localhost|127\.0\.0\.1|)$/.test(location.hostname);   // file:// or a dev server: debug hooks allowed
+var PACIFIST_DEBUG = LOCAL_BUILD ? parseFloat((location.hash.match(/pacifist=(\d+(?:\.\d+)?)/) || [])[1]) : NaN;
 function pacifistTime(){ return PACIFIST_DEBUG > 0 ? PACIFIST_DEBUG : 60 + 30 * LEVEL; }
 function rhinoReveal(){
   if (G.over) return;
-  var kinds = ['tapir', 'horse', 'zebra'];
-  liveRhinos().forEach(function(r){
-    r.morph = kinds[Math.floor(Math.random() * kinds.length)]; r.revealed = false;
+  var kinds = ['tapir', 'horse', 'zebra'].sort(function(){ return Math.random() - .5; });
+  liveRhinos().forEach(function(r, i){
+    r.morph = kinds[i % kinds.length]; r.revealed = false;
     r.state = 'morph'; r.st = 0; r.run = 0; r.jump = 0; r.glow = 0; r.angry = false; r.chargeHit = true;
   });
   bolts = [];
   G.over = true; G.won = true; G.pacifist = true; G.koT = 0;
   alivePlayers().forEach(function(q){ q.state = 'win'; q.st = 0; });
   sfx('gong', {f: 96, v: .5}); sfx('drum');
-  setTimeout(showResult, 6200);
+  fightTimeout(showResult, 6200);
 }
 function explodeRhino(r){
   if (!G || scene !== 'fight') return;
@@ -996,7 +1013,8 @@ function updatePlayer(p, dt){
   else if (p.state === 'punch'){
     var k = p.alt ? POSE.punch : POSE.punch2; var u = p.st < .1 ? p.st / .1 : 1 - smooth(.18, .32, p.st);
     pose = mixPose(POSE.guard, k, u);
-    if (p.st > .06 && p.st < .2 && !p.attackHit){ var hp = p.stickPt || p.handPt, hr = rhinoAt(hp, 14); if (hr){ p.attackHit = true; hitRhino(hr, p, hp, 7, false); } }
+    // the two punch poses extend different arms: POSE.punch the near one, POSE.punch2 the far one
+    if (p.st > .06 && p.st < .2 && !p.attackHit){ var hp = p.stickPt || (p.alt ? p.handPt : p.farHandPt), hr = rhinoAt(hp, 14); if (hr){ p.attackHit = true; hitRhino(hr, p, hp, 7, false); } }
     if (p.st > .32) p.state = 'idle';
   } else if (p.state === 'kick'){
     var u2 = p.st < .12 ? 0 : (p.st < .22 ? (p.st - .12) / .1 : 1 - smooth(.34, .5, p.st));
@@ -1156,12 +1174,13 @@ function updateRhino(r, dt){
     r.run = 0;
     if (r.st < .7){ r.jump = 230 * smooth(0, .7, r.st); r.x = lerp(r.jx0, r.targetX, smooth(.1, .7, r.st)); r.tilt = -.12; r.facing = dist > 0 ? 1 : -1; }
     else if (r.st < 1.15){ r.jump = 230 + 8 * Math.sin(r.st * 20); }
-    else if (r.st < 1.4){ r.jump = 230 * (1 - smooth(1.15, 1.4, r.st)); r.tilt = .08;
-      if (r.st >= 1.38 && !r.chargeHit){ r.chargeHit = true; shake = Math.max(shake, 22); sfx('bighit'); sfx('drum'); impactFrame = 2;
-        for (var pk = 0; pk < 14; pk++) puffs.push({x: r.x + rnd(-200, 200), y: GROUND - rnd(0, 20), t: 0, r: rnd(8, 20)});
-        rings.push({x: r.x, t: 0, grey: true});
-        G.players.forEach(function(q){ if (Math.abs(q.x - r.x) < 190 && q.y < 45) hitPlayer(q, 20, 'STOMPED!', Math.sign(q.x - r.x || 1) * 420); }); }
-    } else { r.jump = 0; r.tilt = 0; if (r.st > 1.9){ r.state = 'idle'; r.st = 0; r.timer = .8; r.chargeHit = false; } }
+    else if (r.st < 1.4){ r.jump = 230 * (1 - smooth(1.15, 1.4, r.st)); r.tilt = .08; }
+    else { r.jump = 0; r.tilt = 0; if (r.st > 1.9){ r.state = 'idle'; r.st = 0; r.timer = .8; r.chargeHit = false; } }
+    // the landing resolves on the first frame at or after touchdown, whatever the frame rate (no upper bound)
+    if (r.st >= 1.38 && r.st < 1.9 && !r.chargeHit){ r.chargeHit = true; shake = Math.max(shake, 22); sfx('bighit'); sfx('drum'); impactFrame = 2;
+      for (var pk = 0; pk < 14; pk++) puffs.push({x: r.x + rnd(-200, 200), y: GROUND - rnd(0, 20), t: 0, r: rnd(8, 20)});
+      rings.push({x: r.x, t: 0, grey: true});
+      G.players.forEach(function(q){ if (Math.abs(q.x - r.x) < 190 && q.y < 45) hitPlayer(q, 20, 'STOMPED!', Math.sign(q.x - r.x || 1) * 420); }); }
   } else if (r.state === 'burst'){
     r.run = 0; r.glow = Math.min(1, r.st / .6); r.squash = .04 * Math.sin(r.st * 40) * r.glow;
     if (r.st >= .6 && !r.chargeHit){
@@ -1175,7 +1194,8 @@ function updateRhino(r, dt){
     if (Math.random() < .6) puffs.push({x: r.x - r.dir * rnd(60, 150), y: GROUND - rnd(0, 30), t: 0, r: rnd(6, 14)});
     // hit the player?
     G.players.forEach(function(q, qi){ if (!r.trampled[qi] && Math.abs(q.x - (r.x + r.dir * 120)) < 110 && q.y < 84 && q.inv <= 0 && !(q.state === 'special' && (q.def.special.kind === 'dash'))){ r.trampled[qi] = true; hitPlayer(q, r.angry ? 26 : 20, 'TRAMPLED!', r.dir * 520); } });
-    if ((r.dir > 0 && r.x > AW - 120) || (r.dir < 0 && r.x < 120)){ r.state = 'skid'; r.st = 0; r.x = clamp(r.x, 120, AW - 120); sfx('whoosh'); for (var i = 0; i < 10; i++) puffs.push({x: r.x + r.dir * rnd(-40, 100), y: GROUND - rnd(0, 30), t: 0, r: rnd(10, 22)});
+    var rb = rhinoBounds(r);
+    if ((r.dir > 0 && r.x > rb[1] - 20) || (r.dir < 0 && r.x < rb[0] + 20)){ r.state = 'skid'; r.st = 0; r.x = clamp(r.x, rb[0] + 20, rb[1] - 20); sfx('whoosh'); for (var i = 0; i < 10; i++) puffs.push({x: r.x + r.dir * rnd(-40, 100), y: GROUND - rnd(0, 30), t: 0, r: rnd(10, 22)});
       if (r.mutant){ for (var hk = 0; hk < 3; hk++) hot.push({x: clamp(r.x - r.dir * (90 + hk * 120), 60, AW - 60), r: rnd(48, 70), t: 0, life: 9}); if (hot.length > 6) hot.splice(0, hot.length - 6); } }
   } else if (r.state === 'skid'){
     r.run = .3 * (1 - r.st); r.tilt = -.22 * (1 - smooth(.3, .8, r.st)) * smooth(0, .12, r.st); r.head = .05;
@@ -1193,7 +1213,11 @@ function updateRhino(r, dt){
     r.squash = .06 * Math.exp(-r.st * 8); r.tilt = -.08 * Math.exp(-r.st * 6);
     if (r.st > .28){ r.state = 'idle'; r.st = 0; r.timer = Math.max(.25, (r.angry ? .5 : 1.0) - r.rage * .04); }
   }
-  r.x = clamp(r.x, 100, AW - 100);
+  // keep some daylight between rhinos that are not mid-charge
+  if (G.rhinos.length > 1 && r.state !== 'charge' && r.state !== 'jetstomp'){
+    G.rhinos.forEach(function(o){ if (o === r || o.state === 'ko' || o.state === 'gone') return; var d = r.x - o.x, ad = Math.abs(d); if (ad < 400) r.x += (d >= 0 ? 1 : -1) * (400 - ad) * 2.5 * dt; });
+  }
+  var lim = rhinoBounds(r); r.x = clamp(r.x, lim[0], lim[1]);
 }
 function update(dt){
   if (!G) return;
@@ -1258,6 +1282,7 @@ function drawHUD(){
     var oy = 50 + i * 42, w = i ? 260 : 330, h = i ? 16 : 20;   // below the MENU / FULLSCREEN buttons in the corner
     bar(LW - 24 - w, 22 + oy, w, h, r.hp / r.maxhp, r.space ? (r.angry ? '#ff8ad0' : '#7fe7ff') : r.mutant ? (r.angry ? '#ccff66' : '#8dff5a') : (r.angry ? '#ff5a3c' : '#f2c56b'), '#c8262c', (r.morph && r.revealed) ? ANIMALS[r.morph].label : (LEVELS[LEVEL].hud + (i ? ' #' + (i + 1) : '')), 'right');
   });
+  if (Net.on && Net.lost){ ctx.font = '900 13px Nunito, sans-serif'; ctx.fillStyle = '#ffd166'; ctx.textAlign = 'center'; ctx.fillText('FRIEND RECONNECTING…', LW / 2, 52); ctx.textAlign = 'left'; }
   // timer
   ctx.textAlign = 'center'; ctx.font = '400 30px Bangers, Impact, sans-serif'; ctx.fillStyle = '#eef2f8'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 4;
   var s = Math.floor(G.elapsed); var tt = (s < 10 ? '0' : '') + s;
@@ -1342,7 +1367,7 @@ function draw(){
     if (rr.mutant && rr.glow > 0 && rr.state !== 'gone'){ var gl = ctx.createRadialGradient(rr.x, GROUND - 110, 20, rr.x, GROUND - 110, 260); gl.addColorStop(0, 'rgba(160,255,110,' + (.55 * rr.glow) + ')'); gl.addColorStop(1, 'rgba(160,255,110,0)'); ctx.fillStyle = gl; ctx.fillRect(rr.x - 260, GROUND - 370, 520, 380); }
     if (rr.state === 'jetstomp' && rr.st > .4 && rr.st < 1.4){ var ta = .5 + .5 * Math.sin(G.t * 18); ctx.strokeStyle = 'rgba(255,70,60,' + (.5 + .5 * ta) + ')'; ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(rr.targetX, GROUND - 2, 150, 26, 0, 0, 6.283); ctx.stroke(); ctx.beginPath(); ctx.ellipse(rr.targetX, GROUND - 2, 60, 11, 0, 0, 6.283); ctx.stroke(); }
     // warning marker when the rhino is about to charge
-    if (rr.state === 'paw'){ ctx.font = '400 40px Bangers, Impact, sans-serif'; ctx.fillStyle = '#ff5a3c'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 5; ctx.textAlign = 'center'; var yy = GROUND - 2.4 * RS - 10 + 6 * Math.sin(rr.st * 30); ctx.strokeText('!', rr.x, yy); ctx.fillText('!', rr.x, yy); ctx.textAlign = 'left'; }
+    if (rr.state === 'paw'){ ctx.font = '400 40px Bangers, Impact, sans-serif'; ctx.fillStyle = '#ff5a3c'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 5; ctx.textAlign = 'center'; var yy = GROUND - 2.4 * RS - 10 + 6 * Math.sin(rr.st * 30), mx = clamp(rr.x, camX + 40, camX + LW - 40); ctx.strokeText('!', mx, yy); ctx.fillText('!', mx, yy); ctx.textAlign = 'left'; }
     if (rr.state !== 'gone') drawRhino(rr);
     if (rr.space && rr.state !== 'gone'){
       var jx = rr.x - rr.facing * .95 * RS, jy = GROUND - rr.jump - 1.85 * RS;
@@ -1427,7 +1452,7 @@ function bigText(s, x, y, size){
 // row-level security only lets the page insert rows and read the visible ones.
 var SUPA = {url: 'https://vvutuggcbqulzygljtne.supabase.co', key: 'sb_publishable_lF_Ak2vi6bc3bghIjaIb6w_WsCCAzHy', table: 'scores', top: 25};
 var Scores = (function(){
-  var KEY = 'swebits_scores_v1', mode = 'local';
+  var KEY = 'swebits_scores_v1', mode = 'local', lastRemote = false;   // lastRemote: did the last add() reach the shared table?
   var remote = !!(window.fetch && window.Promise && SUPA.url);
   function localLoad(){ try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } }
   function localSave(list){ try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) {} }
@@ -1450,15 +1475,16 @@ var Scores = (function(){
   }
   function add(entry){
     var list = sortTrim(localLoad().concat([entry])); localSave(list);   // the device always keeps its own copy
+    lastRemote = false;
     if (!remote) return Promise.resolve(list);
-    return remoteAdd(entry).catch(function(){ mode = 'local'; return list; });
+    return remoteAdd(entry).then(function(l){ lastRemote = true; return l; }).catch(function(){ mode = 'local'; return list; });
   }
   // a public write endpoint will eventually get a silly entry: reporting hides it for everyone
   function report(entry){
     if (!remote || !entry.id) return Promise.resolve(false);
     return fetch(SUPA.url + '/rest/v1/rpc/report_score', {method: 'POST', headers: headers(), body: JSON.stringify({score_id: entry.id})}).then(function(res){ return res.ok; }).catch(function(){ return false; });
   }
-  return {load: load, add: add, report: report, mode: function(){ return mode; }};
+  return {load: load, add: add, report: report, mode: function(){ return mode; }, savedRemote: function(){ return lastRemote; }};
 })();
 function scoreFor(g){ var hp = 0, hits = 0; g.players.forEach(function(q){ hp += q.hp; hits += q.hitsLanded; }); hp /= g.players.length; return Math.round(1000 + hp * 10 + Math.max(0, 120 - g.elapsed) * 20 + hits * 5 + LEVEL * 1500 + (g.pacifist ? 2500 : 0)); }
 function teamName(g){ return g.players.map(function(q){ return q.def.name; }).join(' + '); }
@@ -1507,7 +1533,7 @@ var TRYSTERO_URL = './vendor/trystero.js';
 var TURN_SERVERS = [];            // optional TURN servers [{urls, username, credential}] for strict NATs
 var TURN_CREDENTIALS_URL = '';    // optional: a URL returning a JSON array of ICE servers (e.g. Metered's turn/credentials), fetched before joining
 var RELAY_URL = SUPA.url.replace(/^http/, 'ws') + '/realtime/v1/websocket?apikey=' + SUPA.key + '&vsn=1.0.0';
-var Net = {on:false, host:false, me:0, code:'', peer:null, rtc:null, rtcUp:false, relay:null, relayPeer:false, id:'', ready:false, peerReady:null, f:null, guestInp:{keys:{}, pressed:{}}, sfxQ:[], frame:0, lastKeys:'', err:'', timer:null};
+var Net = {on:false, host:false, me:0, code:'', peer:null, rtc:null, rtcUp:false, rtcPeer:null, relay:null, relayPeer:false, id:'', ready:false, peerReady:null, f:null, guestInp:{keys:{}, pressed:{}}, sfxQ:[], frame:0, lastKeys:'', err:'', timer:null, joining:false, full:false, lost:false, lostTimer:null};
 function iceServers(){
   if (!TURN_CREDENTIALS_URL) return Promise.resolve(TURN_SERVERS);
   return fetch(TURN_CREDENTIALS_URL).then(function(r){ return r.json(); }).then(function(list){ return TURN_SERVERS.concat(list || []); }).catch(function(){ return TURN_SERVERS; });
@@ -1522,10 +1548,11 @@ function netTransport(){
       var room = m.joinRoom({appId: 'swebits-rumble', relayConfig: {redundancy: 10}, turnConfig: turn}, code, {onJoinError: function(err){ h.onError((err && err.error) || String(err)); }});
       var act = room.makeAction('g');
       act.onMessage = function(data, ctx){ h.onData(data, ctx && ctx.peerId); };
+      // a targeted send reaches one peer only (hello / busy); the game traffic goes to the paired peer
       room.onPeerJoin = function(id){ h.onPeerJoin(id); };
       room.onPeerLeave = function(id){ h.onPeerLeave(id); };
       function relays(){ var socks = m.getRelaySockets ? m.getRelaySockets() : {}, n = 0, ok = 0; for (var u in socks){ n++; if (socks[u] && socks[u].readyState === 1) ok++; } return ok + '/' + n; }
-      return {send: function(d){ act.send(d); }, selfId: m.selfId, relays: relays, leave: function(){ try { room.leave(); } catch (e) {} }};
+      return {send: function(d, target){ act.send(d, target ? {target: target} : undefined); }, selfId: m.selfId, relays: relays, leave: function(){ try { room.leave(); } catch (e) {} }};
     }};
   });
 }
@@ -1533,7 +1560,7 @@ function netTransport(){
 // or firewall, so the lobby always runs on it; the game traffic goes P2P when the data channel opens and over the
 // relay otherwise (e.g. on eduroam, where direct peer traffic is blocked).
 function relayTransport(code, h){
-  var topic = 'realtime:swebits-rumble:' + code, ws = null, ref = 0, hb = null, joined = false, peers = {}, closed = false;
+  var topic = 'realtime:swebits-rumble:' + code, ws = null, ref = 0, hb = null, joined = false, peers = {}, closed = false, dropT = null;
   function raw(o){ if (ws && ws.readyState === 1){ try { ws.send(JSON.stringify(o)); } catch (e) {} } }
   function msg(event, payload){ raw({topic: topic, event: event, payload: payload, ref: String(++ref)}); }
   function seen(id){ if (id === Net.id || peers[id]) return; peers[id] = true; h.onPeerJoin(id); }
@@ -1549,84 +1576,126 @@ function relayTransport(code, h){
       var m; try { m = JSON.parse(ev.data); } catch (e) { return; }
       if (!m || m.topic !== topic) return;
       var p = m.payload || {}, k;
-      if (m.event === 'phx_reply'){ if (!joined && p.status === 'ok'){ joined = true; msg('presence', {type: 'presence', event: 'track', payload: {id: Net.id}}); h.onRelay(); } }
-      else if (m.event === 'presence_state'){ for (k in p) seen(k); }
+      if (m.event === 'phx_reply'){ if (!joined && p.status === 'ok'){ joined = true; if (dropT){ clearTimeout(dropT); dropT = null; } msg('presence', {type: 'presence', event: 'track', payload: {id: Net.id}}); h.onRelay(); } }
+      else if (m.event === 'presence_state'){ var now = {}; for (k in p){ now[k] = 1; seen(k); } for (k in peers) if (!now[k]) gone(k); }   // after a reconnect: whoever is not listed any more has left
       else if (m.event === 'presence_diff'){ for (k in (p.joins || {})) seen(k); for (k in (p.leaves || {})) if (!(p.joins || {})[k]) gone(k); }
       else if (m.event === 'broadcast' && p.event === 'g' && p.payload && p.payload.from !== Net.id){ h.onData(p.payload.d, p.payload.from); }
     };
     ws.onerror = function(){};
-    ws.onclose = function(){ if (hb) clearInterval(hb); hb = null; var was = joined; joined = false; for (var q in peers) gone(q); if (!closed) setTimeout(open, 2000); if (was) h.onRelay(); };
+    ws.onclose = function(){
+      if (hb) clearInterval(hb); hb = null; var was = joined; joined = false;
+      if (closed){ for (var q in peers) gone(q); return; }
+      // a dropped socket is not a departed friend: reconnect, and only give the peers up if that takes more than 8 s
+      setTimeout(open, 2000);
+      if (!dropT) dropT = setTimeout(function(){ dropT = null; if (!joined) for (var q2 in peers) gone(q2); }, 8000);
+      if (was) h.onRelay();
+    };
   }
   open();
-  return {send: function(d){ if (joined) msg('broadcast', {type: 'broadcast', event: 'g', payload: {from: Net.id, d: d}}); }, ok: function(){ return joined; }, leave: function(){ closed = true; if (hb) clearInterval(hb); try { if (ws) ws.close(); } catch (e) {} }};
+  return {send: function(d){ if (joined) msg('broadcast', {type: 'broadcast', event: 'g', payload: {from: Net.id, d: d}}); }, ok: function(){ return joined; }, leave: function(){ closed = true; if (hb) clearInterval(hb); if (dropT){ clearTimeout(dropT); dropT = null; } try { if (ws) ws.close(); } catch (e) {} }};
 }
-// every message carries the sender's id; it goes P2P when the data channel is open, else through the relay
-function sendNet(m){
+// Wire rules: every message carries from = own id and to = the partner's id; anything addressed to someone else is
+// dropped. hello (unaddressed, sent to one transport peer) introduces you; a page that already has a partner answers
+// a stranger's hello with busy, so a third player on the same code is told the room is full and never joins the round.
+function sendVia(m, via, target){
   m.from = Net.id;
   try {
-    if (Net.rtc && Net.rtcUp) Net.rtc.send(m);
+    if (via === 'rtc'){ if (Net.rtc) Net.rtc.send(m, target); }
     else if (Net.relay && Net.relay.ok()) Net.relay.send(m);
   } catch (e) {}
+}
+function sendNet(m){
+  if (!Net.peer) return;
+  m.to = Net.peer;
+  sendVia(m, (Net.rtc && Net.rtcUp) ? 'rtc' : 'relay', Net.rtcPeer);
 }
 function coopStatus(t){ $('coopStatus').textContent = t; }
 function coopJoin(){
   var code = ($('coopCode').value || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 24);
   if (!code){ coopStatus('Type a room code first — any word you both agree on.'); return; }
+  if (Net.joining) return;                          // a double-click must not open a second room
   try { localStorage.setItem('swebits_room', code); } catch (e) {}
   netLeave();
+  Net.joining = true; $('btnCoopJoin').disabled = true;
   coopStatus('Connecting to room ' + code.toUpperCase() + '…');
   netTransport().then(function(tr){
-    var conn = tr.join(code, {onPeerJoin: rtcPeerJoin, onPeerLeave: rtcPeerLeave, onData: netData, onError: function(msg){ Net.err = /could not connect to peer/i.test(msg) ? 'direct P2P blocked on this network — using the relay' : msg; updateCoopLine(); }});
-    Net.on = true; Net.code = code; Net.rtc = conn; Net.rtcUp = false; Net.id = String(conn.selfId); Net.peer = null; Net.relayPeer = false; Net.ready = false; Net.peerReady = null; Net.host = false; Net.me = 0; Net.err = '';
-    Net.relay = (window.__coopTransport && window.__coopTransport.noRelay) ? null : relayTransport(code, {onPeerJoin: relayPeerJoin, onPeerLeave: relayPeerLeave, onData: netData, onRelay: updateCoopLine});
+    var conn = tr.join(code, {onPeerJoin: rtcPeerJoin, onPeerLeave: rtcPeerLeave, onData: function(d, id){ netData(d, id, 'rtc'); }, onError: function(msg){ Net.err = /could not connect to peer/i.test(msg) ? 'direct P2P blocked on this network — using the relay' : msg; updateCoopLine(); }});
+    Net.on = true; Net.code = code; Net.rtc = conn; Net.rtcUp = false; Net.rtcPeer = null; Net.id = String(conn.selfId); Net.peer = null; Net.relayPeer = false; Net.ready = false; Net.peerReady = null; Net.host = false; Net.me = 0; Net.err = ''; Net.full = false; Net.lost = false;
+    Net.relay = (window.__coopTransport && window.__coopTransport.noRelay) ? null : relayTransport(code, {onPeerJoin: relayPeerJoin, onPeerLeave: relayPeerLeave, onData: function(d, id){ netData(d, id, 'relay'); }, onRelay: updateCoopLine});
+    Net.joining = false; $('btnCoopJoin').disabled = false;
     buildRoster(); show('select'); scene = 'select'; updateCoopLine();
     if (Net.timer) clearInterval(Net.timer);
     Net.timer = setInterval(function(){ if (!Net.on){ clearInterval(Net.timer); Net.timer = null; return; } if (scene === 'select') updateCoopLine(); }, 1000);
-  }).catch(function(e){ Net.on = false; coopStatus('Could not start the multiplayer module: ' + ((e && e.message) || e) + '. Reload the page and try again.'); });
+  }).catch(function(e){ Net.on = false; Net.joining = false; $('btnCoopJoin').disabled = false; coopStatus('Could not start the multiplayer module: ' + ((e && e.message) || e) + '. Reload the page and try again.'); });
 }
 function netLeave(){
   if (Net.on) sendNet({t:'bye'});
   if (Net.rtc){ try { Net.rtc.leave(); } catch (e) {} }
   if (Net.relay){ try { Net.relay.leave(); } catch (e) {} }
-  Net.on = false; Net.rtc = null; Net.rtcUp = false; Net.relay = null; Net.relayPeer = false; Net.peer = null; Net.ready = false; Net.peerReady = null; Net.host = false; Net.me = 0; Net.f = null; Net.err = '';
+  if (Net.lostTimer){ clearTimeout(Net.lostTimer); Net.lostTimer = null; }
+  if (Net.timer){ clearInterval(Net.timer); Net.timer = null; }
+  Net.on = false; Net.rtc = null; Net.rtcUp = false; Net.rtcPeer = null; Net.relay = null; Net.relayPeer = false; Net.peer = null; Net.ready = false; Net.peerReady = null; Net.host = false; Net.me = 0; Net.f = null; Net.err = ''; Net.full = false; Net.lost = false; Net.joining = false;
+  Net.guestInp = {keys:{}, pressed:{}};
   $('selCoop').hidden = true; $('fightVerb').textContent = 'FIGHT AS';
 }
 function setPeer(id){
   id = String(id);
   if (Net.peer === id) return;
-  if (Net.peer) return;                              // two is company; a third player is ignored
-  Net.peer = id; Net.host = Net.id < Net.peer; Net.me = Net.host ? 0 : 1;
+  if (Net.peer) return;                              // two is company; a third player is told the room is full
+  Net.peer = id; Net.host = Net.id < Net.peer; Net.me = Net.host ? 0 : 1; Net.full = false;
   sfx('chime', {f: 1318});
   if (Net.ready) sendNet({t:'ready', f: ROSTER[selected].id});
   updateCoopLine();
 }
 function peerGone(){
-  Net.peer = null; Net.peerReady = null;
+  if (Net.lostTimer){ clearTimeout(Net.lostTimer); Net.lostTimer = null; }
+  Net.peer = null; Net.peerReady = null; Net.rtcPeer = null; Net.rtcUp = false; Net.relayPeer = false; Net.lost = false;
+  Net.guestInp = {keys:{}, pressed:{}};
   if (scene === 'fight' && !Net.host){ G = null; show('select'); scene = 'select'; }
   updateCoopLine();
 }
-function rtcPeerJoin(id){ Net.rtcUp = true; sendNet({t:'hello'}); updateCoopLine(); }
-function rtcPeerLeave(id){ Net.rtcUp = false; if (Net.peer && !Net.relayPeer) peerGone(); else updateCoopLine(); }
-function relayPeerJoin(id){ if (Net.peer && Net.peer !== id) return; Net.relayPeer = true; setPeer(id); sendNet({t:'hello'}); }
-function relayPeerLeave(id){ if (Net.peer !== id) return; Net.relayPeer = false; if (!Net.rtcUp) peerGone(); else updateCoopLine(); }
-function netData(d, id){
-  if (!d || typeof d !== 'object') return;
-  if (d.from){ if (!Net.peer) setPeer(d.from); else if (Net.peer !== d.from) return; }
-  if (d.t === 'hello'){ /* the sender's id came with the message */ }
+// a transport dropped the partner: in the lobby that is goodbye; in a fight give the connection 8 s to come back
+function peerLost(){
+  if (!Net.peer) return;
+  if (scene !== 'fight'){ peerGone(); return; }
+  Net.lost = true; updateCoopLine();
+  if (!Net.lostTimer) Net.lostTimer = setTimeout(function(){ Net.lostTimer = null; if (Net.lost) peerGone(); }, 8000);
+}
+function peerBack(){ if (Net.lost){ Net.lost = false; if (Net.lostTimer){ clearTimeout(Net.lostTimer); Net.lostTimer = null; } updateCoopLine(); } }
+function rtcPeerJoin(id){ sendVia({t:'hello', paired: Net.peer || null}, 'rtc', id); updateCoopLine(); }
+function rtcPeerLeave(id){ if (String(id) !== Net.rtcPeer) return; Net.rtcUp = false; Net.rtcPeer = null; if (Net.peer && !Net.relayPeer) peerLost(); else updateCoopLine(); }
+function relayPeerJoin(id){
+  if (Net.peer && Net.peer !== id){ sendVia({t:'busy', to: id}, 'relay'); return; }
+  Net.relayPeer = true; setPeer(id); peerBack(); sendVia({t:'hello', to: id, paired: Net.peer}, 'relay');
+}
+function relayPeerLeave(id){ if (Net.peer !== id) return; Net.relayPeer = false; if (!Net.rtcUp) peerLost(); else updateCoopLine(); }
+function netData(d, tid, via){
+  if (!d || typeof d !== 'object' || !d.from) return;
+  if (d.to && d.to !== Net.id) return;                       // addressed to somebody else in the room
+  // busy, or a hello from someone who is already with somebody else: this room is taken
+  if (d.t === 'busy' || (d.t === 'hello' && d.paired && d.paired !== Net.id)){ if (!Net.peer){ Net.full = true; Net.err = 'that room already has two players — try another code'; updateCoopLine(); } return; }
+  if (!Net.peer){ if (scene === 'fight') return; setPeer(d.from); }           // never re-pair mid-fight
+  else if (Net.peer !== d.from){ if (d.t === 'hello') sendVia({t:'busy', to: d.from}, via, tid); return; }
+  if (via === 'rtc'){ Net.rtcPeer = String(tid); Net.rtcUp = true; }
+  if (via === 'relay') Net.relayPeer = true;
+  peerBack();
+  if (d.t === 'hello'){ updateCoopLine(); }
   else if (d.t === 'ready'){ Net.peerReady = d.f; updateCoopLine(); if (Net.host && Net.ready && scene === 'select') coopStart(parseInt($('startLevel').value, 10) || 0); }
   else if (d.t === 'unready'){ Net.peerReady = null; updateCoopLine(); }
   else if (d.t === 'start'){ if (!Net.host){ LEVEL = d.level; Net.f = d.f; beginCoopRound(); } }
   else if (d.t === 'in'){ if (Net.host){ var ko = {}; (d.k || []).forEach(function(k){ ko[k] = true; }); Net.guestInp.keys = ko; (d.p || []).forEach(function(k){ Net.guestInp.pressed[k] = true; }); } }
   else if (d.t === 's'){ if (!Net.host && scene === 'fight') applySnap(d); }
   else if (d.t === 'result'){ if (!Net.host) showResult(); }
-  else if (d.t === 'bye'){ Net.rtcUp = false; Net.relayPeer = false; peerGone(); }
+  else if (d.t === 'bye'){ peerGone(); }
 }
 function updateCoopLine(){
   var el = $('selCoop'); el.hidden = !Net.on; if (!Net.on) return;
   var room = 'Room ' + Net.code.toUpperCase();
   var diag = ((Net.rtc && Net.rtc.relays) ? ' · nostr ' + Net.rtc.relays() : '') + ' · relay ' + (Net.relay ? (Net.relay.ok() ? 'on' : 'connecting…') : 'off');
   var via = ' · via ' + (Net.rtcUp ? 'P2P' : 'relay');
-  if (!Net.peer) el.textContent = room + ' · waiting for your friend to type the same code… pick your fighter meanwhile.' + diag + (Net.err ? ' · ' + Net.err : '') + ' · your id ' + Net.id.slice(0, 6);
+  if (Net.full) el.textContent = room + ' · already has two players — pick another code and both type it.';
+  else if (!Net.peer) el.textContent = room + ' · waiting for your friend to type the same code… pick your fighter meanwhile.' + diag + (Net.err ? ' · ' + Net.err : '') + ' · your id ' + Net.id.slice(0, 6);
+  else if (Net.lost) el.textContent = room + ' · connection to your friend lost — waiting up to 8 s for it to come back…';
   else if (Net.ready && !Net.peerReady) el.textContent = room + ' · you are ready — waiting for your friend to press FIGHT…' + via;
   else if (Net.ready && Net.peerReady) el.textContent = room + ' · starting…' + via;
   else el.textContent = room + ' · friend connected' + via + (Net.host ? ' · you are the host and pick the round' : ' · the host picks the round') + ' · press FIGHT when ready.';
@@ -1715,7 +1784,7 @@ function buildRoster(){
   ROSTER.forEach(function(d, i){
     var el = document.createElement('button'); el.className = 'fighter' + (i === selected ? ' sel' : ''); el.type = 'button'; el.setAttribute('aria-label', d.name);
     el.innerHTML = '<img alt="" src="' + FACES[d.face] + '"><div class="name">' + d.name + '</div><div class="move">' + d.special.name + '</div>' +
-      '<div class="best">' + (function(){ var bb = bestFor(d.name); return bb ? 'BEST ' + fmtScore(bb.score) + ' · ' + bb.name : ''; })() + '</div>' +
+      '<div class="best"></div>' +
       '<div class="stats"><span>PWR</span><div class="bar"><i style="width:' + Math.min(100, Math.round(d.power * 70)) + '%"></i></div><span>SPD</span><div class="bar"><i style="width:' + Math.min(100, Math.round(d.speed * 70)) + '%"></i></div><span>HP</span><div class="bar"><i style="width:' + Math.min(100, Math.round(d.hp / 1.4)) + '%"></i></div></div>';
     el.addEventListener('click', function(){
       unlockAudio();
@@ -1723,6 +1792,7 @@ function buildRoster(){
       selected = i; sfx('chime', {f: 1318}); $('selName').textContent = d.name.toUpperCase(); $('selName2').textContent = d.name.toUpperCase();
       Array.prototype.forEach.call(host.children, function(c, k){ c.classList.toggle('sel', k === i); });
     });
+    var bb = bestFor(d.name); el.querySelector('.best').textContent = bb ? 'BEST ' + fmtScore(bb.score) + ' · ' + bb.name : '';   // leaderboard names are untrusted text, never markup
     host.appendChild(el);
   });
 }
@@ -1818,7 +1888,7 @@ $('btnSave').addEventListener('click', function(){
   try { localStorage.setItem('swebits_name', name); } catch (e) {}
   lastEntry = {name: name, fighter: teamName(G).slice(0, 24), score: scoreFor(G), time: Math.round(G.elapsed * 10) / 10, level: LEVEL + 1, t: Date.now()};
   $('btnSave').disabled = true; $('btnSave').textContent = 'SAVING…';
-  Scores.add(lastEntry).then(function(list){ $('btnSave').textContent = 'SAVED'; sfx('chime', {f: 2093}); renderScores(list); renderBest(); show('scores'); scene = 'scores'; });
+  Scores.add(lastEntry).then(function(list){ $('btnSave').textContent = Scores.savedRemote() ? 'SAVED' : 'SAVED ON THIS DEVICE ONLY'; sfx('chime', {f: Scores.savedRemote() ? 2093 : 1046}); renderScores(list); renderBest(); show('scores'); scene = 'scores'; });
 });
 $('btnStart').addEventListener('click', function(){ unlockAudio(); sfx('gong', {f: 120, v: .4}); buildRoster(); show('select'); scene = 'select'; });
 $('btnFight').addEventListener('click', startFight);
