@@ -37,23 +37,49 @@ test('every fighter has a video', async ({ page }) => {
   }
 });
 
-test('all four rounds start', async ({ page }) => {
+test('all five rounds start', async ({ page }) => {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(URL);
   await page.click('#btnStart');
-  for (const lvl of ['0', '1', '2', '3']) {
+  for (const lvl of ['0', '1', '2', '3', '4']) {
     await page.selectOption('#startLevel', lvl);
     await page.click('#btnFight');
     if (lvl !== '0') { await expect(page.locator('#btnLevelGo')).toBeVisible(); await page.click('#btnLevelGo'); }
     await page.waitForTimeout(1200);
     await page.keyboard.press('ArrowUp'); await page.keyboard.press('j');
-    if (lvl === '3') { for (let i = 0; i < 12; i++) { await page.keyboard.down('ArrowRight'); await page.waitForTimeout(80); await page.keyboard.up('ArrowRight'); } }   // round 4: walk right so the camera scrolls
+    if (lvl === '3' || lvl === '4') { for (let i = 0; i < 12; i++) { await page.keyboard.down('ArrowRight'); await page.waitForTimeout(80); await page.keyboard.up('ArrowRight'); } }   // round 4: walk right so the camera scrolls
     await page.waitForTimeout(400);
     // back to the fighter screen for the next round (the in-game overlays are hidden during a fight)
     await page.evaluate(() => { document.getElementById('btnChoose').click(); });
     await expect(page.locator('#select')).toBeVisible();
   }
+  expect(errors).toEqual([]);
+});
+
+test('round 5: the shares always sum to one and a hit moves share to the others', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  await page.click('#btnStart');
+  await page.selectOption('#startLevel', '4');
+  await page.click('#btnFight');
+  await expect(page.locator('#btnLevelGo')).toBeVisible(); await page.click('#btnLevelGo');
+  await page.waitForTimeout(500);
+  const shares = () => page.evaluate(() => { const g = window.__fight(); return { p: g.p.share, r: g.rhinos.map(r => r.share), skin: g.rhinos.map(r => r.skin), sum: g.players.concat(g.rhinos).reduce((a, c) => a + c.share, 0) }; });
+  const before = await shares();
+  expect(before.skin).toEqual([null, 'zebra']);
+  expect(Math.abs(before.sum - 1)).toBeLessThan(1e-9);
+  expect(before.p).toBeCloseTo(1 / 3, 6);
+  // land a hit on the first rhino from the host side of the code path, then check the pool moved
+  await page.evaluate(() => { const g = window.__fight(); window.__hitRhinoTest = g.rhinos[0].share; });
+  await page.evaluate(() => { const g = window.__fight(); g.p.x = g.rhinos[0].x - 200; });
+  for (let i = 0; i < 6; i++) { await page.keyboard.press('j'); await page.waitForTimeout(260); }
+  const after = await shares();
+  expect(Math.abs(after.sum - 1)).toBeLessThan(1e-9);
+  expect(after.r[0]).toBeLessThan(before.r[0]);
+  expect(after.p).toBeGreaterThan(before.p);
+  expect(after.r[1]).toBeGreaterThan(before.r[1]);   // the bystander gains too: that is the twist
   expect(errors).toEqual([]);
 });
 
