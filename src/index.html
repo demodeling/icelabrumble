@@ -157,7 +157,7 @@
     <div id="title" class="overlay"><div class="panel">
       <h1>SWEBITS<br>RUMBLE</h1>
       <p class="sub">An airborne eDNA sampler in Kiruna reported a rhino. One read, 98.7% match. Somebody has to remove it from the dataset by hand.</p>
-      <div class="row"><button class="btn" id="btnStart">CHOOSE YOUR FIGHTER</button><button class="btn secondary" id="btnScores">HIGH SCORES</button><button class="btn secondary" id="btnCoop">CO-OP</button><button class="btn secondary" id="btnIntro">▶ FALSE POSITIVE?</button></div>
+      <div class="row"><button class="btn" id="btnStart">CHOOSE YOUR FIGHTER</button><button class="btn secondary" id="btnScores">HIGH SCORES</button><button class="btn secondary" id="btnCoop">CO-OP</button><button class="btn secondary" id="btnVersus">VERSUS <b>BETA</b></button><button class="btn secondary" id="btnIntro">▶ FALSE POSITIVE?</button></div>
       <p class="small" id="titleBest"></p>
       <p class="small">Sound on for the full kung-fu experience. Works on Safari, iPhone and iPad — tap ⛶ FULLSCREEN for a widescreen arena on your phone.</p>
       <p class="small" id="iosHint" hidden>iPhone: for a real full screen, tap Share → <b>Add to Home Screen</b> and open the game from there (no Safari bars at all).</p>
@@ -188,6 +188,23 @@
       <div class="namebox"><label for="coopCode" class="small">Room code</label><input id="coopCode" maxlength="24" autocomplete="off" autocapitalize="off" placeholder="kiruna"><button class="btn" id="btnCoopJoin">JOIN ROOM</button></div>
       <p class="small" id="coopStatus"></p>
       <div class="row"><button class="btn secondary" id="btnCoopBack">BACK</button></div>
+    </div></div>
+
+    <div id="versus" class="overlay" hidden><div class="panel">
+      <h2>VERSUS — BETA</h2>
+      <p class="small">One on one. Either side can play <b>THE RHINO</b>: the false positive fights back. Versus fights are never saved to the leaderboard.</p>
+      <div class="row" style="align-items:center">
+        <label class="check">Player 1 <select id="vsP1"></select></label>
+        <label class="check">Player 2 <select id="vsP2"></select></label>
+        <label class="check">Arena <select id="vsArena"><option value="0">Kiruna</option><option value="1">The Wasteland</option><option value="2">The Asteroid</option><option value="3">Kiruna, wide</option><option value="4">The Wasteland, dusk</option></select></label>
+      </div>
+      <div class="row"><button class="btn" id="btnVsFight">FIGHT — SAME KEYBOARD</button></div>
+      <div class="controls">P1 <kbd>&larr;</kbd><kbd>&rarr;</kbd> move · <kbd>&uarr;</kbd> jump · <kbd>&darr;</kbd> duck · <kbd>J</kbd> punch · <kbd>K</kbd> kick · <kbd>L</kbd> special &nbsp;·&nbsp; P2 <kbd>A</kbd><kbd>D</kbd> move · <kbd>W</kbd> jump · <kbd>S</kbd> duck · <kbd>F</kbd> punch · <kbd>G</kbd> kick · <kbd>H</kbd> special</div>
+      <p class="small">As the rhino: punch is the horn sweep, kick paws the ground and charges, the special is a jet stomp.</p>
+      <p class="small">Or fight someone on another device: both type the <b>same room code</b>, then pick on the fighter screen.</p>
+      <div class="namebox"><label for="vsCode" class="small">Room code</label><input id="vsCode" maxlength="24" autocomplete="off" autocapitalize="off" placeholder="kiruna"><button class="btn secondary" id="btnVsJoin">PLAY ONLINE</button></div>
+      <p class="small" id="vsStatus"></p>
+      <div class="row"><button class="btn secondary" id="btnVsBack">BACK</button></div>
     </div></div>
 
     <div id="scores" class="overlay" hidden><div class="panel">
@@ -515,8 +532,27 @@ var keys = {};
 var KEYMAP = {ArrowLeft:'left', a:'left', A:'left', ArrowRight:'right', d:'right', D:'right', ArrowUp:'jump', w:'jump', W:'jump', ' ':'jump',
               ArrowDown:'down', s:'down', S:'down', j:'punch', J:'punch', z:'punch', Z:'punch', k:'kick', K:'kick', x:'kick', X:'kick', l:'special', L:'special', c:'special', C:'special'};
 var pressed = {};   // edge-triggered
-window.addEventListener('keydown', function(e){ if (e.target && e.target.tagName === 'INPUT') return; if (e.key === 'Escape' || e.key === 'Esc'){ goMenu(); return; } var k = KEYMAP[e.key]; if (k){ if (!keys[k]) pressed[k] = true; keys[k] = true; e.preventDefault(); } });
-window.addEventListener('keyup', function(e){ if (e.target && e.target.tagName === 'INPUT') return; var k = KEYMAP[e.key]; if (k){ keys[k] = false; e.preventDefault(); } });
+// a local versus fight splits the keyboard: player 1 keeps the arrows + J/K/L, player 2 gets W/A/S/D + F/G/H
+var keys2 = {}, pressed2 = {};
+var KEYMAP1 = {ArrowLeft:'left', ArrowRight:'right', ArrowUp:'jump', ' ':'jump', ArrowDown:'down', j:'punch', J:'punch', k:'kick', K:'kick', l:'special', L:'special'};
+var KEYMAP2 = {a:'left', A:'left', d:'right', D:'right', w:'jump', W:'jump', s:'down', S:'down', f:'punch', F:'punch', g:'kick', G:'kick', h:'special', H:'special'};
+function keyDown(map, ks, ps, key){ var k = map[key]; if (!k) return false; if (!ks[k]) ps[k] = true; ks[k] = true; return true; }
+window.addEventListener('keydown', function(e){
+  if (e.target && e.target.tagName === 'INPUT') return;
+  if (e.key === 'Escape' || e.key === 'Esc'){ goMenu(); return; }
+  var hit;
+  if (vsLocal) hit = keyDown(KEYMAP2, keys2, pressed2, e.key) || keyDown(KEYMAP1, keys, pressed, e.key);
+  else hit = keyDown(KEYMAP, keys, pressed, e.key);
+  if (hit) e.preventDefault();
+});
+window.addEventListener('keyup', function(e){
+  if (e.target && e.target.tagName === 'INPUT') return;
+  var k2 = vsLocal ? KEYMAP2[e.key] : null;
+  if (k2){ keys2[k2] = false; e.preventDefault(); return; }
+  var k = vsLocal ? KEYMAP1[e.key] : KEYMAP[e.key];
+  if (k){ keys[k] = false; e.preventDefault(); }
+});
+function clearKeys(){ var k; for (k in keys) keys[k] = false; for (k in keys2) keys2[k] = false; pressed = {}; pressed2 = {}; }
 Array.prototype.forEach.call(document.querySelectorAll('.tb'), function(b){
   var k = b.getAttribute('data-k');
   function down(e){ e.preventDefault(); unlockAudio(); if (!keys[k]) pressed[k] = true; keys[k] = true; b.classList.add('act'); }
@@ -896,6 +932,141 @@ function compDrop(c){ if (c.share > 0) compGive(c, c.share); }   // knocked out:
 
 var bolts = [];
 var LEVEL = 0, hot = [], rings = [];
+
+// ------------------------------------------------------------ versus (beta)
+// Two humans, one arena. A side is a fighter from the ROSTER or THE RHINO itself.
+// Sides are stored in the same arrays a round uses (G.players / G.rhinos), so drawing,
+// the hit code and the co-op snapshots all work unchanged; G.sides[i] is side i's entity.
+var VS_TIME = 99;
+var RHINO_DEF = {id:'rhino', name:'The Rhino', hp:150, power:1, speed:.85, jump:1, special:{name:'JET STOMP'}};
+var vsLocal = false, pickRhino = false, vsPicks = ['albertas', 'rhino'];
+function myPickId(){ return pickRhino ? 'rhino' : ROSTER[selected].id; }
+function sideDefById(id){ return id === 'rhino' ? RHINO_DEF : defById(id); }
+function vsFoeOf(e){ if (!G || !G.sides) return null; var i = G.sides.indexOf(e); return i < 0 ? null : G.sides[1 - i]; }
+function vsAlive(e){ return !!e && e.state !== 'ko' && e.state !== 'gone'; }
+function vsName(e){ return e ? (e.isRhino ? 'THE RHINO' : e.def.name.toUpperCase()) : ''; }
+// two of the same pick in one duel: say which side is which
+function vsLabel(e){
+  if (!e || !G.sides) return '';
+  var i = G.sides.indexOf(e), other = G.sides[1 - i];
+  return (other && vsName(other) === vsName(e)) ? ('P' + (i + 1) + '\u2019S ' + vsName(e).replace(/^THE /, '')) : vsName(e);
+}
+function mkVsRhino(x, facing){
+  return {def: RHINO_DEF, isRhino: true, human: true, x: x, facing: facing, hp: RHINO_DEF.hp, maxhp: RHINO_DEF.hp, meter: 0, hitsLanded: 0,
+          mutant: false, space: false, glow: 0, willFeint: false, targetX: 0, state: 'idle', st: 0, timer: 0, run: 0, phase: 0,
+          tilt: 0, head: 0, jump: 0, vj: 0, squash: 0, tail: 0, flash: 0, angry: false, rage: 0, dir: facing, chargeHit: false,
+          vx: 0, trampled: {}, skin: null, size: 1, inp: {keys: {}, pressed: {}}};
+}
+function newVsFight(idA, idB){
+  vsPicks = [idA, idB];
+  AW = LW; camX = 0;
+  var players = [], rhinos = [], sides = [];
+  [[sideDefById(idA), 250, 1], [sideDefById(idB), LW - 250, -1]].forEach(function(spec, i){
+    var ent;
+    if (spec[0] === RHINO_DEF){ ent = mkVsRhino(spec[1], spec[2]); rhinos.push(ent); }
+    else { ent = mkPlayer(spec[0], spec[1]); ent.facing = spec[2]; players.push(ent); }
+    ent.vsSide = i; sides.push(ent);
+  });
+  G = {fid: ++fightSeq, vs: true, sides: sides, p: players[0] || null, p2: null, players: players, r: rhinos[0] || null, rhinos: rhinos,
+       t: 0, over: false, won: false, elapsed: 0, koT: 0, pacifist: false, comp: false, compN: 0, vsWin: -2};
+  particles = []; fx = []; dna = []; puffs = []; hot = []; rings = []; bolts = []; shake = 0; flashA = 0; slowmo = 0; impactFrame = 0;
+  clearKeys();
+}
+function beginVsLocal(){
+  vsLocal = true; LEVEL = parseInt($('vsArena').value, 10) || 0;
+  newVsFight($('vsP1').value, $('vsP2').value); scene = 'fight'; show(null);
+  unlockAudio(); sfx('gong', {f: 96, v: .6}); setTimeout(function(){ sfx('drum'); }, 800);
+}
+// a fighter's body box, so two fighters can hit each other (rounds only ever hit the rhino)
+function fighterRect(p){
+  var top = GROUND - p.y - 150 * (p.ducking ? .58 : 1) * (p.size || 1) * ((p.state === 'special' && p.scale) ? p.scale : 1);
+  return {x0: p.x - 42, x1: p.x + 42, y0: top, y1: GROUND - p.y + 4};
+}
+// what an attack can connect with: any live rhino, plus the opposing fighter in a duel
+function foeAt(p, pt, pad){
+  var r = rhinoAt(pt, pad); if (r) return r;
+  if (G.vs){ var q = vsFoeOf(p); if (q && !q.isRhino && vsAlive(q) && inRect(pt, fighterRect(q), pad)) return q; }
+  return null;
+}
+function hitFoe(t, p, pt, dmg, big, label){
+  if (!t) return;
+  if (t.isRhino){ hitRhino(t, p, pt, dmg, big, label); return; }
+  p.hitsLanded++; p.meter = Math.min(100, p.meter + (big ? 26 : 14));
+  fx.push({x: pt[0], y: pt[1], t: 0, life: big ? .6 : .38, r: big ? 95 : 55, label: label || (big ? 'WHAM!' : (Math.random() < .5 ? 'POW!' : 'BAM!')), big: big});
+  shake = Math.max(shake, big ? 16 : 7); impactFrame = big ? 3 : 1;
+  hitPlayer(t, Math.round(dmg * p.def.power), label || (big ? 'WHAM!' : 'POW!'), (t.x > p.x ? 1 : -1) * (big ? 420 : 210));
+}
+// what a rhino's own attacks reach: the crew in a round, the other side in a duel
+function rhinoFoes(r){
+  if (!G.vs) return G.players;
+  var f = vsFoeOf(r);
+  return vsAlive(f) ? [f] : [];
+}
+function hitEnt(t, atk, dmg, label, knock){
+  if (!t) return;
+  if (t.isRhino) hitRhino(t, atk, [t.x, GROUND - 120 * (t.size || 1) - t.jump], dmg, dmg >= 18, label);
+  else { if (atk && atk.isRhino){ atk.hitsLanded++; atk.meter = Math.min(100, atk.meter + 16); } hitPlayer(t, dmg, label, knock); }
+}
+// a human rhino: the same state machine, driven by a gamepad of keys instead of the timer
+function vsRhinoIdle(r, dt){
+  var keys = r.inp.keys, pressed = r.inp.pressed, foe = vsFoeOf(r), moving = false;
+  r.tilt *= Math.pow(.05, dt); r.head *= Math.pow(.05, dt);
+  if (!G.over && r.jump <= 0){
+    if (keys.left){ r.x -= 250 * dt; moving = true; r.facing = -1; }
+    if (keys.right){ r.x += 250 * dt; moving = true; r.facing = 1; }
+  }
+  if (!moving && foe) r.facing = foe.x > r.x ? 1 : -1;
+  r.run = moving ? .8 : 0; if (moving){ r.phase += dt * 12; if (Math.random() < .2) puffs.push({x: r.x - r.facing * rnd(40, 110), y: GROUND - rnd(0, 18), t: 0, r: rnd(4, 9)}); }
+  if (G.over) return;
+  if (pressed.jump && r.jump <= 0){ r.vj = 620; r.jump = 1; sfx('jump'); }
+  if (r.jump > 0) return;                                   // attacks are ground moves
+  if (pressed.punch){ r.state = 'horn'; r.st = 0; r.chargeHit = false; sfx('whoosh'); }
+  else if (pressed.kick){ r.state = 'paw'; r.st = 0; r.willFeint = false; }
+  else if (pressed.special && r.meter >= 100){ r.meter = 0; r.state = 'jetstomp'; r.st = 0; r.chargeHit = false; r.targetX = foe ? foe.x : r.x; r.jx0 = r.x; sfx('jet'); sfx('roar'); }
+}
+function vsRhinoJump(r, dt){
+  if (r.state === 'jetstomp'){ r.vj = 0; return; }
+  if (r.jump > 0 || r.vj > 0){
+    r.vj -= 1500 * (LEVELS[LEVEL].gravity || 1) * dt; r.jump += r.vj * dt;
+    if (r.jump <= 0){ r.jump = 0; r.vj = 0; r.squash = .06; }
+    r.tilt = lerp(r.tilt, r.vj > 0 ? -.08 : .06, Math.min(1, dt * 6));
+  }
+}
+function vsEnd(winSide){
+  if (G.over) return;
+  G.over = true; G.won = true; G.vsWin = winSide; G.koT = 0;
+  var w = G.sides[winSide];
+  if (w && !w.isRhino){ w.state = 'win'; w.st = 0; }
+  sfx('gong', {f: 70, v: .7});
+  fightTimeout(showResult, 3000);
+}
+function vsTimeUp(){
+  var a = G.sides[0], b = G.sides[1];
+  var fa = Math.max(0, a.hp) / a.maxhp, fb = Math.max(0, b.hp) / b.maxhp;
+  if (Math.abs(fa - fb) < .005){ G.over = true; G.won = true; G.vsWin = -1; G.koT = 0; sfx('gong', {f: 90, v: .6}); fightTimeout(showResult, 2600); return; }
+  vsEnd(fa > fb ? 0 : 1);
+}
+function drawVsHUD(){
+  ctx.font = '700 15px Nunito, sans-serif'; ctx.textBaseline = 'top';
+  var cols = ['#6fe3a0', '#ffb44d'];
+  G.sides.forEach(function(e, i){
+    var w = 330, x = i ? LW - 24 - w : 24, al = i ? 'right' : 'left', y = 72;   // below the MENU / FULLSCREEN buttons
+    var mine = (!Net.on || !Net.peer) ? (vsLocal ? false : i === 0) : i === Net.me;
+    bar(x, y, w, 20, Math.max(0, e.hp) / e.maxhp, e.state === 'ko' ? '#8a8fa3' : cols[i], '#c8262c',
+        (vsLocal ? 'P' + (i + 1) + ' · ' : (mine ? 'YOU · ' : '')) + vsName(e), al);
+    var mx = i ? LW - 24 - 200 : 24;
+    ctx.fillStyle = 'rgba(10,14,30,.55)'; roundRect(mx, y + 44, 200, 10, 5); ctx.fill();
+    ctx.fillStyle = e.meter >= 100 ? '#6fe3a0' : '#93a0bf'; roundRect(i ? mx + 200 - 200 * e.meter / 100 : mx, y + 44, 200 * e.meter / 100, 10, 5); ctx.fill();
+    ctx.fillStyle = e.meter >= 100 ? '#6fe3a0' : '#c9d3e6'; ctx.font = '900 11px Nunito, sans-serif'; ctx.textAlign = al;
+    ctx.fillText(e.meter >= 100 ? 'SPECIAL READY — ' + e.def.special.name : 'SPECIAL ' + Math.floor(e.meter) + '%', i ? LW - 24 : 24, y + 58);
+    ctx.textAlign = 'left'; ctx.font = '700 15px Nunito, sans-serif';
+  });
+  if (Net.on && Net.lost){ ctx.font = '900 13px Nunito, sans-serif'; ctx.fillStyle = '#ffd166'; ctx.textAlign = 'center'; ctx.fillText('OPPONENT RECONNECTING…', LW / 2, 140); ctx.textAlign = 'left'; }
+  ctx.textAlign = 'center'; ctx.font = '400 30px Bangers, Impact, sans-serif'; ctx.fillStyle = '#eef2f8'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 4;
+  var left = Math.max(0, Math.ceil(VS_TIME - G.elapsed)), tt = (left < 10 ? '0' : '') + left;
+  ctx.strokeText(tt, LW / 2, 16); ctx.fillText(tt, LW / 2, 16); ctx.textAlign = 'left';
+}
+
 var G = null;   // current fight
 var scene = 'title';
 var selected = 0;
@@ -912,7 +1083,7 @@ function newFight(def, def2){
   var lv = LEVELS[LEVEL];
   AW = lv.width || LW;
   var rhinos = [], n = lv.rhinos || 1;
-  for (var ri = 0; ri < n; ri++) rhinos.push({x: 720 + ri * (AW - 1140) / Math.max(1, n - 1), facing:-1, hp:lv.rhino.hp, maxhp:lv.rhino.hp, mutant:lv.rhino.mutant, space:!!lv.rhino.space, glow:0, willFeint:false, targetX:0, state:'idle', st:0, timer:1.4 + ri * .9, run:0, phase:0, tilt:0, head:0, jump:0, squash:0, tail:0, flash:0, angry:false, rage:0, dir:-1, chargeHit:false, vx:0, trampled:{}, skin: lv.skins ? lv.skins[ri] : null, size: 1});
+  for (var ri = 0; ri < n; ri++) rhinos.push({x: 720 + ri * (AW - 1140) / Math.max(1, n - 1), facing:-1, hp:lv.rhino.hp, maxhp:lv.rhino.hp, mutant:lv.rhino.mutant, space:!!lv.rhino.space, glow:0, willFeint:false, targetX:0, state:'idle', st:0, timer:1.4 + ri * .9, run:0, phase:0, tilt:0, head:0, jump:0, squash:0, tail:0, flash:0, angry:false, rage:0, dir:-1, chargeHit:false, vx:0, trampled:{}, skin: lv.skins ? lv.skins[ri] : null, size: 1, isRhino: true});
   G = {fid: ++fightSeq, p:p, p2:p2, players: p2 ? [p, p2] : [p], r:rhinos[0], rhinos:rhinos, t:0, over:false, won:false, elapsed:0, koT:0, pacifist:false, comp: !!lv.comp, compN: 0};
   if (G.comp){ var chars = G.players.concat(rhinos); G.compN = chars.length; chars.forEach(function(c){ c.share = 1 / chars.length; c.size = 1; }); compSync(); }
   camX = clamp(p.x - LW / 2, 0, AW - LW);
@@ -934,7 +1105,8 @@ function inRect(pt, rc, pad){ pad = pad || 0; return pt[0] > rc.x0 - pad && pt[0
 function liveRhinos(){ return G.rhinos.filter(function(r){ return r.state !== 'ko' && r.state !== 'gone'; }); }
 function rhinoAt(pt, pad){ var rs = liveRhinos(), best = null, bd = 1e9; for (var i = 0; i < rs.length; i++) if (inRect(pt, rhinoRect(rs[i]), pad)){ var d = Math.abs(rs[i].x - pt[0]); if (d < bd){ bd = d; best = rs[i]; } } return best; }
 // with several rhinos each keeps its own lane (they cannot cross), so they can never stack into one silhouette
-function rhinoBounds(r){ var n = G.rhinos.length, i = G.rhinos.indexOf(r); return [100 + i * 360, AW - 100 - (n - 1 - i) * 360]; }   // 360 = one rhino body
+function rhinoBounds(r){ if (G.vs) return [100, AW - 100];
+  var n = G.rhinos.length, i = G.rhinos.indexOf(r); return [100 + i * 360, AW - 100 - (n - 1 - i) * 360]; }   // 360 = one rhino body
 function hitRhino(r, p, pt, dmg, big, label){
   var vuln = (r.state === 'skid' || r.state === 'sleep') ? 1.6 : 1;
   dmg = Math.round(dmg * p.def.power * vuln);
@@ -951,6 +1123,7 @@ function hitRhino(r, p, pt, dmg, big, label){
 function alivePlayers(){ return G.players.filter(function(q){ return q.state !== 'ko'; }); }
 function rhinoTarget(r){
   // a rhino goes for the nearest fighter still standing
+  if (G.vs){ var f = vsFoeOf(r); return f || r; }
   var best = null, bd = 1e9;
   G.players.forEach(function(q){ if (q.state === 'ko') return; var d = Math.abs(q.x - r.x); if (d < bd){ bd = d; best = q; } });
   return best || G.p;
@@ -967,10 +1140,12 @@ function playerKO(p){
   if (G.over || p.state === 'ko') return;
   p.state = 'ko'; p.st = 0; sfx('gong', {f: 70, v: .6});
   if (G.comp) compDrop(p);
+  if (G.vs){ vsEnd(p.vsSide === 0 ? 1 : 0); return; }
   if (!alivePlayers().length){ G.over = true; G.won = false; fightTimeout(showResult, 1800); }
 }
 function rhinoKO(r){
   r.state = 'ko'; r.st = 0; sfx('bighit');
+  if (G.vs){ vsEnd(r.vsSide === 0 ? 1 : 0); return; }
   if (G.comp){ compDrop(r); fx.push({x: r.x, y: GROUND - 120 * (r.size || 1), t: 0, life: .9, r: 70, label: 'BELOW DETECTION LIMIT', big: false}); }
   fightTimeout(function(){ explodeRhino(r); }, 1500);
   if (liveRhinos().length){ fx.push({x: r.x, y: GROUND - 200, t: 0, life: .8, r: 80, label: 'ONE DOWN!', big: true}); return; }
@@ -1014,7 +1189,7 @@ function explodeRhino(r){
 // ------------------------------------------------------------ update
 function updatePlayer(p, dt){
   var def = p.def, keys = p.inp.keys, pressed = p.inp.pressed;
-  var r = nearestRhino(p.x) || G.r;
+  var r = nearestRhino(p.x) || G.r || vsFoeOf(p) || p;
   p.st += dt; if (p.inv > 0) p.inv -= dt; if (p.flash > 0) p.flash -= dt;
   var busy = p.state === 'punch' || p.state === 'kick' || p.state === 'special' || p.state === 'hurt' || p.state === 'ko' || p.state === 'win';
   var speed = 300 * def.speed;
@@ -1044,12 +1219,12 @@ function updatePlayer(p, dt){
     var k = p.alt ? POSE.punch : POSE.punch2; var u = p.st < .1 ? p.st / .1 : 1 - smooth(.18, .32, p.st);
     pose = mixPose(POSE.guard, k, u);
     // the two punch poses extend different arms: POSE.punch the near one, POSE.punch2 the far one
-    if (p.st > .06 && p.st < .2 && !p.attackHit){ var hp = p.stickPt || (p.alt ? p.handPt : p.farHandPt), hr = rhinoAt(hp, 14); if (hr){ p.attackHit = true; hitRhino(hr, p, hp, 7, false); } }
+    if (p.st > .06 && p.st < .2 && !p.attackHit){ var hp = p.stickPt || (p.alt ? p.handPt : p.farHandPt), hr = foeAt(p, hp, 14); if (hr){ p.attackHit = true; hitFoe(hr, p, hp, 7, false); } }
     if (p.st > .32) p.state = 'idle';
   } else if (p.state === 'kick'){
     var u2 = p.st < .12 ? 0 : (p.st < .22 ? (p.st - .12) / .1 : 1 - smooth(.34, .5, p.st));
     pose = p.st < .12 ? mixPose(POSE.guard, POSE.kickWind, p.st / .12) : mixPose(POSE.kickWind, POSE.kick, u2);
-    if (p.st > .17 && p.st < .32 && !p.attackHit){ var kr = rhinoAt(p.footPt, 16); if (kr){ p.attackHit = true; hitRhino(kr, p, p.footPt, 12, true); } }
+    if (p.st > .17 && p.st < .32 && !p.attackHit){ var kr = foeAt(p, p.footPt, 16); if (kr){ p.attackHit = true; hitFoe(kr, p, p.footPt, 12, true); } }
     if (p.st > .5) p.state = 'idle';
   } else if (p.state === 'special'){
     pose = specialUpdate(p, dt);
@@ -1081,14 +1256,14 @@ function specialUpdate(p, dt){
   if (kind === 'dash' || kind === 'grab'){
     var dur = kind === 'dash' ? .55 : .7, spd = kind === 'dash' ? 900 : 520;
     if (st < .12) pose = mixPose(POSE.guard, POSE.kickWind, st / .12);
-    else if (st < dur - .15){ p.x += p.dashDir * spd * dt; pose = kind === 'dash' ? POSE.punch : POSE.grab; var dr = p.attackHit ? null : rhinoAt(kind === 'dash' ? (p.stickPt || p.handPt) : p.headPt, kind === 'dash' ? 20 : 40); if (dr){ p.attackHit = true; hitRhino(dr, p, p.handPt, sp.dmg, true, kind === 'grab' ? 'SUPLEX!' : 'PURGED!'); if (kind === 'grab'){ dr.jump = 60; dr.tilt = -.6; } } }
+    else if (st < dur - .15){ p.x += p.dashDir * spd * dt; pose = kind === 'dash' ? POSE.punch : POSE.grab; var dr = p.attackHit ? null : foeAt(p, kind === 'dash' ? (p.stickPt || p.handPt) : p.headPt, kind === 'dash' ? 20 : 40); if (dr){ p.attackHit = true; hitFoe(dr, p, p.handPt, sp.dmg, true, kind === 'grab' ? 'SUPLEX!' : 'PURGED!'); if (kind === 'grab' && dr.isRhino){ dr.jump = 60; dr.tilt = -.6; } } }
     else pose = mixPose(POSE.punch, POSE.guard, smooth(dur - .15, dur, st));
     if (st > dur) p.state = 'idle';
   } else if (kind === 'fly' || kind === 'upper'){
     pose = kind === 'fly' ? POSE.fly : POSE.upper;
     if (kind === 'fly') p.x += p.dashDir * 380 * dt;
     var pt = kind === 'fly' ? p.footPt : p.handPt;
-    var fr = p.attackHit ? null : rhinoAt(pt, 22); if (fr){ p.attackHit = true; hitRhino(fr, p, pt, sp.dmg, true, kind === 'fly' ? 'K.O. KICK!' : 'AURORA!'); slowmo = 0; }
+    var fr = p.attackHit ? null : foeAt(p, pt, 22); if (fr){ p.attackHit = true; hitFoe(fr, p, pt, sp.dmg, true, kind === 'fly' ? 'K.O. KICK!' : 'AURORA!'); slowmo = 0; }
     if (p.y <= 0 && p.vy <= 0 && st > .3){ p.state = 'idle'; slowmo = 0; }
   } else if (kind === 'combo' || kind === 'spin'){
     var hits = sp.hits, per = kind === 'combo' ? .17 : .26, idx = Math.floor(st / per);
@@ -1096,7 +1271,7 @@ function specialUpdate(p, dt){
     var u = (st - idx * per) / per;
     if (kind === 'combo') pose = mixPose(POSE.guard, idx % 2 ? POSE.punch2 : POSE.punch, u < .5 ? u * 2 : 2 - u * 2);
     else { pose = mixPose(POSE.kickWind, POSE.kick, u < .5 ? u * 2 : 2 - u * 2); p.facing = (idx % 2 ? -1 : 1) * p.dashDir; }
-    if (u > .35 && u < .7 && p.specialHits === idx){ p.specialHits++; var pt2 = kind === 'combo' ? p.handPt : p.footPt, cr = rhinoAt(pt2, 18); if (cr) hitRhino(cr, p, pt2, sp.dmg, idx === hits - 1, idx === hits - 1 ? (kind === 'combo' ? 'ESPRESSO!' : 'TORNADO!') : null); }
+    if (u > .35 && u < .7 && p.specialHits === idx){ p.specialHits++; var pt2 = kind === 'combo' ? p.handPt : p.footPt, cr = foeAt(p, pt2, 18); if (cr) hitFoe(cr, p, pt2, sp.dmg, idx === hits - 1, idx === hits - 1 ? (kind === 'combo' ? 'ESPRESSO!' : 'TORNADO!') : null); }
     if (kind === 'spin') p.x += p.dashDir * 120 * dt;
   } else if (kind === 'godzilla'){
     p.inv = Math.max(p.inv, .1); slowmo = 0;
@@ -1112,6 +1287,7 @@ function specialUpdate(p, dt){
         for (var gi = 0; gi < 30; gi++) puffs.push({x: p.x + rnd(-460, 460), y: GROUND - rnd(0, 30), t: 0, r: rnd(12, 30)});
         liveRhinos().forEach(function(r){ var rc2 = rhinoRect(r), rcx = (rc2.x0 + rc2.x1) / 2;
           if (Math.abs(p.x - rcx) < 620){ hitRhino(r, p, [rcx, GROUND - 90], sp.dmg, true, 'PER-ZILLA!'); r.jump = 110; r.tilt = -.5; if (r.state === 'charge' || r.state === 'paw' || r.state === 'horn'){ r.state = 'stagger'; r.st = 0; } } });
+        var gz = G.vs ? vsFoeOf(p) : null; if (gz && !gz.isRhino && vsAlive(gz) && Math.abs(p.x - gz.x) < 620) hitFoe(gz, p, [gz.x, GROUND - 90], sp.dmg, true, 'PER-ZILLA!');
       }
     }
     else pose = mixPose(POSE.slam, POSE.guard, smooth(1.9, 2.5, st));
@@ -1127,7 +1303,8 @@ function specialUpdate(p, dt){
         if (r && Math.abs(p.x - rcx3) < 420){
           hitRhino(r, p, [rcx3, GROUND - 120], sp.dmg, true, 'NAP TIME!');
           if (r.state !== 'ko' && r.state !== 'gone'){ r.state = 'sleep'; r.st = 0; r.run = 0; r.facing = p.x > r.x ? 1 : -1; }
-        } else { fx.push({x: p.headPt[0], y: p.headPt[1] - 30, t: 0, life: .7, r: 40, label: 'too far…', big: false}); }
+        } else if (G.vs && vsFoeOf(p) && !vsFoeOf(p).isRhino && vsAlive(vsFoeOf(p)) && Math.abs(p.x - vsFoeOf(p).x) < 200){ var bz = vsFoeOf(p); hitFoe(bz, p, [bz.x, GROUND - 120], sp.dmg, true, 'NAP TIME!'); }
+        else { fx.push({x: p.headPt[0], y: p.headPt[1] - 30, t: 0, life: .7, r: 40, label: 'too far…', big: false}); }
       }
     }
     else pose = mixPose(POSE.grab, POSE.guard, smooth(2.0, 2.3, st));
@@ -1144,7 +1321,8 @@ function updateRhino(r, dt){
   var p = rhinoTarget(r);
   r.st += dt; if (r.flash > 0) r.flash -= dt;
   r.tail = .12 * Math.sin(G.t * 1.4);
-  if (r.jump > 0 && r.state !== 'jetstomp'){ r.jump = Math.max(0, r.jump - 140 * dt); }
+  if (r.human) vsRhinoJump(r, dt);
+  else if (r.jump > 0 && r.state !== 'jetstomp'){ r.jump = Math.max(0, r.jump - 140 * dt); }
   if (r.state === 'ko'){ var a = r.st; r.tilt = -.5 * Math.exp(-a * 1.2) * Math.cos(a * 7); r.head = .4 * Math.exp(-a * 2) * Math.cos(a * 9); r.squash = .1 * Math.exp(-a * 6); return; }
   if (r.state === 'gone') return;
   if (r.state === 'morph'){
@@ -1170,7 +1348,8 @@ function updateRhino(r, dt){
   var dist = p.x - r.x, adist = Math.abs(dist);
   r.angry = G.comp ? r.share < .2 : r.hp < r.maxhp * .45;
   var spdMul = r.angry ? 1.25 : 1;
-  if (r.state === 'idle'){
+  if (r.state === 'idle' && r.human){ vsRhinoIdle(r, dt); }
+  else if (r.state === 'idle'){
     r.facing = dist > 0 ? 1 : -1; r.run = 0; r.tilt *= Math.pow(.05, dt); r.head *= Math.pow(.05, dt);
     r.timer -= dt;
     if (r.timer <= 0){
@@ -1210,12 +1389,12 @@ function updateRhino(r, dt){
     if (r.st >= 1.38 && r.st < 1.9 && !r.chargeHit){ r.chargeHit = true; shake = Math.max(shake, 22); sfx('bighit'); sfx('drum'); impactFrame = 2;
       for (var pk = 0; pk < 14; pk++) puffs.push({x: r.x + rnd(-200, 200), y: GROUND - rnd(0, 20), t: 0, r: rnd(8, 20)});
       rings.push({x: r.x, t: 0, grey: true});
-      G.players.forEach(function(q){ if (Math.abs(q.x - r.x) < 190 && q.y < 45) hitPlayer(q, 20, 'STOMPED!', Math.sign(q.x - r.x || 1) * 420); }); }
+      rhinoFoes(r).forEach(function(q){ if (Math.abs(q.x - r.x) < 190 && (q.isRhino ? q.jump < 40 : q.y < 45)) hitEnt(q, r, 20, 'STOMPED!', Math.sign(q.x - r.x || 1) * 420); }); }
   } else if (r.state === 'burst'){
     r.run = 0; r.glow = Math.min(1, r.st / .6); r.squash = .04 * Math.sin(r.st * 40) * r.glow;
     if (r.st >= .6 && !r.chargeHit){
       r.chargeHit = true; sfx('burst'); rings.push({x: r.x, t: 0}); shake = Math.max(shake, 10);
-      G.players.forEach(function(q){ if (Math.abs(q.x - r.x) < 250 && q.y < 70) hitPlayer(q, 18, 'IRRADIATED!', Math.sign(q.x - r.x || 1) * 320); });
+      rhinoFoes(r).forEach(function(q){ if (Math.abs(q.x - r.x) < 250 && (q.isRhino ? 1 : q.y < 70)) hitEnt(q, r, 18, 'IRRADIATED!', Math.sign(q.x - r.x || 1) * 320); });
     }
     if (r.st > 1.1){ r.state = 'idle'; r.st = 0; r.timer = .8; r.glow = 0; r.squash = 0; r.chargeHit = false; }
   } else if (r.state === 'charge'){
@@ -1223,9 +1402,10 @@ function updateRhino(r, dt){
     r.x += r.dir * sp * dt; r.run = 1; r.phase += dt * 20; r.tilt = .06 + .03 * Math.sin(r.phase); r.head = -.15;
     if (Math.random() < .6) puffs.push({x: r.x - r.dir * rnd(60, 150), y: GROUND - rnd(0, 30), t: 0, r: rnd(6, 14)});
     // hit the player?
-    var ts = Math.min(1.4, r.size || 1); G.players.forEach(function(q, qi){ if (!r.trampled[qi] && Math.abs(q.x - (r.x + r.dir * 120 * ts)) < 110 * ts && q.y < 84 * ts && q.inv <= 0 && !(q.state === 'special' && (q.def.special.kind === 'dash'))){ r.trampled[qi] = true; hitPlayer(q, r.angry ? 26 : 20, 'TRAMPLED!', r.dir * 520); } });
+    var ts = Math.min(1.4, r.size || 1); rhinoFoes(r).forEach(function(q, qi){ if (!r.trampled[qi] && Math.abs(q.x - (r.x + r.dir * 120 * ts)) < 110 * ts && (q.isRhino ? q.jump < 60 : (q.y < 84 * ts && q.inv <= 0 && !(q.state === 'special' && (q.def.special.kind === 'dash'))))){ r.trampled[qi] = true; hitEnt(q, r, r.angry ? 26 : 20, 'TRAMPLED!', r.dir * 520); } });
     var rb = rhinoBounds(r);
-    if ((r.dir > 0 && r.x > rb[1] - 20) || (r.dir < 0 && r.x < rb[0] + 20)){ r.state = 'skid'; r.st = 0; r.x = clamp(r.x, rb[0] + 20, rb[1] - 20); sfx('whoosh'); for (var i = 0; i < 10; i++) puffs.push({x: r.x + r.dir * rnd(-40, 100), y: GROUND - rnd(0, 30), t: 0, r: rnd(10, 22)});
+    if (r.human && r.st > 1.05){ r.state = 'skid'; r.st = 0; sfx('whoosh'); for (var hk2 = 0; hk2 < 8; hk2++) puffs.push({x: r.x + r.dir * rnd(-40, 90), y: GROUND - rnd(0, 26), t: 0, r: rnd(8, 18)}); }
+    else if ((r.dir > 0 && r.x > rb[1] - 20) || (r.dir < 0 && r.x < rb[0] + 20)){ r.state = 'skid'; r.st = 0; r.x = clamp(r.x, rb[0] + 20, rb[1] - 20); sfx('whoosh'); for (var i = 0; i < 10; i++) puffs.push({x: r.x + r.dir * rnd(-40, 100), y: GROUND - rnd(0, 30), t: 0, r: rnd(10, 22)});
       if (r.mutant){ for (var hk = 0; hk < 3; hk++) hot.push({x: clamp(r.x - r.dir * (90 + hk * 120), 60, AW - 60), r: rnd(48, 70), t: 0, life: 9}); if (hot.length > 6) hot.splice(0, hot.length - 6); } }
   } else if (r.state === 'skid'){
     r.run = .3 * (1 - r.st); r.tilt = -.22 * (1 - smooth(.3, .8, r.st)) * smooth(0, .12, r.st); r.head = .05;
@@ -1234,7 +1414,7 @@ function updateRhino(r, dt){
     r.facing = dist > 0 ? 1 : -1;
     if (r.st < .45){ r.head = -.25 * (r.st / .45); r.tilt = .04 * (r.st / .45); }
     else if (r.st < .75){ var u = (r.st - .45) / .3; r.head = -.25 + 1.2 * Math.sin(u * 3.14); r.tilt = .04 - .12 * Math.sin(u * 3.14); r.x += r.facing * 140 * dt;
-      if (!r.chargeHit && u > .2 && u < .8){ var front = r.x + r.facing * 2.4 * rs(r), hs = Math.min(1.4, r.size || 1); G.players.forEach(function(q){ if (!r.chargeHit && Math.abs(q.x - front) < 110 * hs && Math.sign(q.x - r.x) === r.facing && !q.ducking && q.y < 60 * hs){ r.chargeHit = true; hitPlayer(q, 15, 'HORNED!', r.facing * 380); } }); }
+      if (!r.chargeHit && u > .2 && u < .8){ var front = r.x + r.facing * 2.4 * rs(r), hs = Math.min(1.4, r.size || 1); rhinoFoes(r).forEach(function(q){ if (!r.chargeHit && Math.abs(q.x - front) < 110 * hs && Math.sign(q.x - r.x) === r.facing && (q.isRhino ? q.jump < 60 : (!q.ducking && q.y < 60 * hs))){ r.chargeHit = true; hitEnt(q, r, 15, 'HORNED!', r.facing * 380); } }); }
     } else { r.head *= Math.pow(.02, dt); r.tilt *= Math.pow(.02, dt); if (r.st > 1.2){ r.state = 'idle'; r.st = 0; r.timer = r.angry ? .6 : 1.0; r.chargeHit = false; } }
   } else if (r.state === 'sleep'){
     r.run = 0; r.tilt = lerp(r.tilt, .05, Math.min(1, dt * 3)); r.head = lerp(r.head, -.35, Math.min(1, dt * 3)); r.squash = .03 * Math.sin(r.st * 2.5);
@@ -1244,7 +1424,7 @@ function updateRhino(r, dt){
     if (r.st > .28){ r.state = 'idle'; r.st = 0; r.timer = Math.max(.25, (r.angry ? .5 : 1.0) - r.rage * .04); }
   }
   // keep some daylight between rhinos that are not mid-charge
-  if (G.rhinos.length > 1 && r.state !== 'charge' && r.state !== 'jetstomp'){
+  if (!G.vs && G.rhinos.length > 1 && r.state !== 'charge' && r.state !== 'jetstomp'){
     G.rhinos.forEach(function(o){ if (o === r || o.state === 'ko' || o.state === 'gone') return; var d = r.x - o.x, ad = Math.abs(d), need = 200 * ((r.size || 1) + (o.size || 1)); if (ad < need) r.x += (d >= 0 ? 1 : -1) * (need - ad) * 2.5 * dt; });
   }
   var lim = rhinoBounds(r); r.x = clamp(r.x, lim[0], lim[1]);
@@ -1254,12 +1434,17 @@ function update(dt){
   var ts = slowmo > 0 ? .3 : 1;
   G.t += dt * ts; if (!G.over) G.elapsed += dt;
   if (slowmo > 0) slowmo -= dt;
-  G.p.inp.keys = keys; G.p.inp.pressed = pressed;   // player 1 is always the local keyboard / touch pads
+  if (G.vs){
+    G.sides[0].inp.keys = keys; G.sides[0].inp.pressed = pressed;                       // side 1 is this keyboard / the touch pads
+    if (!Net.on || !Net.peer){ G.sides[1].inp.keys = keys2; G.sides[1].inp.pressed = pressed2; }   // side 2 is the other half of the keyboard
+  }
+  else { G.p.inp.keys = keys; G.p.inp.pressed = pressed; }   // player 1 is always the local keyboard / touch pads
   G.players.forEach(function(q){ updatePlayer(q, dt * ts); }); G.rhinos.forEach(function(r){ updateRhino(r, dt * ts); });
   updateCamera(dt);
   if (G.comp) G.players.concat(G.rhinos).forEach(function(c){ c.size = lerp(c.size || 1, sizeOf(c.share), Math.min(1, dt * 5)); });
   var hitsTotal = 0; G.players.forEach(function(q){ hitsTotal += q.hitsLanded; });
-  if (!G.over && hitsTotal === 0 && G.elapsed >= pacifistTime()) rhinoReveal();
+  if (!G.vs && !G.over && hitsTotal === 0 && G.elapsed >= pacifistTime()) rhinoReveal();
+  if (G.vs && !G.over && G.elapsed >= VS_TIME) vsTimeUp();
   // effects
   for (var i = fx.length - 1; i >= 0; i--){ fx[i].t += dt; if (fx[i].t > fx[i].life) fx.splice(i, 1); }
   tickAmbient(dt);
@@ -1273,7 +1458,7 @@ function update(dt){
     if (!G.over && !bo.hit){ G.players.forEach(function(q){ if (!bo.hit && Math.abs(bo.x - q.x) < 34 && q.y < 60 && !q.ducking && q.inv <= 0){ bo.hit = true; hitPlayer(q, 14, 'ZAPPED!', bo.dir * 300); } }); }
     if (bo.x < -60 || bo.x > AW + 60 || bo.hit) bolts.splice(bi, 1);
   }
-  pressed = {};
+  pressed = {}; pressed2 = {};
 }
 // the camera follows the fighters on a wide field (round 4); on the normal field it stays at 0
 function updateCamera(dt){
@@ -1297,6 +1482,7 @@ function tickAmbient(dt){
 
 // ------------------------------------------------------------ draw
 function drawHUD(){
+  if (G.vs){ drawVsHUD(); return; }
   var p = G.p, r = G.r;
   ctx.font = '700 15px ' + 'Nunito, sans-serif'; ctx.textBaseline = 'top';
   // one bar + special meter per fighter (the second one below the first)
@@ -1461,15 +1647,19 @@ function draw(){
     if (impactFrame > 0){ ctx.globalCompositeOperation = 'difference'; ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, LW, LH); ctx.globalCompositeOperation = 'source-over'; }
     if (flashA > 0){ ctx.fillStyle = 'rgba(255,255,255,' + flashA + ')'; ctx.fillRect(0, 0, LW, LH); }
     var allGone = G.rhinos.every(function(r0){ return r0.state === 'gone'; });
-    if (G.over && G.won && G.pacifist){
+    if (G.vs){
+      if (G.over) bigText(G.vsWin === -1 ? 'TIME!' : 'K.O.!', LW / 2, 200, 120);
+      if (!G.over && G.elapsed < 1.6){ var va = 1 - smooth(1.1, 1.6, G.elapsed); ctx.globalAlpha = va; bigText(G.elapsed < .8 ? 'VERSUS' : 'FIGHT!', LW / 2, 220, 96); ctx.globalAlpha = 1; }
+    }
+    else if (G.over && G.won && G.pacifist){
       if (G.rhinos.some(function(r0){ return r0.state === 'morph' && !r0.revealed; })) bigText('?!', LW / 2, 200, 120);
       else if (!allGone){ var just = 'JUST A ' + G.rhinos.filter(function(r0){ return r0.morph; }).map(function(r0){ return ANIMALS[r0.morph].name.toUpperCase(); }).join(' & A '); bigText(just, LW / 2, 200, Math.min(90, Math.floor(1500 / just.length))); }
       else bigText('FALSE POSITIVE', LW / 2, 190, 78);
     }
     else if (G.over && G.won && !allGone){ bigText('K.O.!', LW / 2, 200, 120); }
     else if (G.over && G.won && allGone){ bigText('FALSE POSITIVE', LW / 2, 190, 78); }
-    if (G.over && !G.won){ bigText('TRAMPLED', LW / 2, 200, 100); }
-    if (!G.over && G.elapsed < 1.6){ var a = 1 - smooth(1.1, 1.6, G.elapsed); ctx.globalAlpha = a; bigText(G.elapsed < .8 ? LEVELS[LEVEL].name : 'FIGHT!', LW / 2, 220, 96); ctx.globalAlpha = 1; }
+    if (!G.vs && G.over && !G.won){ bigText('TRAMPLED', LW / 2, 200, 100); }
+    if (!G.vs && !G.over && G.elapsed < 1.6){ var a = 1 - smooth(1.1, 1.6, G.elapsed); ctx.globalAlpha = a; bigText(G.elapsed < .8 ? LEVELS[LEVEL].name : 'FIGHT!', LW / 2, 220, 96); ctx.globalAlpha = 1; }
     if (wl){
       // CRT look: green cast, scanlines, faint flicker
       ctx.fillStyle = 'rgba(80,255,120,' + (.05 + .015 * Math.sin(G.t * 37)) + ')'; ctx.fillRect(0, 0, LW, LH);
@@ -1648,24 +1838,24 @@ function sendNet(m){
   m.to = Net.peer;
   sendVia(m, (Net.rtc && Net.rtcUp) ? 'rtc' : 'relay', Net.rtcPeer);
 }
-function coopStatus(t){ $('coopStatus').textContent = t; }
+function coopStatus(t){ $(Net.mode === 'vs' ? 'vsStatus' : 'coopStatus').textContent = t; }
 function coopJoin(){
-  var code = ($('coopCode').value || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 24);
+  var code = ($(Net.mode === 'vs' ? 'vsCode' : 'coopCode').value || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 24);
   if (!code){ coopStatus('Type a room code first — any word you both agree on.'); return; }
   if (Net.joining) return;                          // a double-click must not open a second room
   try { localStorage.setItem('swebits_room', code); } catch (e) {}
-  netLeave();
-  Net.joining = true; $('btnCoopJoin').disabled = true;
+  var mode = Net.mode; netLeave(); Net.mode = mode;   // leaving resets the mode; this join keeps co-op or versus
+  Net.joining = true; $('btnCoopJoin').disabled = true; $('btnVsJoin').disabled = true;
   coopStatus('Connecting to room ' + code.toUpperCase() + '…');
   netTransport().then(function(tr){
     var conn = tr.join(code, {onPeerJoin: rtcPeerJoin, onPeerLeave: rtcPeerLeave, onData: function(d, id){ netData(d, id, 'rtc'); }, onError: function(msg){ Net.err = /could not connect to peer/i.test(msg) ? 'direct P2P blocked on this network — using the relay' : msg; updateCoopLine(); }});
     Net.on = true; Net.code = code; Net.rtc = conn; Net.rtcUp = false; Net.rtcPeer = null; Net.id = String(conn.selfId); Net.peer = null; Net.relayPeer = false; Net.ready = false; Net.peerReady = null; Net.host = false; Net.me = 0; Net.err = ''; Net.full = false; Net.lost = false;
     Net.relay = (window.__coopTransport && window.__coopTransport.noRelay) ? null : relayTransport(code, {onPeerJoin: relayPeerJoin, onPeerLeave: relayPeerLeave, onData: function(d, id){ netData(d, id, 'relay'); }, onRelay: updateCoopLine});
-    Net.joining = false; $('btnCoopJoin').disabled = false;
+    Net.joining = false; $('btnCoopJoin').disabled = false; $('btnVsJoin').disabled = false;
     buildRoster(); show('select'); scene = 'select'; updateCoopLine();
     if (Net.timer) clearInterval(Net.timer);
     Net.timer = setInterval(function(){ if (!Net.on){ clearInterval(Net.timer); Net.timer = null; return; } if (scene === 'select') updateCoopLine(); }, 1000);
-  }).catch(function(e){ Net.on = false; Net.joining = false; $('btnCoopJoin').disabled = false; coopStatus('Could not start the multiplayer module: ' + ((e && e.message) || e) + '. Reload the page and try again.'); });
+  }).catch(function(e){ Net.on = false; Net.joining = false; $('btnCoopJoin').disabled = false; $('btnVsJoin').disabled = false; coopStatus('Could not start the multiplayer module: ' + ((e && e.message) || e) + '. Reload the page and try again.'); });
 }
 function netLeave(){
   if (Net.on) sendNet({t:'bye'});
@@ -1675,6 +1865,7 @@ function netLeave(){
   if (Net.timer){ clearInterval(Net.timer); Net.timer = null; }
   Net.on = false; Net.rtc = null; Net.rtcUp = false; Net.rtcPeer = null; Net.relay = null; Net.relayPeer = false; Net.peer = null; Net.ready = false; Net.peerReady = null; Net.host = false; Net.me = 0; Net.f = null; Net.err = ''; Net.full = false; Net.lost = false; Net.joining = false;
   Net.guestInp = {keys:{}, pressed:{}};
+  Net.mode = 'coop';
   $('selCoop').hidden = true; $('fightVerb').textContent = 'FIGHT AS';
 }
 function setPeer(id){
@@ -1683,7 +1874,7 @@ function setPeer(id){
   if (Net.peer) return;                              // two is company; a third player is told the room is full
   Net.peer = id; Net.host = Net.id < Net.peer; Net.me = Net.host ? 0 : 1; Net.full = false;
   sfx('chime', {f: 1318});
-  if (Net.ready) sendNet({t:'ready', f: ROSTER[selected].id});
+  if (Net.ready) sendNet({t:'ready', f: myPickId()});
   updateCoopLine();
 }
 function peerGone(){
@@ -1721,7 +1912,7 @@ function netData(d, tid, via){
   if (d.t === 'hello'){ updateCoopLine(); }
   else if (d.t === 'ready'){ Net.peerReady = d.f; updateCoopLine(); if (Net.host && Net.ready && scene === 'select') coopStart(parseInt($('startLevel').value, 10) || 0); }
   else if (d.t === 'unready'){ Net.peerReady = null; updateCoopLine(); }
-  else if (d.t === 'start'){ if (!Net.host){ LEVEL = d.level; Net.f = d.f; beginCoopRound(); } }
+  else if (d.t === 'start'){ if (!Net.host){ LEVEL = d.level; Net.f = d.f; Net.mode = d.vs ? 'vs' : 'coop'; beginCoopRound(); } }
   else if (d.t === 'in'){ if (Net.host){ var ko = {}; (d.k || []).forEach(function(k){ ko[k] = true; }); Net.guestInp.keys = ko; (d.p || []).forEach(function(k){ Net.guestInp.pressed[k] = true; }); } }
   else if (d.t === 's'){ if (!Net.host && scene === 'fight') applySnap(d); }
   else if (d.t === 'result'){ if (!Net.host) showResult(); }
@@ -1729,7 +1920,7 @@ function netData(d, tid, via){
 }
 function updateCoopLine(){
   var el = $('selCoop'); el.hidden = !Net.on; if (!Net.on) return;
-  var room = 'Room ' + Net.code.toUpperCase();
+  var room = (Net.mode === 'vs' ? 'Versus room ' : 'Room ') + Net.code.toUpperCase();
   var diag = ((Net.rtc && Net.rtc.relays) ? ' · nostr ' + Net.rtc.relays() : '') + ' · relay ' + (Net.relay ? (Net.relay.ok() ? 'on' : 'connecting…') : 'off');
   var via = ' · via ' + (Net.rtcUp ? 'P2P' : 'relay');
   if (Net.full) el.textContent = room + ' · already has two players — pick another code and both type it.';
@@ -1741,25 +1932,28 @@ function updateCoopLine(){
   $('fightVerb').textContent = Net.on ? 'READY AS' : 'FIGHT AS';
 }
 function coopReady(){
-  Net.ready = true; sendNet({t:'ready', f: ROSTER[selected].id}); updateCoopLine();
+  Net.ready = true; sendNet({t:'ready', f: myPickId()}); updateCoopLine();
   if (Net.host && Net.peerReady) coopStart(parseInt($('startLevel').value, 10) || 0);
 }
 function coopStart(level){
   // host only: same fighters again (rematch / next round) or the freshly picked pair
   if (!Net.host || !Net.peer) return;
-  LEVEL = level; Net.f = [ROSTER[selected].id, Net.peerReady || (Net.f && Net.f[1]) || 'albertas'];
-  sendNet({t:'start', f: Net.f, level: LEVEL}); beginCoopRound();
+  LEVEL = level; Net.f = [myPickId(), Net.peerReady || (Net.f && Net.f[1]) || 'albertas'];
+  sendNet({t:'start', f: Net.f, level: LEVEL, vs: Net.mode === 'vs' ? 1 : 0}); beginCoopRound();
 }
 function defById(id){ for (var i = 0; i < ROSTER.length; i++) if (ROSTER[i].id === id) return ROSTER[i]; return ROSTER[0]; }
 function beginCoopRound(){
-  newFight(defById(Net.f[0]), defById(Net.f[1])); scene = 'fight'; show(null);
+  if (Net.mode === 'vs'){ vsLocal = false; newVsFight(Net.f[0], Net.f[1]); }
+  else newFight(defById(Net.f[0]), defById(Net.f[1]));
+  scene = 'fight'; show(null);
   Net.guestInp = {keys:{}, pressed:{}}; Net.sfxQ = []; Net.frame = 0; Net.lastKeys = '';
   unlockAudio(); sfx('gong', {f: LEVEL ? 70 : 96, v: .6}); setTimeout(function(){ sfx('drum'); }, 800);
 }
 function hostTick(dt){
-  if (G && G.p2){ G.p2.inp.keys = Net.guestInp.keys; G.p2.inp.pressed = Net.guestInp.pressed; }
+  var guest = G ? (G.vs ? G.sides[1] : G.p2) : null;
+  if (guest && Net.peer){ guest.inp.keys = Net.guestInp.keys; guest.inp.pressed = Net.guestInp.pressed; }
   update(dt);
-  if (G && G.p2){ Net.guestInp.pressed = {}; Net.frame++; if (Net.peer && Net.frame % (Net.rtcUp ? 2 : 3) === 0) sendSnap(); }   // 30 Hz P2P, 20 Hz over the relay
+  if (guest){ Net.guestInp.pressed = {}; Net.frame++; if (Net.peer && Net.frame % (Net.rtcUp ? 2 : 3) === 0) sendSnap(); }   // 30 Hz P2P, 20 Hz over the relay
 }
 function guestTick(dt){
   if (!G) return;
@@ -1779,8 +1973,8 @@ function r2(v){ return Math.round((v || 0) * 100) / 100; }
 function r3(v){ return v == null ? null : Math.round(v * 1000) / 1000; }
 function packP(p){ return [r1(p.x), r1(p.y), p.facing, r1(p.hp), p.meter | 0, p.state, r2(p.st), r2(p.inv), r2(p.flash), r2(p.scale || 1), p.ducking ? 1 : 0, POSE_KEYS.map(function(k){ return r2(p.pose[k]); }), p.alt ? 1 : 0, p.hitsLanded, r3(p.share)]; }
 function unpackP(p, a){ p.x = a[0]; p.y = a[1]; p.facing = a[2]; p.hp = a[3]; p.meter = a[4]; p.state = a[5]; p.st = a[6]; p.inv = a[7]; p.flash = a[8]; p.scale = a[9]; p.ducking = !!a[10]; var o = {}; POSE_KEYS.forEach(function(k, i){ o[k] = a[11][i]; }); p.pose = o; p.alt = !!a[12]; p.hitsLanded = a[13]; if (a[14] != null){ p.share = a[14]; p.size = sizeOf(a[14]); } }
-function packR(r){ return [r1(r.x), r.facing, r.hp, r.state, r2(r.st), r1(r.jump), r2(r.tilt), r2(r.head), r2(r.squash), r2(r.run), r2(r.phase), r2(r.tail), r2(r.flash), r2(r.glow), r.angry ? 1 : 0, r.dir, r1(r.targetX), r.morph || '', r.revealed ? 1 : 0, r.willFeint ? 1 : 0, r3(r.share)]; }
-function unpackR(r, a){ r.x = a[0]; r.facing = a[1]; r.hp = a[2]; r.state = a[3]; r.st = a[4]; r.jump = a[5]; r.tilt = a[6]; r.head = a[7]; r.squash = a[8]; r.run = a[9]; r.phase = a[10]; r.tail = a[11]; r.flash = a[12]; r.glow = a[13]; r.angry = !!a[14]; r.dir = a[15]; r.targetX = a[16]; r.morph = a[17] || null; r.revealed = !!a[18]; r.willFeint = !!a[19]; if (a[20] != null){ r.share = a[20]; r.size = sizeOf(a[20]); } }
+function packR(r){ return [r1(r.x), r.facing, r.hp, r.state, r2(r.st), r1(r.jump), r2(r.tilt), r2(r.head), r2(r.squash), r2(r.run), r2(r.phase), r2(r.tail), r2(r.flash), r2(r.glow), r.angry ? 1 : 0, r.dir, r1(r.targetX), r.morph || '', r.revealed ? 1 : 0, r.willFeint ? 1 : 0, r3(r.share), r.meter | 0]; }
+function unpackR(r, a){ r.x = a[0]; r.facing = a[1]; r.hp = a[2]; r.state = a[3]; r.st = a[4]; r.jump = a[5]; r.tilt = a[6]; r.head = a[7]; r.squash = a[8]; r.run = a[9]; r.phase = a[10]; r.tail = a[11]; r.flash = a[12]; r.glow = a[13]; r.angry = !!a[14]; r.dir = a[15]; r.targetX = a[16]; r.morph = a[17] || null; r.revealed = !!a[18]; r.willFeint = !!a[19]; if (a[20] != null){ r.share = a[20]; r.size = sizeOf(a[20]); } if (a[21] != null) r.meter = a[21]; }
 function sendSnap(){
   var snap = {t:'s', T: r2(G.t), e: r2(G.elapsed), o: G.over ? 1 : 0, w: G.won ? 1 : 0, pf: G.pacifist ? 1 : 0,
     P: G.players.map(packP), R: G.rhinos.map(packR),
@@ -1788,12 +1982,12 @@ function sendSnap(){
     hot: hot.map(function(h){ return [r1(h.x), r1(h.r), r2(h.t), h.life]; }),
     rg: rings.map(function(g){ return [r1(g.x), r2(g.t), g.grey ? 1 : 0]; }),
     bo: bolts.map(function(b){ return [r1(b.x), b.dir, r2(b.t)]; }),
-    sh: r1(shake), fl: r2(flashA), sm: r2(slowmo), imf: impactFrame, sx: Net.sfxQ};
+    sh: r1(shake), fl: r2(flashA), sm: r2(slowmo), imf: impactFrame, sx: Net.sfxQ, vw: G.vsWin};
   Net.sfxQ = []; sendNet(snap);
 }
 function applySnap(d){
   if (!G || !d.P) return;
-  G.t = d.T; G.elapsed = d.e; G.over = !!d.o; G.won = !!d.w; G.pacifist = !!d.pf;
+  G.t = d.T; G.elapsed = d.e; G.over = !!d.o; G.won = !!d.w; G.pacifist = !!d.pf; if (d.vw != null) G.vsWin = d.vw;
   for (var i = 0; i < G.players.length && i < d.P.length; i++) unpackP(G.players[i], d.P[i]);
   for (var ri = 0; ri < G.rhinos.length && ri < d.R.length; ri++){
     var r = G.rhinos[ri], wasGone = r.state === 'gone'; unpackR(r, d.R[ri]);
@@ -1809,18 +2003,21 @@ function applySnap(d){
 
 // ------------------------------------------------------------ screens
 var $ = function(id){ return document.getElementById(id); };
-function show(id){ ['title', 'select', 'result', 'scores', 'levelCard', 'coop'].forEach(function(s){ $(s).hidden = s !== id; }); $('menuBtn').hidden = id === 'title'; document.body.setAttribute('data-scene', id || 'fight'); }
+function show(id){ ['title', 'select', 'result', 'scores', 'levelCard', 'coop', 'versus'].forEach(function(s){ $(s).hidden = s !== id; }); $('menuBtn').hidden = id === 'title'; document.body.setAttribute('data-scene', id || 'fight'); }
 // back to the main menu from anywhere (Esc, or the ☰ MENU button): abandons a running fight
 function goMenu(){
   if (scene === 'title') return;
   if (termTimer){ clearInterval(termTimer); termTimer = null; }
   if (!$('videoBox').hidden) closeVideo();
-  G = null; keys = {}; pressed = {}; slowmo = 0; shake = 0; flashA = 0;
+  G = null; vsLocal = false; clearKeys(); slowmo = 0; shake = 0; flashA = 0;
   netLeave();
   show('title'); scene = 'title'; refreshBoard();
 }
 function buildRoster(){
-  var host = $('roster'); host.innerHTML = ''; $('selName').textContent = ROSTER[selected].name.toUpperCase(); $('selName2').textContent = ROSTER[selected].name.toUpperCase();
+  var host = $('roster'); host.innerHTML = '';
+  var vsPick = Net.on && Net.mode === 'vs';
+  if (!vsPick) pickRhino = false;
+  setPickName();
   ROSTER.forEach(function(d, i){
     var el = document.createElement('button'); el.className = 'fighter' + (i === selected ? ' sel' : ''); el.type = 'button'; el.setAttribute('aria-label', d.name);
     el.innerHTML = '<img alt="" src="' + FACES[d.face] + '"><div class="name">' + d.name + '</div><div class="move">' + d.special.name + '</div>' +
@@ -1828,13 +2025,33 @@ function buildRoster(){
       '<div class="stats"><span>PWR</span><div class="bar"><i style="width:' + Math.min(100, Math.round(d.power * 70)) + '%"></i></div><span>SPD</span><div class="bar"><i style="width:' + Math.min(100, Math.round(d.speed * 70)) + '%"></i></div><span>HP</span><div class="bar"><i style="width:' + Math.min(100, Math.round(d.hp / 1.4)) + '%"></i></div></div>';
     el.addEventListener('click', function(){
       unlockAudio();
-      if (selected === i && el.classList.contains('sel')){ startFight(); return; }
-      selected = i; sfx('chime', {f: 1318}); $('selName').textContent = d.name.toUpperCase(); $('selName2').textContent = d.name.toUpperCase();
-      Array.prototype.forEach.call(host.children, function(c, k){ c.classList.toggle('sel', k === i); });
+      if (selected === i && !pickRhino && el.classList.contains('sel')){ startFight(); return; }
+      selected = i; pickRhino = false; sfx('chime', {f: 1318}); setPickName();
+      Array.prototype.forEach.call(host.children, function(c, k){ c.classList.toggle('sel', k === i && !pickRhino); });
     });
     var bb = bestFor(d.name); el.querySelector('.best').textContent = bb ? 'BEST ' + fmtScore(bb.score) + ' · ' + bb.name : '';   // leaderboard names are untrusted text, never markup
+    el.classList.toggle('sel', i === selected && !pickRhino);
     host.appendChild(el);
   });
+  if (vsPick){
+    // versus only: the false positive itself is a playable side
+    var rel = document.createElement('button'); rel.className = 'fighter' + (pickRhino ? ' sel' : ''); rel.type = 'button'; rel.setAttribute('aria-label', 'The Rhino');
+    rel.innerHTML = '<div class="name">THE RHINO</div><div class="move">' + RHINO_DEF.special.name + '</div><div class="best">the false positive fights back</div>' +
+      '<div class="stats"><span>PWR</span><div class="bar"><i style="width:70%"></i></div><span>SPD</span><div class="bar"><i style="width:60%"></i></div><span>HP</span><div class="bar"><i style="width:100%"></i></div></div>';
+    rel.addEventListener('click', function(){
+      unlockAudio();
+      if (pickRhino && rel.classList.contains('sel')){ startFight(); return; }
+      pickRhino = true; sfx('chime', {f: 1046}); setPickName();
+      Array.prototype.forEach.call(host.children, function(c){ c.classList.remove('sel'); });
+      rel.classList.add('sel');
+    });
+    host.appendChild(rel);
+  }
+}
+function setPickName(){
+  var n = pickRhino ? 'THE RHINO' : ROSTER[selected].name.toUpperCase();
+  $('selName').textContent = n; $('selName2').textContent = n;
+  $('btnVideo').hidden = pickRhino;
 }
 function beginRound(){
   newFight(ROSTER[selected]); scene = 'fight'; show(null);
@@ -1863,6 +2080,7 @@ function startFight(){
 function showResult(){
   if (!G || scene !== 'fight') return;   // the fight was abandoned via the menu
   if (Net.on && Net.host && Net.peer) sendNet({t:'result'});
+  if (G.vs){ showVsResult(); return; }
   var p = G.players[(Net.on && Net.peer) ? Net.me : 0] || G.p, r = G.r, coop = G.players.length > 1;
   $('resCoop').hidden = !coop;
   if (coop){ $('resCoop').textContent = Net.host ? 'Co-op: you are the host — REMATCH or NEXT ROUND starts it for both of you.' : 'Co-op: waiting for the host to pick REMATCH or NEXT ROUND…'; }
@@ -1898,6 +2116,22 @@ function showResult(){
     $('resReadout').innerHTML = G.comp ? ('> reads: <b>Rhinoceros + Zebra (relative abundance)</b> — status: <b>' + G.rhinos.map(function(r0){ return Math.round((r0.share || 0) * 100) + ' %'; }).join(' + ') + '</b><br>> fighter: <b>' + teamName(G) + '</b> · survived <b>' + G.elapsed.toFixed(1) + ' s</b> · your share fell below the <b>detection limit</b><br>> tip: every hit you take makes both of them bigger. Land hits and keep the share coming your way.')
       : ('> read: <b>Rhinoceros' + (LEVEL === 3 ? ' ×2 (PCR duplicate)' : LEVEL === 2 ? ' (wrong sample)' : LEVEL ? ' (contaminant match)' : ' (98.7%)') + '</b> — status: <b>still there</b><br>> fighter: <b>' + teamName(G) + '</b> · survived <b>' + G.elapsed.toFixed(1) + ' s</b> · rhino HP left: <b>' + G.rhinos.map(function(r0){ return r0.hp; }).join(' + ') + '</b><br>> tip: jump the charge when you see the <b>!</b>, duck the horn sweep, and hit it while it skids (or sleeps).');
   }
+  show('result'); scene = 'result';
+}
+function showVsResult(){
+  var online = Net.on && Net.peer, me = online ? Net.me : 0, win = G.vsWin, a = G.sides[0], b = G.sides[1];
+  $('resCoop').hidden = true; $('scoreLine').hidden = true; $('nameBox').hidden = true;
+  $('btnNext').hidden = true; $('btnAgain').hidden = online && !Net.host;
+  if (win === -1){ $('resBig').textContent = 'DRAW'; $('resTitle').textContent = 'TIME UP — NOBODY IS REMOVED'; }
+  else {
+    var w = G.sides[win], l = G.sides[1 - win];
+    $('resBig').textContent = online ? (win === me ? 'YOU WIN' : 'YOU LOSE') : ('PLAYER ' + (win + 1) + ' WINS');
+    $('resTitle').textContent = vsLabel(w) + ' BEATS ' + vsLabel(l);
+  }
+  $('resReadout').innerHTML = '> versus (beta) — <b>not saved to the leaderboard</b><br>' +
+    '> ' + vsLabel(a) + ': <b>' + Math.max(0, Math.round(a.hp)) + '/' + a.maxhp + ' HP</b> · hits landed: <b>' + (a.hitsLanded || 0) + '</b><br>' +
+    '> ' + vsLabel(b) + ': <b>' + Math.max(0, Math.round(b.hp)) + '/' + b.maxhp + ' HP</b> · hits landed: <b>' + (b.hitsLanded || 0) + '</b><br>' +
+    '> time: <b>' + G.elapsed.toFixed(1) + ' s</b> of ' + VS_TIME + ' s' + (G.vsWin === -1 ? ' — the clock decides nothing when the health is level.' : '');
   show('result'); scene = 'result';
 }
 var VIDEOS = __VIDEOS__, videoURLs = {};   // one 20 s clip per fighter plus 'intro' (the menu clip): {mode:'files', base:'assets/videos/'} or {mode:'inline', data:{key: base64}}
@@ -1936,15 +2170,26 @@ $('btnSave').addEventListener('click', function(){
 });
 $('btnStart').addEventListener('click', function(){ unlockAudio(); sfx('gong', {f: 120, v: .4}); buildRoster(); show('select'); scene = 'select'; });
 $('btnFight').addEventListener('click', startFight);
-$('btnAgain').addEventListener('click', function(){ if (Net.on && Net.peer){ coopStart(LEVEL); return; } if (LEVELS[LEVEL].card) showLevelCard(); else beginRound(); });
+$('btnAgain').addEventListener('click', function(){ if (Net.on && Net.peer){ coopStart(LEVEL); return; } if (vsLocal){ beginVsLocal(); return; } if (LEVELS[LEVEL].card) showLevelCard(); else beginRound(); });
+$('btnVersus').addEventListener('click', function(){ unlockAudio(); openVersus(); });
+$('btnVsFight').addEventListener('click', function(){ unlockAudio(); beginVsLocal(); });
+$('btnVsJoin').addEventListener('click', function(){ unlockAudio(); Net.mode = 'vs'; pickRhino = false; coopJoin(); });
+$('vsCode').addEventListener('keydown', function(e){ if (e.key === 'Enter'){ Net.mode = 'vs'; coopJoin(); } });
+$('btnVsBack').addEventListener('click', function(){ netLeave(); show('title'); scene = 'title'; });
+function openVersus(){
+  show('versus'); scene = 'versus'; vsLocal = false; $('vsStatus').textContent = '';
+  var opts = ROSTER.map(function(d){ return '<option value="' + d.id + '">' + d.name + '</option>'; }).join('') + '<option value="rhino">THE RHINO</option>';
+  ['vsP1', 'vsP2'].forEach(function(id, i){ var el = $(id); if (el.options.length !== ROSTER.length + 1){ el.innerHTML = opts; el.value = i ? 'rhino' : ROSTER[0].id; } });
+  try { $('vsCode').value = localStorage.getItem('swebits_room') || ''; } catch (e) {}
+}
 $('btnNext').addEventListener('click', function(){ unlockAudio(); LEVEL = Math.min(LEVELS.length - 1, LEVEL + 1); if (Net.on && Net.peer){ coopStart(LEVEL); return; } showLevelCard(); });
-$('btnCoop').addEventListener('click', function(){ unlockAudio(); show('coop'); scene = 'coop'; $('coopStatus').textContent = ''; try { $('coopCode').value = localStorage.getItem('swebits_room') || ''; } catch (e) {} });
+$('btnCoop').addEventListener('click', function(){ unlockAudio(); Net.mode = 'coop'; show('coop'); scene = 'coop'; $('coopStatus').textContent = ''; try { $('coopCode').value = localStorage.getItem('swebits_room') || ''; } catch (e) {} });
 $('btnCoopJoin').addEventListener('click', function(){ unlockAudio(); coopJoin(); });
 $('coopCode').addEventListener('keydown', function(e){ if (e.key === 'Enter') coopJoin(); });
 $('btnCoopBack').addEventListener('click', function(){ netLeave(); show('title'); scene = 'title'; });
 $('btnLevelGo').addEventListener('click', function(){ unlockAudio(); if (termTimer){ clearInterval(termTimer); termTimer = null; } beginRound(); });
 $('btnLevelBack').addEventListener('click', function(){ if (termTimer){ clearInterval(termTimer); termTimer = null; } buildRoster(); show('select'); scene = 'select'; });
-$('btnChoose').addEventListener('click', function(){ buildRoster(); show('select'); scene = 'select'; G = null; if (Net.on){ Net.ready = false; sendNet({t:'unready'}); updateCoopLine(); } });
+$('btnChoose').addEventListener('click', function(){ if (vsLocal){ G = null; openVersus(); return; } buildRoster(); show('select'); scene = 'select'; G = null; if (Net.on){ Net.ready = false; sendNet({t:'unready'}); updateCoopLine(); } });
 
 refreshBoard();
 
@@ -1952,7 +2197,7 @@ refreshBoard();
 var last = performance.now();
 function frame(now){
   var dt = Math.min(.05, (now - last) / 1000); last = now;
-  if (scene === 'fight'){ if (Net.on && Net.peer && !Net.host) guestTick(dt); else hostTick(dt); } else pressed = {};
+  if (scene === 'fight'){ if (Net.on && Net.peer && !Net.host) guestTick(dt); else hostTick(dt); } else { pressed = {}; pressed2 = {}; }
   draw();
   requestAnimationFrame(frame);
 }
