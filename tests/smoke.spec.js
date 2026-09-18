@@ -9,8 +9,8 @@ test('game boots and a fight runs', async ({ page }) => {
   await page.goto(URL);
   await expect(page.locator('#btnStart')).toBeVisible();
   await page.click('#btnStart');
-  await expect(page.locator('.fighter')).toHaveCount(73);   // everyone on umu.se/en/icelab/about-us/members
-  await page.locator('.fighter').nth(4).click();       // Eric Libby (not pre-selected, so one click only selects)
+  await expect(page.locator('.fighter')).toHaveCount(10);   // ten at a time; the pager walks the whole members page
+  await page.locator('.fighter').nth(4).click();       // Eric (not pre-selected, so one click only selects)
   await page.click('#btnFight');
   await page.waitForTimeout(1500);
   for (let i = 0; i < 20; i++) { await page.keyboard.down('ArrowRight'); await page.waitForTimeout(60); await page.keyboard.up('ArrowRight'); await page.keyboard.press('j'); await page.waitForTimeout(120); }
@@ -150,6 +150,50 @@ test('round 7: the island is a plane you walk around, and reach depends on depth
   expect(errors).toEqual([]);
 });
 
+test('the roster shows ten fighters at a time and pages through the rest', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  await page.click('#btnStart');
+  await expect(page.locator('.fighter')).toHaveCount(10);
+  await expect(page.locator('#rosterPage')).toHaveText('FIGHTERS 1\u201310 OF 73 \u00b7 PAGE 1/8');
+  const firstPage = await page.locator('.fighter .name').allTextContents();
+  expect(firstPage[0]).toBe('Kemal');                       // first names only
+  expect(firstPage.some(n => n.indexOf(' ') >= 0)).toBe(false);
+  await page.click('#btnPageNext');
+  await expect(page.locator('#rosterPage')).toHaveText('FIGHTERS 11\u201320 OF 73 \u00b7 PAGE 2/8');
+  const secondPage = await page.locator('.fighter .name').allTextContents();
+  expect(secondPage).not.toEqual(firstPage);
+  await expect(page.locator('.fighter')).toHaveCount(10);
+  await page.click('#btnPagePrev');                          // and back again
+  await expect(page.locator('.fighter .name').first()).toHaveText('Kemal');
+  await page.click('#btnPagePrev');                          // wraps to the last page
+  await expect(page.locator('#rosterPage')).toHaveText('FIGHTERS 71\u201373 OF 73 \u00b7 PAGE 8/8');
+  await expect(page.locator('.fighter')).toHaveCount(3);
+  expect(errors).toEqual([]);
+});
+
+test('round 7: the zoom button magnifies the island', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  await page.click('#btnStart');
+  await page.locator('.fighter').nth(4).click();
+  await page.selectOption('#startLevel', '6');
+  await page.click('#btnFight');
+  await expect(page.locator('#btnLevelGo')).toBeVisible();
+  await page.click('#btnLevelGo');
+  await expect(page.locator('#zoomBtn')).toBeVisible();
+  expect(await page.evaluate(() => window.__fight().zoom)).toBe(1);
+  await page.click('#zoomBtn');
+  expect(await page.evaluate(() => window.__fight().zoom)).toBe(1.7);
+  await page.keyboard.press('v');                            // V cycles it too
+  expect(await page.evaluate(() => window.__fight().zoom)).toBe(2.6);
+  await page.keyboard.press('v');
+  expect(await page.evaluate(() => window.__fight().zoom)).toBe(1);
+  expect(errors).toEqual([]);
+});
+
 // The shared leaderboard talks to Supabase over REST; the tests mock that endpoint so they never need the network.
 async function mockSupabase(page, rows) {
   const calls = [];
@@ -164,8 +208,8 @@ async function mockSupabase(page, rows) {
   return calls;
 }
 const ROWS = [
-  { id: 1, name: 'Ludde', fighter: 'Åke Brännström', score: 8420, time_s: 61.2, level: 2, created_at: '2026-09-16T10:00:00Z' },
-  { id: 2, name: 'Pelle', fighter: 'Eric Libby', score: 5120, time_s: 40.0, level: 1, created_at: '2026-09-16T11:00:00Z' },
+  { id: 1, name: 'Ludde', fighter: 'Åke', score: 8420, time_s: 61.2, level: 2, created_at: '2026-09-16T10:00:00Z' },
+  { id: 2, name: 'Pelle', fighter: 'Eric', score: 5120, time_s: 40.0, level: 1, created_at: '2026-09-16T11:00:00Z' },
 ];
 
 test('shared leaderboard: title best, roster best, report hides an entry', async ({ page }) => {
@@ -308,9 +352,9 @@ test('co-op: two pages fight the rhino through a room', async ({ browser }) => {
   await A.evaluate(() => window.__coopPeer('b')); await B.evaluate(() => window.__coopPeer('a'));
   await expect(A.locator('#selCoop')).toContainText('you are the host');
   await expect(B.locator('#selCoop')).toContainText('the host picks the round');
-  await A.locator('.fighter').nth(4).click(); await A.click('#btnFight');   // Eric Libby, host ready first
+  await A.locator('.fighter').nth(4).click(); await A.click('#btnFight');   // Eric, host ready first
   await expect(A.locator('#selCoop')).toContainText('waiting for your friend to press');
-  await B.locator('.fighter').nth(1).click(); await B.click('#btnFight');   // Åke Brännström
+  await B.locator('.fighter').nth(1).click(); await B.click('#btnFight');   // Åke
   await expect(A.locator('#select')).toBeHidden(); await expect(B.locator('#select')).toBeHidden();
   // the guest plays: its inputs travel to the host, snapshots come back
   for (let i = 0; i < 8; i++) { await B.keyboard.down('ArrowRight'); await B.waitForTimeout(60); await B.keyboard.up('ArrowRight'); await B.keyboard.press('j'); await B.waitForTimeout(100); }
