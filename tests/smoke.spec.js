@@ -187,6 +187,55 @@ test('a cornered rhino sweeps instead of charging on the spot', async ({ page })
   expect(errors).toEqual([]);
 });
 
+test('round 4: both rhinos reach the whole field and can run past each other', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  await page.click('#btnStart');
+  await page.selectOption('#startLevel', '3');
+  await page.click('#btnFight');
+  await expect(page.locator('#btnLevelGo')).toBeVisible(); await page.click('#btnLevelGo');
+  await page.waitForTimeout(600);
+  // lanes used to fence rhino 0 out of the right end of the field and rhino 1 out of the left end,
+  // so a player standing there was safe and the rhino pawed at its invisible wall forever
+  const chase = (corner, x0, x1, goal) => page.evaluate(async (a) => {
+    const g = window.__fight();
+    g.rhinos[0].x = a.x0; g.rhinos[1].x = a.x1; g.rhinos.forEach(function(r){ r.timer = 0; });
+    const lo = [a.x0, a.x1], hi = [a.x0, a.x1]; let hp = 100;
+    await new Promise(res => { let n = 0; const t = setInterval(() => {
+      const G = window.__fight(); if (!G) return;
+      G.p.x = a.corner; G.p.inv = 0;                    // pinned in the corner, kept alive
+      hp = Math.min(hp, G.p.hp); G.p.hp = 100;
+      G.rhinos.forEach(function(r, i){ lo[i] = Math.min(lo[i], r.x); hi[i] = Math.max(hi[i], r.x); });
+      // stop as soon as the far rhino has crossed the old lane line and taken a swing, so a loaded machine only waits longer
+      const done = hp < 100 && (a.goal > 0 ? hi[0] > a.goal : lo[1] < -a.goal);
+      if (done || ++n > 900) { clearInterval(t); res(); }
+    }, 16); });
+    return { lo: lo, hi: hi, hp: hp };
+  }, { corner: corner, x0: x0, x1: x1, goal: goal });
+  const right = await chase(1860, 600, 1200, 1500);
+  expect(right.hi[0]).toBeGreaterThan(1500);     // rhino 0 past the old end of its lane (1460)
+  expect(right.hp).toBeLessThan(100);            // and something actually landed
+  const left = await chase(60, 1400, 700, -420);       // the same from a crossed start, towards the other corner
+  expect(left.lo[1]).toBeLessThan(420);          // rhino 1 past the old start of its lane (460)
+  expect(left.hp).toBeLessThan(100);
+  // a charge runs clean through the other rhino instead of being fenced off by it
+  const past = await page.evaluate(async () => {
+    const g = window.__fight(), a = g.rhinos[0], b = g.rhinos[1];
+    b.x = 900; b.state = 'idle'; b.timer = 999;
+    a.x = 400; a.facing = 1; a.dir = 1; a.cx0 = a.x; a.state = 'charge'; a.st = 0; a.chargeHit = false; a.trampled = {};
+    g.p.x = 1800;
+    await new Promise(res => setTimeout(res, 1500));
+    const G = window.__fight(); G.rhinos.forEach(function(r){ r.state = 'idle'; r.st = 0; r.timer = 999; });
+    const crossed = G.rhinos[0].x > G.rhinos[1].x + 100;
+    await new Promise(res => setTimeout(res, 700));        // idle: the push apart settles
+    return { crossed: crossed, gap: Math.abs(G.rhinos[0].x - G.rhinos[1].x) };
+  });
+  expect(past.crossed).toBe(true);
+  expect(past.gap).toBeGreaterThan(300);         // and they never settle stacked in one silhouette
+  expect(errors).toEqual([]);
+});
+
 test('NEXT ROUND then BACK keeps the round you unlocked', async ({ page }) => {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));

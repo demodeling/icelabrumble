@@ -1140,9 +1140,10 @@ function rhinoAt(pt, pad){
   }
   return best;
 }
-// with several rhinos each keeps its own lane (they cannot cross), so they can never stack into one silhouette
-function rhinoBounds(r){ if (G.vs) return [100, AW - 100];
-  var n = G.rhinos.length, i = G.rhinos.indexOf(r); return [100 + i * 360, AW - 100 - (n - 1 - i) * 360]; }   // 360 = one rhino body
+// every rhino gets the whole arena: lanes used to fence each one into a slice, which left a strip of the field
+// no rhino could reach (stand there and it paws and sweeps at its wall forever) and stopped them running past each other
+function rhinoBounds(r){ return [100, AW - 100]; }
+function passesThrough(r){ return r.state === 'charge' || r.state === 'jetstomp'; }
 function hitRhino(r, p, pt, dmg, big, label){
   var vuln = (r.state === 'skid' || r.state === 'sleep') ? 1.6 : 1;
   dmg = Math.round(dmg * p.def.power * vuln);
@@ -1471,9 +1472,16 @@ function updateRhino(r, dt){
     r.squash = .06 * Math.exp(-r.st * 8); r.tilt = -.08 * Math.exp(-r.st * 6);
     if (r.st > .28){ r.state = 'idle'; r.st = 0; r.timer = Math.max(.25, (r.angry ? .5 : 1.0) - r.rage * .04); }
   }
-  // keep some daylight between rhinos that are not mid-charge
-  if (!G.vs && G.rhinos.length > 1 && r.state !== 'charge' && r.state !== 'jetstomp'){
-    G.rhinos.forEach(function(o){ if (o === r || o.state === 'ko' || o.state === 'gone') return; var d = r.x - o.x, ad = Math.abs(d), need = 200 * ((r.size || 1) + (o.size || 1)); if (ad < need) r.x += (d >= 0 ? 1 : -1) * (need - ad) * 2.5 * dt; });
+  // keep some daylight between rhinos so two never stack into one silhouette: a soft push apart, never a wall.
+  // A charge or a jet stomp passes clean through (either end of it), so they can cross and run past each other.
+  if (!G.vs && G.rhinos.length > 1 && !passesThrough(r)){
+    G.rhinos.forEach(function(o){
+      if (o === r || o.state === 'ko' || o.state === 'gone' || passesThrough(o)) return;
+      var d = r.x - o.x, ad = Math.abs(d), need = 200 * ((r.size || 1) + (o.size || 1));
+      // dead level: push by index instead of sign, or both pick the same way and slide off together still stacked
+      var way = d > 0 ? 1 : (d < 0 ? -1 : (G.rhinos.indexOf(r) < G.rhinos.indexOf(o) ? -1 : 1));
+      if (ad < need) r.x += way * (need - ad) * 2.5 * dt;
+    });
   }
   var lim = rhinoBounds(r); r.x = clamp(r.x, lim[0], lim[1]);
 }
