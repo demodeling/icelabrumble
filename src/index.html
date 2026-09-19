@@ -42,11 +42,23 @@
   @media (max-width:480px), (max-height:560px){
     .panel{gap:7px;} h1{font-size:clamp(30px,8vw,52px);} h2{font-size:clamp(18px,4vw,26px);margin:0;} .sub{font-size:12px;}
     #result .readout,#result #resCoop{order:2;} #result .row{order:1;} #scores .row{order:-1;}
+    #versus .controls{display:none;} #versus p.small{font-size:11px;}
     .result-big{font-size:clamp(34px,9vw,56px);} .btn{padding:8px 12px;font-size:16px;} .namebox{gap:6px;} .readout{font-size:11px;line-height:1.35;}
   }
   @media (max-width:480px), (max-height:420px){
     #topBtns button span{display:none;} #topBtns button{padding:4px 8px;}
   }
+  /* Phones and short windows: an overlay steps out of the letterboxed stage and takes the whole screen, so no
+     button can end up below the stage's clipped edge. A portrait phone gives the panel ~840 px instead of ~450. */
+  @media (max-width:640px), (max-height:640px){
+    .overlay{position:fixed;top:0;left:0;right:0;bottom:auto;height:100vh;height:100dvh;padding:10px 12px;}
+    body:not([data-scene="fight"]) #topBtns{position:fixed;top:6px;right:6px;}   /* follow the overlay out of the stage, off the headings */
+    #result .readout{max-height:26vh;}
+    #scores .row{order:-1;}
+    .roster{max-height:52vh;overflow-y:auto;}
+  }
+  /* …except in fullscreen, where the stage already is the screen */
+  #stage.fs-rot .overlay, #stage.fs-fill .overlay{position:absolute;top:0;left:0;right:0;bottom:0;height:auto;}
   @media (max-height:560px){ #levelCard .term{max-height:44vh;overflow:auto;} }   /* the card scrolls, its buttons stay on the stage */
   @media (max-width:640px){ table.scores{display:block;overflow-x:auto;max-width:100%;font-size:11px;} table.scores th,table.scores td{padding:4px 5px;} }
   h1{font-family:var(--display);font-size:clamp(40px,8vw,88px);letter-spacing:.04em;margin:0;line-height:.95;
@@ -88,7 +100,7 @@
   .tb.big{width:clamp(56px,11vw,86px);height:clamp(56px,11vw,86px);}
   .tb.sp{border-color:var(--aurora);}
   .result-big{font-family:var(--display);font-size:clamp(48px,10vw,120px);color:var(--gold);text-shadow:5px 5px 0 var(--ember),10px 10px 0 rgba(0,0,0,.5);margin:0;line-height:1;}
-  .readout{font-family:var(--mono);background:#0b1224;border:1px solid var(--aurora);color:var(--aurora);border-radius:8px;padding:8px 14px;font-size:clamp(11px,1.5vw,14px);text-align:left;}
+  .readout{font-family:var(--mono);background:#0b1224;border:1px solid var(--aurora);color:var(--aurora);border-radius:8px;padding:8px 14px;font-size:clamp(11px,1.5vw,14px);text-align:left;overflow-y:auto;}
   .readout b{color:var(--gold);font-weight:400;}
   .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
   .small{font-size:clamp(11px,1.3vw,13px);color:var(--muted);margin:0;}

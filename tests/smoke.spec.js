@@ -205,6 +205,55 @@ test('NEXT ROUND then BACK keeps the round you unlocked', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test('phone: every round-5 result button is on screen, even with the display fonts at full size', async ({ browser }) => {
+  // the webfonts are blocked in CI, so force the display text to its largest clamp value: a worst case
+  // at least as tall as Bangers/Nunito on a real phone
+  const INFLATE = `.result-big{font-size:56px!important;line-height:1.1!important}
+    h2{font-size:26px!important;line-height:1.25!important} .scoreline{font-size:36px!important}
+    .btn{font-size:18px!important} .small,.readout{line-height:1.6!important}`;
+  for (const size of [{ width: 390, height: 844 }, { width: 375, height: 667 }, { width: 844, height: 390 }]) {
+    const ctx = await browser.newContext({ viewport: size, hasTouch: true, isMobile: true });
+    await ctx.addInitScript((css) => { window.addEventListener('DOMContentLoaded', () => {
+      const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st); }); }, INFLATE);
+    const page = await ctx.newPage();
+    const errors = []; page.on('pageerror', e => errors.push(e.message));
+    await page.route(/\/rest\/v1\//, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await page.goto(URL);
+    await page.click('#btnStart');
+    await page.selectOption('#startLevel', '4');
+    await page.click('#btnFight');
+    await expect(page.locator('#btnLevelGo')).toBeVisible();
+    await page.click('#btnLevelGo');
+    await page.waitForTimeout(500);
+    // win round 5 by pushing each rhino under the detection limit with real punches
+    for (let k = 0; k < 2; k++) {
+      await page.evaluate(() => { const g = window.__fight();
+        const live = g.rhinos.filter(r => r.state !== 'ko' && r.state !== 'gone'); if (!live.length) return;
+        const r = live[0]; r.share = 0.07; r.hp = 7; r.state = 'idle'; r.timer = 9999; g.p.x = r.x - 110; });
+      for (let i = 0; i < 14; i++) {
+        const done = await page.evaluate(() => { const g = window.__fight();
+          return !g || g.over || !g.rhinos.some(r => r.state !== 'ko' && r.state !== 'gone'); });
+        if (done) break;
+        await page.keyboard.press('j'); await page.waitForTimeout(200);
+      }
+    }
+    await expect(page.locator('#result')).toBeVisible({ timeout: 15000 });
+    const reach = await page.evaluate(() => {
+      const bad = [];
+      ['playerName', 'btnSave', 'btnAgain', 'btnChoose'].forEach(id => {
+        const el = document.getElementById(id);
+        const r = el.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        const hit = document.elementFromPoint(cx, cy);
+        if (!(cy > 0 && cy < window.innerHeight && hit && (hit === el || el.contains(hit)))) bad.push(id + '@' + Math.round(r.top));
+      });
+      return bad;
+    });
+    expect(reach, `unreachable at ${size.width}x${size.height}`).toEqual([]);
+    expect(errors).toEqual([]);
+    await ctx.close();
+  }
+});
+
 test('pacifist ending: outlast the rhino without hitting it', async ({ page }) => {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
