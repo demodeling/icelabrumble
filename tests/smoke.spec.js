@@ -468,6 +468,149 @@ test('versus (beta): two pages duel through a room, one of them as the rhino', a
   await ctx.close();
 });
 
+test('a re-pick after READY reaches the other player, in co-op and in a versus room', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 1100, height: 720 } });
+  const A = await ctx.newPage(), B = await ctx.newPage();
+  const errors = []; [A, B].forEach(p => p.on('pageerror', e => errors.push(e.message)));
+  await wireCoop(A, 'a', () => B, {});            // 'a' < 'b', so A hosts
+  await wireCoop(B, 'b', () => A, {});
+  for (const p of [A, B]) {
+    await p.route(/\/rest\/v1\//, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await p.goto(URL);
+    await p.click('#btnVersus'); await p.fill('#vsCode', 'duel'); await p.click('#btnVsJoin');
+    await expect(p.locator('#select')).toBeVisible();
+  }
+  await A.evaluate(() => window.__coopPeer('b')); await B.evaluate(() => window.__coopPeer('a'));
+  // the guest readies as Björn, then changes its mind and takes the rhino card before the host starts
+  await B.click('.fighter:nth-child(2)'); await B.click('#btnFight');
+  await expect(B.locator('#selCoop')).toContainText('you are ready');
+  await B.click('.fighter:nth-child(12)');                      // THE RHINO
+  await expect(B.locator('#selName')).toHaveText('THE RHINO');
+  await A.click('.fighter:nth-child(5)'); await A.click('#btnFight');   // host: Per
+  await expect(A.locator('#select')).toBeHidden();
+  const shape = await A.evaluate(() => { const g = window.__fight(); return { vs: g.vs, players: g.players.map(q => q.def.id), rhinos: g.rhinos.length }; });
+  expect(shape).toEqual({ vs: true, players: ['per'], rhinos: 1 });   // the guest got the rhino it asked for
+  expect(errors).toEqual([]);
+  await ctx.close();
+});
+
+test('versus: REMATCH after the opponent leaves goes back to the versus screen, never into the campaign', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 1100, height: 720 } });
+  const A = await ctx.newPage(), B = await ctx.newPage();
+  const errors = []; [A, B].forEach(p => p.on('pageerror', e => errors.push(e.message)));
+  await wireCoop(A, 'a', () => B, {});
+  await wireCoop(B, 'b', () => A, {});
+  for (const p of [A, B]) {
+    await p.route(/\/rest\/v1\//, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await p.goto(URL);
+    await p.click('#btnVersus'); await p.fill('#vsCode', 'duel'); await p.click('#btnVsJoin');
+    await expect(p.locator('#select')).toBeVisible();
+  }
+  await A.evaluate(() => window.__coopPeer('b')); await B.evaluate(() => window.__coopPeer('a'));
+  await A.click('.fighter:nth-child(5)'); await A.click('#btnFight');
+  await B.click('.fighter:nth-child(12)'); await B.click('#btnFight');
+  await expect(A.locator('#select')).toBeHidden();
+  await B.keyboard.press('Escape');                              // the opponent walks away mid-duel
+  await A.waitForTimeout(400);
+  await A.evaluate(() => { const g = window.__fight(); g.rhinos[0].hp = 1; g.rhinos[0].share = 0; g.p.x = g.rhinos[0].x - 120; });
+  for (let i = 0; i < 8 && await A.evaluate(() => !window.__fight().over); i++) { await A.keyboard.press('j'); await A.waitForTimeout(250); }
+  await expect(A.locator('#result')).toBeVisible({ timeout: 15000 });
+  await A.click('#btnAgain');
+  await expect(A.locator('#versus')).toBeVisible();              // not a campaign round
+  await expect(A.locator('#vsStatus')).toContainText('opponent left');
+  expect(await A.evaluate(() => window.__fight())).toBeNull();
+  expect(errors).toEqual([]);
+  await ctx.close();
+});
+
+test('the keyboard works the menus: Space presses a button, the arrows work a dropdown, a release always releases', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.route(/\/rest\/v1\//, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+  await page.goto(URL);
+  await page.evaluate(() => document.getElementById('btnStart').focus());
+  await page.keyboard.press(' ');
+  await expect(page.locator('#select')).toBeVisible();
+  await page.evaluate(() => document.getElementById('startLevel').focus());
+  await page.keyboard.press('ArrowDown');
+  await expect(page.locator('#startLevel')).not.toHaveValue('0');
+  // a key released while the name box has focus must not survive into the next fight
+  await page.selectOption('#startLevel', '0');
+  await page.click('#btnFight');
+  await page.waitForTimeout(400);
+  await page.evaluate(() => { const g = window.__fight(); g.rhinos[0].hp = 1; g.rhinos[0].timer = 999; g.p.x = g.rhinos[0].x - 150; });
+  for (let i = 0; i < 6 && await page.evaluate(() => !window.__fight().over); i++) { await page.keyboard.press('j'); await page.waitForTimeout(250); }
+  await expect(page.locator('#result')).toBeVisible({ timeout: 15000 });
+  await page.keyboard.down('ArrowRight');
+  await page.click('#playerName');
+  await page.keyboard.up('ArrowRight');
+  await page.click('#btnAgain');
+  await page.waitForTimeout(200);
+  const x0 = await page.evaluate(() => window.__fight().p.x);
+  await page.waitForTimeout(1000);
+  const x1 = await page.evaluate(() => window.__fight().p.x);
+  expect(Math.abs(x1 - x0)).toBeLessThan(5);
+  expect(errors).toEqual([]);
+});
+
+test('round 5: the punch still connects once a rhino has shrunk', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  await page.click('#btnStart');
+  await page.selectOption('#startLevel', '4');
+  await page.click('#btnFight');
+  await expect(page.locator('#btnLevelGo')).toBeVisible();
+  await page.click('#btnLevelGo');
+  await page.waitForTimeout(400);
+  const landed = await page.evaluate(async () => {
+    const out = [];
+    for (const share of [0.30, 0.20, 0.14, 0.10, 0.07]) {
+      const g = window.__fight(), r = g.rhinos[0];
+      r.share = share; r.size = 0.35 + 0.65 * share * g.compN; r.hp = share * 100; r.state = 'idle'; r.timer = 9999;
+      g.p.x = r.x - 120;
+      await new Promise(res => setTimeout(res, 120));
+      const before = window.__fight().rhinos[0].share;
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'j' }));
+      window.dispatchEvent(new KeyboardEvent('keyup', { key: 'j' }));
+      await new Promise(res => setTimeout(res, 350));
+      out.push(window.__fight().rhinos[0].share < before - 1e-9);
+    }
+    return out;
+  });
+  expect(landed).toEqual([true, true, true, true, true]);
+  expect(errors).toEqual([]);
+});
+
+test('a prop extends the reach without replacing the fist: Anton connects at point-blank range', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  const damageAtGap = async (gap) => {
+    await page.click('#btnVersus');
+    await page.selectOption('#vsP1', 'anton');
+    await page.selectOption('#vsP2', 'bjorn');
+    await page.click('#btnVsFight');
+    await page.waitForTimeout(400);
+    const dealt = await page.evaluate(async (g0) => {
+      const g = window.__fight(); g.sides[1].x = g.sides[0].x + g0; g.sides[1].inv = 0;
+      const hp0 = g.sides[1].hp;
+      for (let i = 0; i < 4; i++) {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'j' }));
+        window.dispatchEvent(new KeyboardEvent('keyup', { key: 'j' }));
+        await new Promise(r => setTimeout(r, 340));
+        window.__fight().sides[1].inv = 0;
+      }
+      return hp0 - window.__fight().sides[1].hp;
+    }, gap);
+    await page.keyboard.press('Escape');
+    return dealt;
+  };
+  expect(await damageAtGap(30)).toBeGreaterThan(0);    // used to whiff: the blade overshot the opponent
+  expect(await damageAtGap(120)).toBeGreaterThan(0);
+  expect(errors).toEqual([]);
+});
+
 // The real Trystero bundle is an ES module, which a file:// page cannot import, so this test serves dist/ over http
 // (like the deployed site; the service worker registers too). Relays are unreachable in CI; that must not throw.
 test('co-op loads the bundled Trystero module and opens a room', async ({ page }) => {

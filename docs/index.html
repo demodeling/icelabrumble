@@ -174,7 +174,7 @@
       <p class="small" id="titleBest"></p>
       <p class="small">Sound on for the full kung-fu experience. Works on Safari, iPhone and iPad — tap ⛶ FULLSCREEN for a widescreen arena on your phone.</p>
       <p class="small" id="iosHint" hidden>iPhone: for a real full screen, tap Share → <b>Add to Home Screen</b> and open the game from there (no Safari bars at all).</p>
-      <p class="small ver" id="verLine">v1.4.0 · build 2729207</p>
+      <p class="small ver" id="verLine">v1.4.0 · build 6b15440</p>
     </div></div>
 
     <div id="select" class="overlay" hidden><div class="panel">
@@ -550,21 +550,30 @@ var keys2 = {}, pressed2 = {};
 var KEYMAP1 = {ArrowLeft:'left', ArrowRight:'right', ArrowUp:'jump', ' ':'jump', ArrowDown:'down', j:'punch', J:'punch', k:'kick', K:'kick', l:'special', L:'special'};
 var KEYMAP2 = {a:'left', A:'left', d:'right', D:'right', w:'jump', W:'jump', s:'down', S:'down', f:'punch', F:'punch', g:'kick', G:'kick', h:'special', H:'special'};
 function keyDown(map, ks, ps, key){ var k = map[key]; if (!k) return false; if (!ks[k]) ps[k] = true; ks[k] = true; return true; }
+// a focused control keeps its own keyboard: Space and Enter press a button, the arrows open a dropdown.
+// Only a text field swallows the keys entirely; everything else just declines to steer the fighter.
+function typingIn(e){ var t = e.target, n = (t && t.tagName) || ''; return n === 'INPUT' || n === 'TEXTAREA' || !!(t && t.isContentEditable); }
+function ownsKeys(e){ var n = (e.target && e.target.tagName) || ''; return n === 'BUTTON' || n === 'SELECT' || n === 'A' || n === 'OPTION'; }
 window.addEventListener('keydown', function(e){
-  if (e.target && e.target.tagName === 'INPUT') return;
+  if (typingIn(e)) return;
   if (e.key === 'Escape' || e.key === 'Esc'){ goMenu(); return; }
+  if (ownsKeys(e)) return;
   var hit;
   if (vsLocal) hit = keyDown(KEYMAP2, keys2, pressed2, e.key) || keyDown(KEYMAP1, keys, pressed, e.key);
   else hit = keyDown(KEYMAP, keys, pressed, e.key);
   if (hit) e.preventDefault();
 });
+// a release always releases, whatever has focus — a keyup that lands in the name box used to leave the
+// fighter walking into the next fight
 window.addEventListener('keyup', function(e){
-  if (e.target && e.target.tagName === 'INPUT') return;
+  var quiet = typingIn(e) || ownsKeys(e);
   var k2 = vsLocal ? KEYMAP2[e.key] : null;
-  if (k2){ keys2[k2] = false; e.preventDefault(); return; }
+  if (k2){ keys2[k2] = false; if (!quiet) e.preventDefault(); return; }
   var k = vsLocal ? KEYMAP1[e.key] : KEYMAP[e.key];
-  if (k){ keys[k] = false; e.preventDefault(); }
+  if (k){ keys[k] = false; if (!quiet) e.preventDefault(); }
 });
+window.addEventListener('blur', function(){ clearKeys(); });   // alt-tab away mid-stride and the fighter stops
+function blurFocus(){ var a = document.activeElement; if (a && a !== document.body && a.blur) a.blur(); }
 function clearKeys(){ var k; for (k in keys) keys[k] = false; for (k in keys2) keys2[k] = false; pressed = {}; pressed2 = {}; }
 Array.prototype.forEach.call(document.querySelectorAll('.tb'), function(b){
   var k = b.getAttribute('data-k');
@@ -983,10 +992,10 @@ function newVsFight(idA, idB){
   G = {fid: ++fightSeq, vs: true, sides: sides, p: players[0] || null, p2: null, players: players, r: rhinos[0] || null, rhinos: rhinos,
        t: 0, over: false, won: false, elapsed: 0, koT: 0, pacifist: false, comp: false, compN: 0, vsWin: -2};
   particles = []; fx = []; dna = []; puffs = []; hot = []; rings = []; bolts = []; shake = 0; flashA = 0; slowmo = 0; impactFrame = 0;
-  clearKeys();
+  clearKeys(); blurFocus();
 }
 function beginVsLocal(){
-  vsLocal = true; LEVEL = parseInt($('vsArena').value, 10) || 0;
+  vsLocal = true; LEVEL = clampLevel($('vsArena').value);
   newVsFight($('vsP1').value, $('vsP2').value); scene = 'fight'; show(null);
   unlockAudio(); sfx('gong', {f: 96, v: .6}); setTimeout(function(){ sfx('drum'); }, 800);
 }
@@ -1100,6 +1109,7 @@ function newFight(def, def2){
   G = {fid: ++fightSeq, p:p, p2:p2, players: p2 ? [p, p2] : [p], r:rhinos[0], rhinos:rhinos, t:0, over:false, won:false, elapsed:0, koT:0, pacifist:false, comp: !!lv.comp, compN: 0};
   if (G.comp){ var chars = G.players.concat(rhinos); G.compN = chars.length; chars.forEach(function(c){ c.share = 1 / chars.length; c.size = 1; }); compSync(); }
   camX = clamp(p.x - LW / 2, 0, AW - LW);
+  clearKeys(); blurFocus();
   particles = []; fx = []; dna = []; puffs = []; hot = []; rings = []; bolts = []; shake = 0; flashA = 0; slowmo = 0; impactFrame = 0;
 }
 
@@ -1116,7 +1126,20 @@ function rhinoRect(r){
 }
 function inRect(pt, rc, pad){ pad = pad || 0; return pt[0] > rc.x0 - pad && pt[0] < rc.x1 + pad && pt[1] > rc.y0 - pad && pt[1] < rc.y1 + pad; }
 function liveRhinos(){ return G.rhinos.filter(function(r){ return r.state !== 'ko' && r.state !== 'gone'; }); }
-function rhinoAt(pt, pad){ var rs = liveRhinos(), best = null, bd = 1e9; for (var i = 0; i < rs.length; i++) if (inRect(pt, rhinoRect(rs[i]), pad)){ var d = Math.abs(rs[i].x - pt[0]); if (d < bd){ bd = d; best = rs[i]; } } return best; }
+function rhinoAt(pt, pad){
+  pad = pad || 0;
+  var rs = liveRhinos(), best = null, bd = 1e9;
+  for (var i = 0; i < rs.length; i++){
+    var rc = rhinoRect(rs[i]);
+    // round 5 shrinks a rhino below fist height; then a punch reaches over it instead of into it, so the
+    // shorter the target the further down from the hand it still counts (a full-size rhino is unaffected)
+    var vpad = Math.max(pad, 165 - (rc.y1 - rc.y0));
+    if (pt[0] > rc.x0 - pad && pt[0] < rc.x1 + pad && pt[1] > rc.y0 - vpad && pt[1] < rc.y1 + pad){
+      var d = Math.abs(rs[i].x - pt[0]); if (d < bd){ bd = d; best = rs[i]; }
+    }
+  }
+  return best;
+}
 // with several rhinos each keeps its own lane (they cannot cross), so they can never stack into one silhouette
 function rhinoBounds(r){ if (G.vs) return [100, AW - 100];
   var n = G.rhinos.length, i = G.rhinos.indexOf(r); return [100 + i * 360, AW - 100 - (n - 1 - i) * 360]; }   // 360 = one rhino body
@@ -1234,7 +1257,11 @@ function updatePlayer(p, dt){
     var k = p.alt ? POSE.punch : POSE.punch2; var u = p.st < .1 ? p.st / .1 : 1 - smooth(.18, .32, p.st);
     pose = mixPose(POSE.guard, k, u);
     // the two punch poses extend different arms: POSE.punch the near one, POSE.punch2 the far one
-    if (p.st > .06 && p.st < .2 && !p.attackHit){ var hp = p.stickPt || (p.alt ? p.handPt : p.farHandPt), hr = foeAt(p, hp, 14); if (hr){ p.attackHit = true; hitFoe(hr, p, hp, 7, false); } }
+    if (p.st > .06 && p.st < .2 && !p.attackHit){
+      // a prop extends the reach, it does not replace the fist: try the blade, then the hand behind it
+      var hp = p.alt ? p.handPt : p.farHandPt, hr = p.stickPt ? foeAt(p, p.stickPt, 14) : null;
+      if (hr) hp = p.stickPt; else hr = foeAt(p, hp, 14);
+      if (hr){ p.attackHit = true; hitFoe(hr, p, hp, 7, false); } }
     if (p.st > .32) p.state = 'idle';
   } else if (p.state === 'kick'){
     var u2 = p.st < .12 ? 0 : (p.st < .22 ? (p.st - .12) / .1 : 1 - smooth(.34, .5, p.st));
@@ -1272,7 +1299,7 @@ function specialUpdate(p, dt){
   if (kind === 'dash' || kind === 'grab'){
     var dur = kind === 'dash' ? .55 : .7, spd = kind === 'dash' ? 900 : 520;
     if (st < .12) pose = mixPose(POSE.guard, POSE.kickWind, st / .12);
-    else if (st < dur - .15){ p.x += p.dashDir * spd * dt; pose = kind === 'dash' ? POSE.punch : POSE.grab; var dr = p.attackHit ? null : foeAt(p, kind === 'dash' ? (p.stickPt || p.handPt) : p.headPt, kind === 'dash' ? 20 : 40); if (dr){ p.attackHit = true; hitFoe(dr, p, p.handPt, sp.dmg, true, kind === 'grab' ? 'SUPLEX!' : 'PURGED!'); if (kind === 'grab' && dr.isRhino){ dr.jump = 60; dr.tilt = -.6; } } }
+    else if (st < dur - .15){ p.x += p.dashDir * spd * dt; pose = kind === 'dash' ? POSE.punch : POSE.grab; var dr = p.attackHit ? null : (kind === 'dash' && p.stickPt ? (foeAt(p, p.stickPt, 20) || foeAt(p, p.handPt, 20)) : foeAt(p, kind === 'dash' ? p.handPt : p.headPt, kind === 'dash' ? 20 : 40)); if (dr){ p.attackHit = true; hitFoe(dr, p, p.handPt, sp.dmg, true, kind === 'grab' ? 'SUPLEX!' : 'PURGED!'); if (kind === 'grab' && dr.isRhino){ dr.jump = 60; dr.tilt = -.6; } } }
     else pose = mixPose(POSE.punch, POSE.guard, smooth(dur - .15, dur, st));
     if (st > dur) p.state = 'idle';
   } else if (kind === 'fly' || kind === 'upper'){
@@ -1931,9 +1958,9 @@ function netData(d, tid, via){
   if (via === 'relay') Net.relayPeer = true;
   peerBack();
   if (d.t === 'hello'){ updateCoopLine(); }
-  else if (d.t === 'ready'){ Net.peerReady = d.f; updateCoopLine(); if (Net.host && Net.ready && scene === 'select') coopStart(parseInt($('startLevel').value, 10) || 0); }
+  else if (d.t === 'ready'){ Net.peerReady = d.f; updateCoopLine(); if (Net.host && Net.ready && scene === 'select') coopStart(clampLevel($('startLevel').value)); }
   else if (d.t === 'unready'){ Net.peerReady = null; updateCoopLine(); }
-  else if (d.t === 'start'){ if (!Net.host){ LEVEL = d.level; Net.f = d.f; Net.mode = d.vs ? 'vs' : 'coop'; beginCoopRound(); } }
+  else if (d.t === 'start'){ if (!Net.host){ LEVEL = clampLevel(d.level); Net.f = d.f; Net.mode = d.vs ? 'vs' : 'coop'; beginCoopRound(); } }
   else if (d.t === 'in'){ if (Net.host){ var ko = {}; (d.k || []).forEach(function(k){ ko[k] = true; }); Net.guestInp.keys = ko; (d.p || []).forEach(function(k){ Net.guestInp.pressed[k] = true; }); } }
   else if (d.t === 's'){ if (!Net.host && scene === 'fight') applySnap(d); }
   else if (d.t === 'result'){ if (!Net.host) showResult(); }
@@ -1952,9 +1979,11 @@ function updateCoopLine(){
   else el.textContent = room + ' · friend connected' + via + (Net.host ? ' · you are the host and pick the round' : ' · the host picks the round') + ' · press FIGHT when ready.';
   $('fightVerb').textContent = Net.on ? 'READY AS' : 'FIGHT AS';
 }
+// a new pick after READY has to reach the partner, or you play the fighter you changed your mind about
+function repickReady(){ if (Net.on && Net.peer && Net.ready){ sendNet({t:'ready', f: myPickId()}); updateCoopLine(); } }
 function coopReady(){
   Net.ready = true; sendNet({t:'ready', f: myPickId()}); updateCoopLine();
-  if (Net.host && Net.peerReady) coopStart(parseInt($('startLevel').value, 10) || 0);
+  if (Net.host && Net.peerReady) coopStart(clampLevel($('startLevel').value));
 }
 function coopStart(level){
   // host only: same fighters again (rematch / next round) or the freshly picked pair
@@ -1962,6 +1991,7 @@ function coopStart(level){
   LEVEL = level; Net.f = [myPickId(), Net.peerReady || (Net.f && Net.f[1]) || 'albertas'];
   sendNet({t:'start', f: Net.f, level: LEVEL, vs: Net.mode === 'vs' ? 1 : 0}); beginCoopRound();
 }
+function clampLevel(v){ v = parseInt(v, 10); return (v >= 0 && v < LEVELS.length) ? v : 0; }
 function defById(id){ for (var i = 0; i < ROSTER.length; i++) if (ROSTER[i].id === id) return ROSTER[i]; return ROSTER[0]; }
 function beginCoopRound(){
   if (Net.mode === 'vs'){ vsLocal = false; newVsFight(Net.f[0], Net.f[1]); }
@@ -2047,7 +2077,7 @@ function buildRoster(){
     el.addEventListener('click', function(){
       unlockAudio();
       if (selected === i && !pickRhino && el.classList.contains('sel')){ startFight(); return; }
-      selected = i; pickRhino = false; sfx('chime', {f: 1318}); setPickName();
+      selected = i; pickRhino = false; sfx('chime', {f: 1318}); setPickName(); repickReady();
       Array.prototype.forEach.call(host.children, function(c, k){ c.classList.toggle('sel', k === i && !pickRhino); });
     });
     var bb = bestFor(d.name); el.querySelector('.best').textContent = bb ? 'BEST ' + fmtScore(bb.score) + ' · ' + bb.name : '';   // leaderboard names are untrusted text, never markup
@@ -2062,7 +2092,7 @@ function buildRoster(){
     rel.addEventListener('click', function(){
       unlockAudio();
       if (pickRhino && rel.classList.contains('sel')){ startFight(); return; }
-      pickRhino = true; sfx('chime', {f: 1046}); setPickName();
+      pickRhino = true; sfx('chime', {f: 1046}); setPickName(); repickReady();
       Array.prototype.forEach.call(host.children, function(c){ c.classList.remove('sel'); });
       rel.classList.add('sel');
     });
@@ -2097,7 +2127,7 @@ function showLevelCard(){
 }
 function startFight(){
   if (Net.on){ coopReady(); return; }
-  LEVEL = parseInt($('startLevel').value, 10) || 0;
+  LEVEL = clampLevel($('startLevel').value);
   if (LEVELS[LEVEL].card) showLevelCard(); else beginRound();
 }
 function showResult(){
@@ -2194,7 +2224,14 @@ $('btnSave').addEventListener('click', function(){
 });
 $('btnStart').addEventListener('click', function(){ unlockAudio(); sfx('gong', {f: 120, v: .4}); buildRoster(); show('select'); scene = 'select'; });
 $('btnFight').addEventListener('click', startFight);
-$('btnAgain').addEventListener('click', function(){ if (Net.on && Net.peer){ coopStart(LEVEL); return; } if (vsLocal){ beginVsLocal(); return; } if (LEVELS[LEVEL].card) showLevelCard(); else beginRound(); });
+$('btnAgain').addEventListener('click', function(){
+  if (Net.on && Net.peer){ coopStart(LEVEL); return; }
+  if (vsLocal){ beginVsLocal(); return; }
+  if (G && G.vs){ leaveVersus('Your opponent left the room. Start another duel, or play on the same keyboard.'); return; }   // never fall through into the campaign
+  if (LEVELS[LEVEL].card) showLevelCard(); else beginRound();
+});
+// an online duel whose partner is gone: back to the versus screen, not into round 1
+function leaveVersus(msg){ G = null; netLeave(); openVersus(); $('vsStatus').textContent = msg || ''; }
 $('btnVersus').addEventListener('click', function(){ unlockAudio(); openVersus(); });
 $('btnVsFight').addEventListener('click', function(){ unlockAudio(); beginVsLocal(); });
 $('btnVsJoin').addEventListener('click', function(){ unlockAudio(); Net.mode = 'vs'; pickRhino = false; coopJoin(); });
@@ -2213,7 +2250,7 @@ $('coopCode').addEventListener('keydown', function(e){ if (e.key === 'Enter') co
 $('btnCoopBack').addEventListener('click', function(){ netLeave(); show('title'); scene = 'title'; });
 $('btnLevelGo').addEventListener('click', function(){ unlockAudio(); if (termTimer){ clearInterval(termTimer); termTimer = null; } beginRound(); });
 $('btnLevelBack').addEventListener('click', function(){ if (termTimer){ clearInterval(termTimer); termTimer = null; } buildRoster(); show('select'); scene = 'select'; });
-$('btnChoose').addEventListener('click', function(){ if (vsLocal){ G = null; openVersus(); return; } buildRoster(); show('select'); scene = 'select'; G = null; if (Net.on){ Net.ready = false; sendNet({t:'unready'}); updateCoopLine(); } });
+$('btnChoose').addEventListener('click', function(){ if (vsLocal){ G = null; openVersus(); return; } if (G && G.vs && !(Net.on && Net.peer)){ leaveVersus(''); return; } buildRoster(); show('select'); scene = 'select'; G = null; if (Net.on){ Net.ready = false; sendNet({t:'unready'}); updateCoopLine(); } });
 
 refreshBoard();
 
