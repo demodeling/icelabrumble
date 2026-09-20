@@ -187,6 +187,55 @@ test('a cornered rhino sweeps instead of charging on the spot', async ({ page })
   expect(errors).toEqual([]);
 });
 
+test('round 4: both rhinos reach the whole field and can run past each other', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  await page.click('#btnStart');
+  await page.selectOption('#startLevel', '3');
+  await page.click('#btnFight');
+  await expect(page.locator('#btnLevelGo')).toBeVisible(); await page.click('#btnLevelGo');
+  await page.waitForTimeout(600);
+  // lanes used to fence rhino 0 out of the right end of the field and rhino 1 out of the left end,
+  // so a player standing there was safe and the rhino pawed at its invisible wall forever
+  const chase = (corner, x0, x1, goal) => page.evaluate(async (a) => {
+    const g = window.__fight();
+    g.rhinos[0].x = a.x0; g.rhinos[1].x = a.x1; g.rhinos.forEach(function(r){ r.timer = 0; });
+    const lo = [a.x0, a.x1], hi = [a.x0, a.x1]; let hp = 100;
+    await new Promise(res => { let n = 0; const t = setInterval(() => {
+      const G = window.__fight(); if (!G) return;
+      G.p.x = a.corner; G.p.inv = 0;                    // pinned in the corner, kept alive
+      hp = Math.min(hp, G.p.hp); G.p.hp = 100;
+      G.rhinos.forEach(function(r, i){ lo[i] = Math.min(lo[i], r.x); hi[i] = Math.max(hi[i], r.x); });
+      // stop as soon as the far rhino has crossed the old lane line and taken a swing, so a loaded machine only waits longer
+      const done = hp < 100 && (a.goal > 0 ? hi[0] > a.goal : lo[1] < -a.goal);
+      if (done || ++n > 900) { clearInterval(t); res(); }
+    }, 16); });
+    return { lo: lo, hi: hi, hp: hp };
+  }, { corner: corner, x0: x0, x1: x1, goal: goal });
+  const right = await chase(1860, 600, 1200, 1500);
+  expect(right.hi[0]).toBeGreaterThan(1500);     // rhino 0 past the old end of its lane (1460)
+  expect(right.hp).toBeLessThan(100);            // and something actually landed
+  const left = await chase(60, 1400, 700, -420);       // the same from a crossed start, towards the other corner
+  expect(left.lo[1]).toBeLessThan(420);          // rhino 1 past the old start of its lane (460)
+  expect(left.hp).toBeLessThan(100);
+  // a charge runs clean through the other rhino instead of being fenced off by it
+  const past = await page.evaluate(async () => {
+    const g = window.__fight(), a = g.rhinos[0], b = g.rhinos[1];
+    b.x = 900; b.state = 'idle'; b.timer = 999;
+    a.x = 400; a.facing = 1; a.dir = 1; a.cx0 = a.x; a.state = 'charge'; a.st = 0; a.chargeHit = false; a.trampled = {};
+    g.p.x = 1800;
+    await new Promise(res => setTimeout(res, 1500));
+    const G = window.__fight(); G.rhinos.forEach(function(r){ r.state = 'idle'; r.st = 0; r.timer = 999; });
+    const crossed = G.rhinos[0].x > G.rhinos[1].x + 100;
+    await new Promise(res => setTimeout(res, 700));        // idle: the push apart settles
+    return { crossed: crossed, gap: Math.abs(G.rhinos[0].x - G.rhinos[1].x) };
+  });
+  expect(past.crossed).toBe(true);
+  expect(past.gap).toBeGreaterThan(300);         // and they never settle stacked in one silhouette
+  expect(errors).toEqual([]);
+});
+
 test('NEXT ROUND then BACK keeps the round you unlocked', async ({ page }) => {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
@@ -252,6 +301,112 @@ test('phone: every round-5 result button is on screen, even with the display fon
     expect(errors).toEqual([]);
     await ctx.close();
   }
+});
+
+test('a special costs the whole meter: its own hits never refund it', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  // Bea's Espresso Rush lands 5 times and used to hand back 82 of the 100 it cost
+  for (const [nth, hits] of [[3, 5], [8, 4]]) {
+    await page.click('#btnStart');
+    const f = page.locator(`.fighter:nth-child(${nth})`);
+    if (!(await f.evaluate(el => el.classList.contains('sel')))) await f.click();
+    await page.click('#btnFight');
+    await page.waitForTimeout(500);
+    const after = await page.evaluate(async () => {
+      const g = window.__fight();
+      g.p.meter = 100; g.p.x = g.rhinos[0].x - 130; g.rhinos[0].timer = 9999; g.rhinos[0].hp = 9999;
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'l' }));
+      window.dispatchEvent(new KeyboardEvent('keyup', { key: 'l' }));
+      await new Promise(r => setTimeout(r, 3200));
+      return { meter: Math.round(window.__fight().p.meter), hits: window.__fight().p.hitsLanded };
+    });
+    expect(after.hits).toBeGreaterThan(1);      // it really is a multi-hit special
+    expect(after.meter).toBe(0);
+    await page.keyboard.press('Escape');
+  }
+  expect(errors).toEqual([]);
+});
+
+test('versus: a duel decided on the clock says TIME and the verdict matches the numbers under it', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  await page.click('#btnVersus');
+  await page.selectOption('#vsP1', 'albertas');
+  await page.selectOption('#vsP2', 'rhino');
+  await page.selectOption('#vsArena', '0');
+  await page.click('#btnVsFight');
+  await page.waitForTimeout(400);
+  // the fighter leads on its own bar (61 %) while holding fewer absolute points than the rhino (80 of 150)
+  await page.evaluate(() => { const g = window.__fight(); g.sides[0].hp = 61; g.sides[1].hp = 80; g.elapsed = 98.4; });
+  await page.waitForTimeout(1200);
+  const flagged = await page.evaluate(() => { const g = window.__fight(); return { over: g.over, win: g.vsWin, time: g.vsTime }; });
+  expect(flagged).toEqual({ over: true, win: 0, time: true });   // nobody was knocked out
+  await expect(page.locator('#result')).toBeVisible({ timeout: 12000 });
+  await expect(page.locator('#resTitle')).toHaveText('ALBERTAS LEADS ON HEALTH — 61 % TO 53 %');
+  const read = await page.locator('#resReadout').innerText();
+  expect(read).toContain('61/100 HP (61 %)');
+  expect(read).toContain('80/150 HP (53 %)');
+  expect(errors).toEqual([]);
+});
+
+test('versus: the five arenas are five different fights', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  const start = async (arena) => {
+    await page.click('#btnVersus');
+    await page.selectOption('#vsP1', 'albertas');
+    await page.selectOption('#vsP2', 'bjorn');
+    await page.selectOption('#vsArena', arena);
+    await page.click('#btnVsFight');
+    await page.waitForTimeout(400);
+  };
+  const seen = [];
+  for (const arena of ['0', '1', '2', '3', '4']) {
+    await start(arena);
+    seen.push(await page.evaluate(() => {
+      const g = window.__fight();
+      return { theme: g.comp ? 'comp' : 'plain', comp: !!g.comp,
+               width: Math.round(Math.max.apply(null, g.sides.map(s => s.x))), gravity: 0 };
+    }));
+    await page.keyboard.press('Escape');
+  }
+  expect(seen[4].comp).toBe(true);                       // arena 5 is the compositional ring
+  expect(seen.filter(x => x.comp).length).toBe(1);
+  expect(seen[3].width).toBeGreaterThan(seen[0].width);  // arena 4 really is the wide field
+  // the compositional ring: sizes sum to one, a hit moves share, a side under the limit ends it
+  await start('4');
+  const ring = await page.evaluate(async () => {
+    const g = window.__fight(); g.sides[1].x = g.sides[0].x + 90; g.sides[1].inv = 0;
+    const before = g.sides.map(s => s.share);
+    for (let i = 0; i < 3; i++) {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'j' }));
+      window.dispatchEvent(new KeyboardEvent('keyup', { key: 'j' }));
+      await new Promise(r => setTimeout(r, 340));
+      const G = window.__fight(); G.sides[1].inv = 0; G.sides[1].x = G.sides[0].x + 90;
+    }
+    const g2 = window.__fight();
+    return { before, after: g2.sides.map(s => s.share), sum: g2.sides.reduce((a, s) => a + s.share, 0) };
+  });
+  expect(ring.before).toEqual([0.5, 0.5]);
+  expect(ring.after[0]).toBeGreaterThan(ring.before[0]);
+  expect(ring.after[1]).toBeLessThan(ring.before[1]);
+  expect(Math.abs(ring.sum - 1)).toBeLessThan(1e-9);
+  const ended = await page.evaluate(async () => {
+    const g = window.__fight(); g.sides[1].share = 0.08; g.sides[0].share = 0.92; g.sides[1].inv = 0; g.sides[1].x = g.sides[0].x + 90;
+    for (let i = 0; i < 4 && !window.__fight().over; i++) {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k' }));
+      window.dispatchEvent(new KeyboardEvent('keyup', { key: 'k' }));
+      await new Promise(r => setTimeout(r, 400));
+      const G = window.__fight(); if (!G.over) { G.sides[1].inv = 0; G.sides[1].x = G.sides[0].x + 90; }
+    }
+    const G = window.__fight(); return { over: G.over, win: G.vsWin, byClock: G.vsTime };
+  });
+  expect(ended).toEqual({ over: true, win: 0, byClock: false });   // removed by the detection limit, not the clock
+  expect(errors).toEqual([]);
 });
 
 test('pacifist ending: outlast the rhino without hitting it', async ({ page }) => {
