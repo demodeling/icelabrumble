@@ -137,6 +137,9 @@
   .btn.rad{background:#8dff5a;box-shadow:0 5px 0 #3f8a2a,0 10px 22px rgba(0,0,0,.4);}
   .term.blue{color:#7fe7ff;border-color:#2a5d7a;text-shadow:0 0 6px rgba(127,231,255,.6);background:#03080f;}
   .term.blue b{color:#dff7ff;}
+  .term.museum{color:#f2d492;border-color:#7a5a2a;background:#120d08;text-shadow:0 0 6px rgba(242,212,146,.4);}
+  .term.museum b{color:#fff3d6;}
+  .btn.museum{background:#f2d492;box-shadow:0 5px 0 #8a6a2a,0 10px 22px rgba(0,0,0,.4);}
   .btn.blue{background:#7fe7ff;box-shadow:0 5px 0 #2a6d8a,0 10px 22px rgba(0,0,0,.4);}
   .check select{font-family:var(--body);font-weight:700;background:#0b1224;color:var(--snow);border:2px solid var(--snow2);border-radius:6px;padding:3px 6px;}
   .check{font-size:clamp(11px,1.3vw,13px);color:var(--muted);display:flex;gap:6px;align-items:center;}
@@ -189,7 +192,7 @@
       <p class="small" id="selMove"></p>
       <p class="small">Tap a fighter to select — tap again to fight.</p>
       <p class="small coop" id="selCoop" hidden></p>
-      <label class="check">Start at <select id="startLevel"><option value="0">Round 1 — Kiruna</option><option value="1">Round 2 — The Wasteland</option><option value="2">Round 3 — The Asteroid</option><option value="3">Round 4 — The Duplicates</option><option value="4">Round 5 — Compositional</option></select></label>
+      <label class="check">Start at <select id="startLevel"><option value="0">Round 1 — Kiruna</option><option value="1">Round 2 — The Wasteland</option><option value="2">Round 3 — The Asteroid</option><option value="3">Round 4 — The Duplicates</option><option value="4">Round 5 — Compositional</option><option value="5">Round 6 — The Square</option></select></label>
       <div class="roster" id="roster"></div>
       <div class="controls" id="ctrlHelp"><kbd>←</kbd><kbd>→</kbd> move · <kbd>↑</kbd>/<kbd>space</kbd> jump · <kbd>↓</kbd> duck · <kbd>J</kbd> punch · <kbd>K</kbd> kick · <kbd>L</kbd> special (when the meter is full) · <kbd>Esc</kbd> menu</div>
     </div></div>
@@ -516,6 +519,10 @@ function sfx(kind, opt){
     var sg = a.createBufferSource(); sg.buffer = noiseBuf(a, 0.03);
     var fg = a.createBiquadFilter(); fg.type = 'highpass'; fg.frequency.value = 2500; sg.connect(fg); fg.connect(g);
     g.gain.setValueAtTime(0.5, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.03); sg.start(t); sg.stop(t + 0.035);
+  } else if (kind === 'tick'){
+    var sk = a.createBufferSource(); sk.buffer = noiseBuf(a, 0.02);
+    var fk = a.createBiquadFilter(); fk.type = 'bandpass'; fk.frequency.value = opt.f || 1600; fk.Q.value = 1.2; sk.connect(fk); fk.connect(g);
+    g.gain.setValueAtTime(0.28, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.02); sk.start(t); sk.stop(t + 0.025);
   } else if (kind === 'burst'){
     var ob = a.createOscillator(); ob.type = 'sawtooth'; ob.frequency.setValueAtTime(90, t); ob.frequency.exponentialRampToValueAtTime(900, t + .55);
     var fb = a.createBiquadFilter(); fb.type = 'lowpass'; fb.frequency.setValueAtTime(400, t); fb.frequency.exponentialRampToValueAtTime(4000, t + .55);
@@ -679,6 +686,7 @@ function drawSpace(t){
   for (var m = 0; m < 4; m++){ var mx = ((m * 260 - t * (18 + m * 6)) % (LW + 80) + LW + 80) % (LW + 80) - 40, my = 380 + 30 * Math.sin(t * .6 + m); ctx.fillStyle = '#7a7e86'; ctx.beginPath(); ctx.moveTo(mx, my); ctx.lineTo(mx + 14, my - 6); ctx.lineTo(mx + 22, my + 4); ctx.lineTo(mx + 10, my + 10); ctx.closePath(); ctx.fill(); }
 }
 function drawBackground(t){
+  if (LEVELS[LEVEL].theme === 'museum'){ drawMuseum(t); return; }
   if (LEVELS[LEVEL].theme === 'space'){ drawSpace(t); return; }
   if (LEVELS[LEVEL].theme === 'wasteland'){ drawWasteland(t); return; }
   if (!skyGrad){ skyGrad = ctx.createLinearGradient(0, 0, 0, 360); skyGrad.addColorStop(0, '#0c1434'); skyGrad.addColorStop(.6, '#425a96'); skyGrad.addColorStop(1, '#f0b282'); }
@@ -717,6 +725,103 @@ function drawBackground(t){
   for (var k = 0; k < 14; k++){ var yy = 430 + k * 12 + (k % 3) * 3; ctx.beginPath(); ctx.moveTo((k * 173) % LW, yy); ctx.lineTo((k * 173) % LW + 90 + k * 9, yy); ctx.stroke(); }
   // bare trees
   drawTree(70, 452, 22, 4, 11); drawTree(880, 448, 20, 4, 5); drawTree(930, 590, 68, 5, 3);
+}
+// round 6: a Swedish museum hall drawn in section. The four sides of the room (floor, walls, ceiling) are where the
+// fight happens; the back wall is the exhibition. Static art only: this also runs on the menus, where there is no G.
+var DURER = {x: 0, facing: 1, jump: 0, tilt: 0, squash: 0, run: 0, phase: 0, head: -.05, tail: .1, flash: 0, size: 1};
+function museumPlaque(x, y, sv, en, hot){
+  ctx.fillStyle = 'rgba(0,0,0,.35)'; roundRect(x - 62, y - 17, 128, 38, 4); ctx.fill();
+  var pg = ctx.createLinearGradient(0, y - 19, 0, y + 19); pg.addColorStop(0, '#e9cf8a'); pg.addColorStop(1, '#a8843e');
+  ctx.fillStyle = pg; roundRect(x - 64, y - 19, 128, 38, 4); ctx.fill();
+  ctx.strokeStyle = '#5a4318'; ctx.lineWidth = 1.5; roundRect(x - 60, y - 15, 120, 30, 3); ctx.stroke();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = hot ? '#9a1d1a' : '#2a1e0c'; ctx.font = '700 12px Georgia, "Times New Roman", serif'; ctx.fillText(sv, x, y - 4);
+  ctx.fillStyle = '#4a3814'; ctx.font = 'italic 400 9px Georgia, "Times New Roman", serif'; ctx.fillText(en, x, y + 8);
+  if (hot){ ctx.fillStyle = '#c8262c'; ctx.beginPath(); ctx.arc(x + 52, y - 10, 4, 0, 6.283); ctx.fill(); }
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+}
+function museumFrame(x, y, w, h){
+  ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(x - 6, y - 4, w + 16, h + 16);
+  var fg = ctx.createLinearGradient(x, y, x + w, y + h); fg.addColorStop(0, '#e2c06a'); fg.addColorStop(.5, '#a37a2c'); fg.addColorStop(1, '#d9b45e');
+  ctx.fillStyle = fg; ctx.fillRect(x - 10, y - 10, w + 20, h + 20);
+  ctx.strokeStyle = '#5a4318'; ctx.lineWidth = 2; ctx.strokeRect(x - 10, y - 10, w + 20, h + 20); ctx.strokeRect(x - 3, y - 3, w + 6, h + 6);
+}
+function drawMuseum(t){
+  var X0 = SQ.x0, X1 = SQ.x1, Y0 = SQ.y0, Y1 = SQ.y1, R = SQ.R, W = X1 - X0, H = Y1 - Y0;
+  // the building around the hall, cut open: dark stone courses
+  ctx.fillStyle = '#211b17'; ctx.fillRect(-20, -20, LW + 40, LH + 40);
+  ctx.strokeStyle = 'rgba(255,236,214,.06)'; ctx.lineWidth = 1; ctx.beginPath();
+  for (var by = 6, row = 0; by < LH + 20; by += 24, row++){ ctx.moveTo(-20, by); ctx.lineTo(LW + 20, by); for (var bx = (row % 2) * 34 - 20; bx < LW + 20; bx += 68){ ctx.moveTo(bx, by); ctx.lineTo(bx, by + 24); } }
+  ctx.stroke();
+  // plaster lining with coved corners, oak parquet along the floor
+  ctx.fillStyle = '#e4d9c3'; roundRect(X0 - 16, Y0 - 16, W + 32, H + 32, R + 16); ctx.fill();
+  ctx.save(); roundRect(X0 - 16, Y0 - 16, W + 32, H + 32, R + 16); ctx.clip();
+  var og = ctx.createLinearGradient(0, Y1, 0, Y1 + 18); og.addColorStop(0, '#caa066'); og.addColorStop(1, '#8a6238');
+  ctx.fillStyle = og; ctx.fillRect(0, Y1, LW, 18);
+  ctx.strokeStyle = 'rgba(70,40,15,.45)'; ctx.lineWidth = 1; ctx.beginPath();
+  for (var pk = 0; pk < 44; pk++){ var px = X0 - 40 + pk * 24; ctx.moveTo(px, Y1 + (pk % 2 ? 0 : 9)); ctx.lineTo(px, Y1 + (pk % 2 ? 9 : 18)); }
+  ctx.moveTo(0, Y1 + 9); ctx.lineTo(LW, Y1 + 9); ctx.stroke();
+  ctx.restore();
+  // the back wall
+  ctx.save(); roundRect(X0, Y0, W, H, R); ctx.clip();
+  var wg = ctx.createLinearGradient(0, Y0, 0, Y1); wg.addColorStop(0, '#4a665e'); wg.addColorStop(1, '#2d433e');
+  ctx.fillStyle = wg; ctx.fillRect(X0, Y0, W, H);
+  // wainscot and a brass dado rail
+  ctx.fillStyle = '#23352f'; ctx.fillRect(X0, 392, W, Y1 - 392);
+  ctx.fillStyle = '#c9b27a'; ctx.fillRect(X0, 387, W, 5); ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(X0, 392, W, 2);
+  ctx.strokeStyle = 'rgba(0,0,0,.28)'; ctx.lineWidth = 2; for (var wp = X0 + 44; wp < X1 - 90; wp += 112) ctx.strokeRect(wp, 406, 92, 48);
+  ctx.strokeStyle = 'rgba(255,255,255,.05)'; for (var wp2 = X0 + 44; wp2 < X1 - 90; wp2 += 112) ctx.strokeRect(wp2 + 2, 408, 92, 48);
+  // warm picture lights
+  [[250, .85], [480, 1], [710, .85]].forEach(function(l){ var sg = ctx.createRadialGradient(l[0], Y0 + 6, 8, l[0], Y0 + 110, 250); sg.addColorStop(0, 'rgba(255,228,176,' + (.3 * l[1]) + ')'); sg.addColorStop(1, 'rgba(255,228,176,0)'); ctx.fillStyle = sg; ctx.fillRect(l[0] - 260, Y0, 520, 330); });
+  // hall sign
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#e8cf8e'; ctx.font = '700 17px Georgia, "Times New Roman", serif'; ctx.fillText('SAL 6  ·  ARTBESTÄMNING', 480, Y0 + 30);
+  ctx.fillStyle = 'rgba(232,207,142,.7)'; ctx.font = 'italic 400 11px Georgia, "Times New Roman", serif'; ctx.fillText('where every species name starts: the voucher specimen', 480, Y0 + 48);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  // the rhinoceros of 1515, drawn from a letter by someone who never saw one: a false positive in oils
+  museumFrame(186, 238, 150, 92);
+  ctx.fillStyle = '#e8dcc0'; ctx.fillRect(186, 238, 150, 92);
+  ctx.save(); ctx.beginPath(); ctx.rect(186, 238, 150, 92); ctx.clip();
+  ctx.translate(262, 318); ctx.scale(.2, .2); ctx.translate(0, -GROUND);
+  ctx.globalAlpha = .9; drawRhino(DURER); ctx.globalAlpha = 1;
+  ctx.fillStyle = '#4e4a50'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 6;   // the little horn on its back that no rhino has
+  ctx.beginPath(); ctx.moveTo(-40, GROUND - 176); ctx.lineTo(-18, GROUND - 236); ctx.lineTo(-2, GROUND - 178); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = 'rgba(60,40,20,.18)'; for (var hl = 0; hl < 10; hl++) ctx.fillRect(186, 242 + hl * 9, 150, 1);
+  ctx.fillStyle = '#d9c9a0'; ctx.font = 'italic 400 10px Georgia, "Times New Roman", serif'; ctx.textAlign = 'center';
+  ctx.fillText('Rhinocerus, 1515 — drawn from hearsay', 261, 348); ctx.textAlign = 'left';
+  // Kiruna under the aurora, in a gilt frame
+  museumFrame(624, 238, 150, 92);
+  var ag = ctx.createLinearGradient(0, 238, 0, 330); ag.addColorStop(0, '#0c1434'); ag.addColorStop(1, '#46609a'); ctx.fillStyle = ag; ctx.fillRect(624, 238, 150, 92);
+  ctx.strokeStyle = 'rgba(95,235,155,.5)'; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(630, 262); ctx.quadraticCurveTo(690, 244, 768, 266); ctx.stroke(); ctx.lineCap = 'butt';
+  ctx.fillStyle = '#9298c4'; ctx.beginPath(); ctx.moveTo(624, 318); ctx.lineTo(660, 290); ctx.lineTo(690, 306); ctx.lineTo(728, 282); ctx.lineTo(774, 312); ctx.lineTo(774, 330); ctx.lineTo(624, 330); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#eef1f8'; ctx.fillRect(624, 322, 150, 8);
+  ctx.fillStyle = '#d9c9a0'; ctx.font = 'italic 400 10px Georgia, "Times New Roman", serif'; ctx.textAlign = 'center';
+  ctx.fillText('Kiruna, the sampling site', 699, 348); ctx.textAlign = 'left';
+  // the vitrine: one jar, one label, the wrong name
+  ctx.fillStyle = '#3a2718'; ctx.fillRect(432, 392, 96, Y1 - 392); ctx.fillStyle = '#4e3522'; ctx.fillRect(426, 388, 108, 8);
+  ctx.fillStyle = '#f2ead8'; ctx.fillRect(446, 412, 68, 28); ctx.strokeStyle = '#6a5a3a'; ctx.lineWidth = 1; ctx.strokeRect(446, 412, 68, 28);
+  ctx.fillStyle = '#2a1e0c'; ctx.font = 'italic 700 9px Georgia, "Times New Roman", serif'; ctx.textAlign = 'center'; ctx.fillText('Rhinoceros sp.', 480, 423);
+  ctx.save(); ctx.translate(480, 433); ctx.rotate(-.12); ctx.fillStyle = '#c8262c'; ctx.font = '900 8px Nunito, sans-serif'; ctx.fillText('FELBESTÄMD', 0, 0); ctx.restore();
+  ctx.fillStyle = 'rgba(160,210,200,.16)'; ctx.fillRect(430, 296, 100, 92);
+  ctx.strokeStyle = 'rgba(220,245,240,.55)'; ctx.lineWidth = 2; ctx.strokeRect(430, 296, 100, 92);
+  ctx.fillStyle = 'rgba(200,190,120,.5)'; roundRect(456, 322, 48, 62, 8); ctx.fill(); ctx.strokeStyle = 'rgba(240,240,230,.7)'; ctx.stroke();
+  ctx.fillStyle = '#6c686c'; ctx.beginPath(); ctx.ellipse(480, 358, 15, 11, 0, 0, 6.283); ctx.fill(); ctx.beginPath(); ctx.moveTo(468, 352); ctx.lineTo(462, 336); ctx.lineTo(474, 348); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#8a6a3a'; ctx.fillRect(452, 316, 56, 8);
+  ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(438, 304); ctx.lineTo(452, 304); ctx.moveTo(438, 304); ctx.lineTo(438, 332); ctx.stroke();
+  ctx.textAlign = 'left';
+  // velvet rope between two brass posts
+  [392, 568].forEach(function(sx){ ctx.fillStyle = '#c9b27a'; ctx.fillRect(sx - 3, 420, 6, 50); ctx.beginPath(); ctx.arc(sx, 418, 6, 0, 6.283); ctx.fill(); ctx.fillRect(sx - 9, 466, 18, 4); });
+  ctx.strokeStyle = '#8a1d2a'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(392, 424); ctx.quadraticCurveTo(480, 460, 568, 424); ctx.stroke();
+  // the confusion matrix, one cell per corner of the room
+  museumPlaque(196, 198, 'SANT POSITIV', 'true positive', false);
+  museumPlaque(764, 198, 'FALSKT POSITIV', 'false positive — you are here', true);
+  museumPlaque(196, 426, 'FALSKT NEGATIV', 'false negative', false);
+  museumPlaque(764, 426, 'SANT NEGATIV', 'true negative', false);
+  ctx.restore();
+  // coving shadow along the inside of the room
+  ctx.strokeStyle = 'rgba(0,0,0,.28)'; ctx.lineWidth = 6; roundRect(X0 + 3, Y0 + 3, W - 6, H - 6, R - 3); ctx.stroke();
+  ctx.strokeStyle = '#b8ab92'; ctx.lineWidth = 2; roundRect(X0 - 8, Y0 - 8, W + 16, H + 16, R + 8); ctx.stroke();
 }
 function drawTree(x, y, size, depth, seed){
   var r = seed;
@@ -848,7 +953,7 @@ function fighterDraw(f, t){
   ctx.restore();
   if (scl !== 1){
     var oy0 = GROUND - f.y;
-    [ 'handPt', 'farHandPt', 'footPt', 'headPt' ].forEach(function(k){ var q = f[k]; f[k] = [f.x + (q[0] - f.x) * scl, oy0 + (q[1] - oy0) * scl]; });
+    [ 'handPt', 'farHandPt', 'footPt', 'headPt', 'stickPt' ].forEach(function(k){ var q = f[k]; if (q) f[k] = [f.x + (q[0] - f.x) * scl, oy0 + (q[1] - oy0) * scl]; });
   }
 }
 function fighterDrawInner(f, t){
@@ -943,8 +1048,76 @@ var LEVELS = [
    card: "> ROUND 4 — THE DUPLICATES\n> read: <b>PCR DUPLICATE</b>\n\nDuring library prep one molecule can be copied and sequenced twice. One wrong read shows up as two, and both get counted.\n\nTwo rhinos on a field <b>twice as wide</b>. The camera follows you.\n\n> split them up: hit one while the other skids\n> the <b>!</b> marks the one about to charge\n> both have to go"},
   {name: 'ROUND 5', theme: 'wasteland', rhino: {hp: 100, mutant: false}, rhinos: 2, width: 1440, comp: true, skins: [null, 'zebra'], hud: 'THE RHINO · false positive', huds: ['THE RHINO · false positive', 'THE ZEBRA · false positive'], read: 'Rhinoceros + Zebra (relative abundance)',
    pacifist: 60, reveal: {rhino: 'bear', zebra: 'moose'}, next: 'NEXT ROUND: COMPOSITIONAL',
-   card: "> ROUND 5 — COMPOSITIONAL\n> counts: <b>RELATIVE</b>\n\nSequencing never tells you how much of anything there is — only what fraction of the reads each species got. The shares always <b>add up to one</b>.\n\nA rhino, a zebra and you share one ring. Whoever takes damage shrinks, and the size they lose goes to everyone else — the rhino, the zebra, <b>and you</b>.\n\n> hit them and you grow; get hit and they grow\n> a false positive is gone once its share drops below the <b>detection limit</b> (6 %)\n> be the dominant species"}
+   card: "> ROUND 5 — COMPOSITIONAL\n> counts: <b>RELATIVE</b>\n\nSequencing never tells you how much of anything there is — only what fraction of the reads each species got. The shares always <b>add up to one</b>.\n\nA rhino, a zebra and you share one ring. Whoever takes damage shrinks, and the size they lose goes to everyone else — the rhino, the zebra, <b>and you</b>.\n\n> hit them and you grow; get hit and they grow\n> a false positive is gone once its share drops below the <b>detection limit</b> (6 %)\n> be the dominant species"},
+  {name: 'ROUND 6', theme: 'museum', square: true, calm: true, rhino: {hp: 440, mutant: false}, hud: 'THE SPECIMEN · mislabelled voucher', read: 'Rhinoceros (museum voucher, mislabelled)',
+   pacifist: 90, next: 'NEXT ROUND: THE SQUARE', cardStyle: 'museum', puff: '#e6d8bc',
+   tip: 'it follows you round every corner — jump the charge when you see the <b>!</b>, duck the horn, and hit it while it skids.',
+   win: {big: 'RELABELLED', title: 'VOUCHER SPECIMEN CORRECTED', status: 'RELABELLED',
+         lesson: 'every species name in a reference database traces back to a museum specimen. Label one jar wrong and every read that matches it inherits the wrong name — a false positive that looks like a true positive from every corner of the matrix.',
+         next: 'the sequencer starts to <b>stutter</b>. Round 7.'},
+   card: "> ROUND 6 — THE SQUARE\n> reference specimen: <b>MISLABELLED</b>\n\nEvery species name in a reference database goes back to a museum specimen. Give one jar the wrong label and every read that matches it gets the wrong name.\n\nThis fight runs round the walls of the exhibition hall: floor, wall, ceiling, wall. You stand on whichever side your feet are on.\n\n> → always walks you anticlockwise, ← clockwise\n> the rhino follows you round the corners\n> each corner is one cell of the confusion matrix"}
 ];
+// ------------------------------------------------------------ round 6: the square
+// The four sides of the room are one flat track, unrolled. Every entity keeps its logical x (distance along the track)
+// and its y / jump (height off the side it stands on), and all movement and hit code runs unchanged in that flat frame.
+// Only drawing wraps it round the room: sqPt() for points, sqEnterFighter() / sqEnterRhino() for rigid per-entity frames.
+var SQ = {x0: 40, x1: 920, y0: 156, y1: GROUND, R: 100, size: .66, mid: 480};
+(function(){
+  var R = SQ.R, W = SQ.x1 - SQ.x0 - 2 * R, H = SQ.y1 - SQ.y0 - 2 * R, A = Math.PI / 2 * R, Q = Math.PI / 2;
+  // s = 0 is the middle of the floor and grows anticlockwise on screen: right along the floor, up the right wall,
+  // left along the ceiling, down the left wall. c = the corner a stretch belongs to (0 BR, 1 TR, 2 TL, 3 BL).
+  SQ.segs = [
+    {len: W / 2, x: SQ.mid, y: SQ.y1, dx: 1, dy: 0, c: 0}, {len: A, cx: SQ.x1 - R, cy: SQ.y1 - R, a0: Q, c: 0},
+    {len: H / 2, x: SQ.x1, y: SQ.y1 - R, dx: 0, dy: -1, c: 0}, {len: H / 2, x: SQ.x1, y: SQ.y1 - R - H / 2, dx: 0, dy: -1, c: 1},
+    {len: A, cx: SQ.x1 - R, cy: SQ.y0 + R, a0: 0, c: 1}, {len: W / 2, x: SQ.x1 - R, y: SQ.y0, dx: -1, dy: 0, c: 1},
+    {len: W / 2, x: SQ.mid, y: SQ.y0, dx: -1, dy: 0, c: 2}, {len: A, cx: SQ.x0 + R, cy: SQ.y0 + R, a0: -Q, c: 2},
+    {len: H / 2, x: SQ.x0, y: SQ.y0 + R, dx: 0, dy: 1, c: 2}, {len: H / 2, x: SQ.x0, y: SQ.y0 + R + H / 2, dx: 0, dy: 1, c: 3},
+    {len: A, cx: SQ.x0 + R, cy: SQ.y1 - R, a0: -Math.PI, c: 3}, {len: W / 2, x: SQ.x0 + R, y: SQ.y1, dx: 1, dy: 0, c: 3}
+  ];
+  SQ.P = 0; SQ.segs.forEach(function(g){ g.s0 = SQ.P; SQ.P += g.len; });
+  SQ.half = (SQ.y1 - SQ.y0) / 2 - 3;   // the highest a drawn point goes: the middle of the room
+})();
+// the shortest way round the loop from one logical x to another, in [-P/2, P/2)
+function wrapDelta(d){ return d - SQ.P * Math.floor(d / SQ.P + .5); }
+// the point on the wall under logical x, the angle of the wall there, and its inward normal
+function sqBase(lx){
+  var s = ((lx - SQ.mid) % SQ.P + SQ.P) % SQ.P, g = SQ.segs[0];
+  for (var i = 0; i < SQ.segs.length; i++){ g = SQ.segs[i]; if (s < g.s0 + g.len) break; }
+  var u = s - g.s0;
+  if (g.cx == null) return {x: g.x + g.dx * u, y: g.y + g.dy * u, a: Math.atan2(g.dy, g.dx), nx: g.dy, ny: -g.dx, c: g.c};
+  var an = g.a0 - u / SQ.R, ca = Math.cos(an), sa = Math.sin(an);   // anticlockwise on screen = a falling canvas angle
+  return {x: g.cx + SQ.R * ca, y: g.cy + SQ.R * sa, a: an - Math.PI / 2, nx: -ca, ny: -sa, c: g.c};
+}
+// a logical point h above the wall at x. Higher than the corner radius, the plain offset would fold back past the arc
+// centre and run backwards, so it is pinned to the corner's inner point instead (continuous, never folded)
+function sqPt(lx, h){
+  h = Math.min(h || 0, SQ.half);
+  var b = sqBase(lx), x = b.x + b.nx * h, y = b.y + b.ny * h;
+  if (h > 0){
+    x = (b.c === 0 || b.c === 1) ? Math.min(x, SQ.x1 - h) : Math.max(x, SQ.x0 + h);
+    y = (b.c === 0 || b.c === 3) ? Math.min(y, SQ.y1 - h) : Math.max(y, SQ.y0 + h);
+  }
+  return [x, y];
+}
+// rigid frames: the logical point (lx, GROUND - h) lands on the room, turned to the side it stands on
+function sqFrameAt(lx, h, px, py, ang){ ctx.translate(px, py); ctx.rotate(ang); ctx.translate(-lx, -(GROUND - h)); }
+function sqEnterFighter(f){ var b = sqBase(f.x), q = sqPt(f.x, f.y); sqFrameAt(f.x, f.y, q[0], q[1], b.a); }
+function sqEnterRhino(r){
+  // the chord between the feet gives the angle and its midpoint the pivot, so on a curved corner both feet stay down
+  var d = .9 * rs(r), a = sqBase(r.x - d), b = sqBase(r.x + d), ang = Math.atan2(b.y - a.y, b.x - a.x), j = r.jump || 0;
+  sqFrameAt(r.x, j, (a.x + b.x) / 2 + Math.sin(ang) * j, (a.y + b.y) / 2 - Math.cos(ang) * j, ang);
+}
+function inFrame(e, fn){ if (!G || !G.square){ fn(); return; } ctx.save(); if (e.isRhino) sqEnterRhino(e); else sqEnterFighter(e); fn(); ctx.restore(); }
+function sqRoomPath(pad){ roundRect(SQ.x0 - pad, SQ.y0 - pad, SQ.x1 - SQ.x0 + 2 * pad, SQ.y1 - SQ.y0 + 2 * pad, SQ.R + pad); }
+// the charge warning, upright on whichever wall the rhino is on
+function sqPawMark(r){
+  var q = sqPt(r.x, 2.4 * rs(r) + 10 - 6 * Math.sin(r.st * 30));
+  ctx.font = '400 40px Bangers, Impact, sans-serif'; ctx.fillStyle = '#ff5a3c'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 5; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.strokeText('!', q[0], q[1]); ctx.fillText('!', q[0], q[1]); ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+}
+// in the square everything is smaller (a rhino has to fit on a wall), and jumps shrink with the rig: same airtime,
+// lower arc, so the dodge windows (which already scale with size) still work
+function jumpK(e){ return (G && G.square) ? (e.size || 1) : 1; }
 // round 5: everyone's share of the ring sums to one; damage moves share to the others; below the limit you are not detected
 var COMP_K = 360, COMP_LIMIT = .06;
 function sizeOf(share){ return Math.min(2.4, .35 + .65 * share * (G ? G.compN : 3)); }
@@ -1123,7 +1296,10 @@ function newFight(def, def2){
   AW = lv.width || LW;
   var rhinos = [], n = lv.rhinos || 1;
   for (var ri = 0; ri < n; ri++) rhinos.push({x: 720 + ri * (AW - 1140) / Math.max(1, n - 1), facing:-1, hp:lv.rhino.hp, maxhp:lv.rhino.hp, mutant:lv.rhino.mutant, space:!!lv.rhino.space, glow:0, willFeint:false, targetX:0, state:'idle', st:0, timer:1.4 + ri * .9, run:0, phase:0, tilt:0, head:0, jump:0, squash:0, tail:0, flash:0, angry:false, rage:0, dir:-1, chargeHit:false, cx0:0, vx:0, trampled:{}, skin: lv.skins ? lv.skins[ri] : null, size: 1, isRhino: true});
-  G = {fid: ++fightSeq, p:p, p2:p2, players: p2 ? [p, p2] : [p], r:rhinos[0], rhinos:rhinos, t:0, over:false, won:false, elapsed:0, koT:0, pacifist:false, comp: !!lv.comp, compN: 0};
+  G = {fid: ++fightSeq, p:p, p2:p2, players: p2 ? [p, p2] : [p], r:rhinos[0], rhinos:rhinos, t:0, over:false, won:false, elapsed:0, koT:0, pacifist:false, comp: !!lv.comp, compN: 0,
+       square: !!lv.square};
+  // both co-op pages run this, so both draw the room and the smaller rigs; nothing else may switch the square on
+  if (G.square) G.players.concat(rhinos).forEach(function(c){ c.size = SQ.size; });
   if (G.comp){ var chars = G.players.concat(rhinos); G.compN = chars.length; chars.forEach(function(c){ c.share = 1 / chars.length; c.size = 1; }); compSync(); }
   camX = clamp(p.x - LW / 2, 0, AW - LW);
   clearKeys(); blurFocus();
@@ -1135,7 +1311,7 @@ function startAttack(p, kind){
   p.state = kind; p.st = 0; p.attackHit = false; p.specialHits = 0;
   if (kind === 'punch'){ p.alt = !p.alt; sfx('whoosh'); }
   if (kind === 'kick') sfx('whoosh');
-  if (kind === 'special'){ if (p.def.special.kind === 'godzilla'){ sfx('roar'); sfx('drum'); } else if (p.def.special.kind === 'babysit'){ sfx('lullaby'); } else { sfx('shout'); sfx('whoosh'); } p.meter = 0; p.scale = 1; var sk = p.def.special.kind; if (sk === 'fly' || sk === 'upper'){ p.vy = sk === 'upper' ? 620 : 470; p.y = Math.max(p.y, 1); } if (sk === 'fly' || sk === 'dash' || sk === 'grab'){ p.dashDir = p.facing; } if (sk === 'fly') slowmo = 0.9; }
+  if (kind === 'special'){ if (p.def.special.kind === 'godzilla'){ sfx('roar'); sfx('drum'); } else if (p.def.special.kind === 'babysit'){ sfx('lullaby'); } else { sfx('shout'); sfx('whoosh'); } p.meter = 0; p.scale = 1; var sk = p.def.special.kind; if (sk === 'fly' || sk === 'upper'){ p.vy = (sk === 'upper' ? 620 : 470) * jumpK(p); p.y = Math.max(p.y, 1); } if (sk === 'fly' || sk === 'dash' || sk === 'grab'){ p.dashDir = p.facing; } if (sk === 'fly') slowmo = 0.9; }
 }
 function rhinoRect(r){
   var S = rs(r), front = r.x + r.facing * 2.55 * S, back = r.x - r.facing * 1.6 * S;
@@ -1159,7 +1335,7 @@ function rhinoAt(pt, pad){
 }
 // every rhino gets the whole arena: lanes used to fence each one into a slice, which left a strip of the field
 // no rhino could reach (stand there and it paws and sweeps at its wall forever) and stopped them running past each other
-function rhinoBounds(r){ return [100, AW - 100]; }
+function rhinoBounds(r){ return (G && G.square) ? [-1e9, 1e9] : [100, AW - 100]; }
 function passesThrough(r){ return r.state === 'charge' || r.state === 'jetstomp'; }
 function hitRhino(r, p, pt, dmg, big, label){
   var vuln = (r.state === 'skid' || r.state === 'sleep') ? 1.6 : 1;
@@ -1188,7 +1364,7 @@ function hitPlayer(p, dmg, label, knock){
   if (p.inv > 0 || G.over || p.state === 'ko') return;
   if (G.comp) compHit(p, dmg); else p.hp = Math.max(0, p.hp - dmg);
   if (p.hp <= 0 || (G.comp && p.share < COMP_LIMIT)) p.killedBy = label;
-  p.inv = 1.0; p.flash = 0.15; p.state = 'hurt'; p.st = 0; p.vy = 260; p.y = Math.max(p.y, 1); p.kx = knock;
+  p.inv = 1.0; p.flash = 0.15; p.state = 'hurt'; p.st = 0; p.vy = 260 * jumpK(p); p.y = Math.max(p.y, 1); p.kx = knock;
   fx.push({x: p.headPt[0], y: p.headPt[1] - 20, t: 0, life: .5, r: 60, label: label, big: false, red: true});
   shake = Math.max(shake, 12); sfx('hurt'); sfx('hit');
   if (G.comp ? p.share < COMP_LIMIT : p.hp <= 0) playerKO(p);
@@ -1214,7 +1390,7 @@ function rhinoKO(r){
 // pacifist ending: never land a hit and outlast the rhino (60 s in round 1, +30 s per round) and the read turns out to be something else
 var LOCAL_BUILD = /^(localhost|127\.0\.0\.1|)$/.test(location.hostname);   // file:// or a dev server: debug hooks allowed
 var PACIFIST_DEBUG = LOCAL_BUILD ? parseFloat((location.hash.match(/pacifist=([0-9]*\.?[0-9]+(?:e[+-]?[0-9]+)?)/i) || [])[1]) : NaN;
-if (LOCAL_BUILD){ window.__fight = function(){ return G; }; window.__pct100 = function(v){ return pct100(v); }; }   // tests peek at the fight state
+if (LOCAL_BUILD){ window.__fight = function(){ return G; }; window.__pct100 = function(v){ return pct100(v); }; window.__sq = function(){ return {P: SQ.P, base: sqBase, pt: sqPt, wrap: wrapDelta}; }; }   // tests peek at the fight state
 function pacifistTime(){ return PACIFIST_DEBUG > 0 ? PACIFIST_DEBUG : (LEVELS[LEVEL].pacifist || 60 + 30 * LEVEL); }
 function rhinoReveal(){
   if (G.over) return;
@@ -1236,8 +1412,8 @@ function explodeRhino(r){
   for (var i = 0; i < 230; i++){
     var x = rnd(rc.x0, rc.x1), y = rnd(rc.y0 + 10, rc.y1 - 5);
     var dx = x - cx, dy = y - cy - 60, d = Math.hypot(dx, dy) + 1;
-    var v = rnd(180, 520);
-    dna.push({x: x, y: y, vx: dx / d * v + rnd(-60, 60), vy: dy / d * v - 120, rot: rnd(0, 3.14), rv: rnd(-3, 3), tw: rnd(0, 6.28), tv: rnd(4, 9), L: rnd(16, 34), t: 0, letter: i % 3 === 0 ? 'ACGT'[i % 4] : null});
+    var v = rnd(180, 520) * (G.square ? .5 : 1);
+    dna.push({x: x, y: y, vx: dx / d * v + rnd(-60, 60), vy: dy / d * v - (G.square ? 60 : 120), rot: rnd(0, 3.14), rv: rnd(-3, 3), tw: rnd(0, 6.28), tv: rnd(4, 9), L: rnd(16, 34), t: 0, letter: i % 3 === 0 ? 'ACGT'[i % 4] : null});
   }
   [1568, 2093, 2637, 3136].forEach(function(f, k){ setTimeout(function(){ sfx('chime', {f: f}); }, 100 + k * 90); });
   outroMelody();
@@ -1252,20 +1428,20 @@ function updatePlayer(p, dt){
   var speed = 300 * def.speed;
   var onGround = p.y <= 0 && p.vy <= 0;
   // face the rhino when not mid-attack
-  if (!busy || p.state === 'hurt') p.facing = r.x > p.x ? 1 : -1;
+  if ((!busy || p.state === 'hurt') && !(G.square && Math.abs(r.x - p.x) > SQ.P / 2 - 40)) p.facing = r.x > p.x ? 1 : -1;
   var moving = false;
   if (!busy && !G.over){
     if (keys.left && !keys.right){ p.x -= speed * dt; moving = true; }
     if (keys.right && !keys.left){ p.x += speed * dt; moving = true; }
-    if (pressed.jump && onGround){ p.vy = 690 * def.jump * (LEVELS[LEVEL].gravity ? .82 : 1); p.y = 1; sfx('jump'); }
+    if (pressed.jump && onGround){ p.vy = 690 * def.jump * (LEVELS[LEVEL].gravity ? .82 : 1) * jumpK(p); p.y = 1; sfx('jump'); }
     if (pressed.punch && onGround) startAttack(p, 'punch');
     else if (pressed.kick && onGround) startAttack(p, 'kick');
     else if (pressed.special && p.meter >= 100 && onGround) startAttack(p, 'special');
   }
   // gravity
-  if (p.y > 0 || p.vy > 0){ p.vy -= 1500 * (LEVELS[LEVEL].gravity || 1) * dt; p.y += p.vy * dt; if (p.y <= 0){ p.y = 0; p.vy = 0; if (p.state === 'hurt' && p.st > .3){ p.state = 'idle'; } } }
+  if (p.y > 0 || p.vy > 0){ p.vy -= 1500 * (LEVELS[LEVEL].gravity || 1) * jumpK(p) * dt; p.y += p.vy * dt; if (p.y <= 0){ p.y = 0; p.vy = 0; if (p.state === 'hurt' && p.st > .3){ p.state = 'idle'; } } }
   if (p.state === 'hurt' && p.kx){ p.x += p.kx * dt; p.kx *= Math.pow(0.02, dt); }
-  p.x = clamp(p.x, 40, AW - 40);
+  if (!G.square) p.x = clamp(p.x, 40, AW - 40);
   if (AW > LW) p.x = clamp(p.x, camX + 24, camX + LW - 24);   // stay inside the camera's view on the wide field
   // pose selection
   var pose;
@@ -1338,7 +1514,7 @@ function specialUpdate(p, dt){
   } else if (kind === 'godzilla'){
     p.inv = Math.max(p.inv, .1); slowmo = 0;
     var grow = smooth(0, .7, st) * (1 - smooth(1.9, 2.5, st));
-    p.scale = 1 + 1.9 * grow;
+    p.scale = 1 + (G.square ? .7 : 1.9) * grow;   // the hall is only so tall
     if (st < .7){ pose = mixPose(POSE.guard, POSE.upper, st / .7); shake = Math.max(shake, 4 + 6 * st); }
     else if (st < 1.05){ pose = POSE.upper; }
     else if (st < 1.2){ pose = mixPose(POSE.upper, POSE.slam, (st - 1.05) / .15); }
@@ -1348,7 +1524,7 @@ function specialUpdate(p, dt){
         p.attackHit = true; shake = 48; impactFrame = 4; flashA = .55; sfx('bighit'); sfx('boom'); sfx('drum');
         for (var gi = 0; gi < 30; gi++) puffs.push({x: p.x + rnd(-460, 460), y: GROUND - rnd(0, 30), t: 0, r: rnd(12, 30)});
         liveRhinos().forEach(function(r){ var rc2 = rhinoRect(r), rcx = (rc2.x0 + rc2.x1) / 2;
-          if (Math.abs(p.x - rcx) < 620){ hitRhino(r, p, [rcx, GROUND - 90], sp.dmg, true, 'PER-ZILLA!'); r.jump = 110; r.tilt = -.5; if (r.state === 'charge' || r.state === 'paw' || r.state === 'horn'){ r.state = 'stagger'; r.st = 0; } } });
+          if (Math.abs(p.x - rcx) < 620){ hitRhino(r, p, [rcx, GROUND - 90], sp.dmg, true, 'PER-ZILLA!'); r.jump = G.square ? 70 : 110; r.tilt = -.5; if (r.state === 'charge' || r.state === 'paw' || r.state === 'horn'){ r.state = 'stagger'; r.st = 0; } } });
         var gz = G.vs ? vsFoeOf(p) : null; if (gz && !gz.isRhino && vsAlive(gz) && Math.abs(p.x - gz.x) < 620) hitFoe(gz, p, [gz.x, GROUND - 90], sp.dmg, true, 'PER-ZILLA!');
       }
     }
@@ -1403,7 +1579,7 @@ function updateRhino(r, dt){
   if (r.state === 'trot'){
     r.head = lerp(r.head, 0, Math.min(1, dt * 3)); r.run = .7; r.phase += dt * 11; r.tilt = .02 * Math.sin(r.phase); r.x += r.dir * 210 * dt;
     if (Math.random() < .25) puffs.push({x: r.x - r.dir * rnd(60, 130), y: GROUND - rnd(0, 20), t: 0, r: rnd(5, 10)});
-    if (r.x < -300 || r.x > AW + 300) r.state = 'gone';
+    if (!G.square && (r.x < -300 || r.x > AW + 300)) r.state = 'gone';   // round the loop it never leaves; the result comes on its timer
     return;
   }
   if (r.state !== 'burst' && r.glow > 0) r.glow = Math.max(0, r.glow - dt * 3);
@@ -1412,7 +1588,7 @@ function updateRhino(r, dt){
   var spdMul = r.angry ? 1.25 : 1;
   if (r.state === 'idle' && r.human){ vsRhinoIdle(r, dt); }
   else if (r.state === 'idle'){
-    r.facing = dist > 0 ? 1 : -1; r.run = 0; r.tilt *= Math.pow(.05, dt); r.head *= Math.pow(.05, dt);
+    if (!(G.square && adist > SQ.P / 2 - 40)) r.facing = dist > 0 ? 1 : -1; r.run = 0; r.tilt *= Math.pow(.05, dt); r.head *= Math.pow(.05, dt);
     r.timer -= dt;
     if (r.timer <= 0){
       if (r.mutant && adist < 280 && Math.random() < .5){ r.state = 'burst'; r.st = 0; r.chargeHit = false; }
@@ -1471,7 +1647,8 @@ function updateRhino(r, dt){
     // hit the player?
     var ts = Math.min(1.4, r.size || 1), ran = Math.abs(r.x - (r.cx0 == null ? r.x : r.cx0)) > 40; rhinoFoes(r).forEach(function(q, qi){ if (ran && !r.trampled[qi] && Math.abs(q.x - (r.x + r.dir * 120 * ts)) < 110 * ts && (q.isRhino ? q.jump < 60 : (q.y < 84 * ts && q.inv <= 0 && !(q.state === 'special' && (q.def.special.kind === 'dash'))))){ r.trampled[qi] = true; hitEnt(q, r, r.angry ? 26 : 20, 'TRAMPLED!', r.dir * 520); } });
     var rb = rhinoBounds(r);
-    if (r.human && r.st > 1.05){ r.state = 'skid'; r.st = 0; sfx('whoosh'); for (var hk2 = 0; hk2 < 8; hk2++) puffs.push({x: r.x + r.dir * rnd(-40, 90), y: GROUND - rnd(0, 26), t: 0, r: rnd(8, 18)}); }
+    if (G.square && !r.human && ((r.st > .4 && dist * r.dir < -200) || r.st > 2.5)){ r.state = 'skid'; r.st = 0; sfx('whoosh'); for (var sq2 = 0; sq2 < 8; sq2++) puffs.push({x: r.x + r.dir * rnd(-40, 90), y: GROUND - rnd(0, 26), t: 0, r: rnd(8, 18)}); }
+    else if (r.human && r.st > 1.05){ r.state = 'skid'; r.st = 0; sfx('whoosh'); for (var hk2 = 0; hk2 < 8; hk2++) puffs.push({x: r.x + r.dir * rnd(-40, 90), y: GROUND - rnd(0, 26), t: 0, r: rnd(8, 18)}); }
     else if ((r.dir > 0 && r.x > rb[1] - 20) || (r.dir < 0 && r.x < rb[0] + 20)){ r.state = 'skid'; r.st = 0; r.x = clamp(r.x, rb[0] + 20, rb[1] - 20); sfx('whoosh'); for (var i = 0; i < 10; i++) puffs.push({x: r.x + r.dir * rnd(-40, 100), y: GROUND - rnd(0, 30), t: 0, r: rnd(10, 22)});
       if (r.mutant){ for (var hk = 0; hk < 3; hk++) hot.push({x: clamp(r.x - r.dir * (90 + hk * 120), 60, AW - 60), r: rnd(48, 70), t: 0, life: 9}); if (hot.length > 6) hot.splice(0, hot.length - 6); } }
   } else if (r.state === 'skid'){
@@ -1515,6 +1692,7 @@ function update(dt){
   }
   else { G.p.inp.keys = keys; G.p.inp.pressed = pressed; }   // player 1 is always the local keyboard / touch pads
   G.players.forEach(function(q){ updatePlayer(q, dt * ts); }); G.rhinos.forEach(function(r){ updateRhino(r, dt * ts); });
+  if (G.square && G.r) G.players.forEach(function(q){ q.x = G.r.x + wrapDelta(q.x - G.r.x); });
   updateCamera(dt);
   if (G.comp) G.players.concat(G.rhinos).forEach(function(c){ c.size = lerp(c.size || 1, sizeOf(c.share), Math.min(1, dt * 5)); });
   var hitsTotal = 0; G.players.forEach(function(q){ hitsTotal += q.hitsLanded; });
@@ -1547,7 +1725,10 @@ function updateCamera(dt){
 function tickAmbient(dt){
   for (var j = puffs.length - 1; j >= 0; j--){ puffs[j].t += dt; if (puffs[j].t > .55) puffs.splice(j, 1); }
   for (var k = 0; k < dna.length; k++){ var d = dna[k]; d.t += dt; d.x += d.vx * dt; d.y += d.vy * dt; d.vx *= Math.pow(.35, dt); d.vy = d.vy * Math.pow(.4, dt) - 25 * dt; d.rot += d.rv * dt; d.tw += d.tv * dt; }
-  if (LEVELS[LEVEL].theme === 'space'){
+  var th = LEVELS[LEVEL].theme;
+  if (th === 'museum'){
+    for (var f4 = 0; f4 < flakes.length; f4++){ var fl4 = flakes[f4]; fl4.y += fl4.v * .12 * dt; fl4.x += Math.sin(G.t * .5 + fl4.p) * 5 * dt; if (fl4.y > LH) { fl4.y = -5; fl4.x = Math.random() * LW; } }
+  } else if (th === 'space'){
     for (var f3 = 0; f3 < flakes.length; f3++){ var fl3 = flakes[f3]; fl3.x -= (20 + fl3.v) * dt; if (fl3.x < -5) { fl3.x = LW + 5; fl3.y = Math.random() * LH; } }
   } else if (LEVELS[LEVEL].theme === 'wasteland'){
     for (var f2 = 0; f2 < flakes.length; f2++){ var fl2 = flakes[f2]; fl2.y -= fl2.v * .7 * dt; fl2.x += 14 * dt + Math.sin(G.t * 1.3 + fl2.p) * 16 * dt; if (fl2.y < -5) { fl2.y = LH + 5; fl2.x = Math.random() * LW; } }
@@ -1656,24 +1837,27 @@ function bar(x, y, w, h, v, col, back, label, align, tick){
 }
 function roundRect(x, y, w, h, r){ if (w < 0) w = 0; ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 function star(cx, cy, R, n, inner, ang){ ctx.beginPath(); for (var k = 0; k < 2 * n; k++){ var rr = k % 2 ? R * inner : R, a = ang + Math.PI * k / n; var x = cx + rr * Math.cos(a), y = cy + rr * Math.sin(a); if (k === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); } ctx.closePath(); }
+function fxPt(x, y){ return (G && G.square) ? sqPt(x, GROUND - y) : [x, y]; }
 function drawFX(){
-  // snow puffs
-  for (var i = 0; i < puffs.length; i++){ var q = puffs[i], u = q.t / .55; ctx.globalAlpha = .7 * (1 - u); ctx.fillStyle = '#f6f9ff'; ctx.beginPath(); ctx.arc(q.x, q.y - u * 40, q.r + u * 24, 0, 6.283); ctx.fill(); }
+  // snow puffs (dust in the hall)
+  var pc = LEVELS[LEVEL].puff || '#f6f9ff';
+  for (var i = 0; i < puffs.length; i++){ var q = puffs[i], u = q.t / .55, qp = fxPt(q.x, q.y - u * 40); ctx.globalAlpha = .7 * (1 - u); ctx.fillStyle = q.col || pc; ctx.beginPath(); ctx.arc(qp[0], qp[1], q.r + u * 24, 0, 6.283); ctx.fill(); }
   ctx.globalAlpha = 1;
   for (var j = 0; j < fx.length; j++){
-    var e = fx[j], u2 = e.t / e.life, R = e.r * (.6 + .4 * Math.min(1, e.t * 12)) * (1 + .5 * u2), al = 1 - u2 * u2;
+    var e = fx[j], u2 = e.t / e.life, R = e.r * (.6 + .4 * Math.min(1, e.t * 12)) * (1 + .5 * u2), al = 1 - u2 * u2, ep = fxPt(e.x, e.y);
     ctx.globalAlpha = al;
-    star(e.x, e.y, R, 12, .55, e.t * 3); ctx.fillStyle = e.red ? '#ff6a4a' : '#ffe86e'; ctx.fill(); ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 3; ctx.stroke();
-    star(e.x, e.y, R * .62, 12, .55, -e.t * 2); ctx.fillStyle = '#fffbe8'; ctx.fill();
+    star(ep[0], ep[1], R, 12, .55, e.t * 3); ctx.fillStyle = e.red ? '#ff6a4a' : '#ffe86e'; ctx.fill(); ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 3; ctx.stroke();
+    star(ep[0], ep[1], R * .62, 12, .55, -e.t * 2); ctx.fillStyle = '#fffbe8'; ctx.fill();
     ctx.font = '400 ' + (e.big ? 44 : 28) + 'px Bangers, Impact, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.lineWidth = 6; ctx.strokeStyle = '#fff'; ctx.strokeText(e.label, e.x, e.y - 4); ctx.fillStyle = e.red ? '#c8262c' : '#e3352b'; ctx.fillText(e.label, e.x, e.y - 4);
+    ctx.lineWidth = 6; ctx.strokeStyle = '#fff'; ctx.strokeText(e.label, ep[0], ep[1] - 4); ctx.fillStyle = e.red ? '#c8262c' : '#e3352b'; ctx.fillText(e.label, ep[0], ep[1] - 4);
     ctx.textAlign = 'left'; ctx.textBaseline = 'top';
   }
   ctx.globalAlpha = 1;
   // DNA molecules
   for (var k = 0; k < dna.length; k++){
     var d = dna[k], fade = 1 - smooth(4, 6.5, d.t); if (fade <= 0) continue;
-    ctx.globalAlpha = fade; ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(d.rot);
+    var dp = fxPt(d.x, d.y);
+    ctx.globalAlpha = fade; ctx.save(); ctx.translate(dp[0], dp[1]); ctx.rotate(d.rot);
     if (d.letter){
       var col = {A:'#78ffa0', C:'#6ed2ff', G:'#ffdc6e', T:'#ff82be'}[d.letter];
       ctx.fillStyle = col; ctx.globalAlpha = fade * .3; ctx.beginPath(); ctx.arc(0, 0, 12, 0, 6.283); ctx.fill(); ctx.globalAlpha = fade;
@@ -1692,17 +1876,19 @@ function drawFX(){
   }
   ctx.globalAlpha = 1;
 }
+// letterbox colour and the colour of the ground below the arena on a tall phone, per theme
+var THEME_COL = {kiruna: ['#0c1434', '#c6d0e6'], wasteland: ['#2a1a14', '#6f5238'], space: ['#02030c', '#3c4048'], museum: ['#1b1612', '#211b17']};
 function draw(){
   var sc = Math.min(canvas.width / LW, canvas.height / LH), offx = (canvas.width - LW * sc) / 2, offy = (canvas.height - LH * sc) / 2;
   // a touch phone held upright has spare height: put the arena at the top and leave the band below it to the pads,
   // so the right-hand column no longer sits on the rhino
   if (isTouch && offy > 0) offy = 0;
   HUD_CSS = sc / (dpr || 1); HUD_K = Math.max(1, Math.min(2.6, 8.6 / (13 * HUD_CSS)));
-  var wl = LEVELS[LEVEL].theme === 'wasteland', sp = LEVELS[LEVEL].theme === 'space';
-  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = sp ? '#02030c' : (wl ? '#2a1a14' : '#0c1434'); ctx.fillRect(0, 0, canvas.width, canvas.height);
+  var th = LEVELS[LEVEL].theme, wl = th === 'wasteland', sp = th === 'space', mu = th === 'museum', tc = THEME_COL[th] || THEME_COL.kiruna;
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = tc[0]; ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.setTransform(sc, 0, 0, sc, offx, offy);
   var EXT = (canvas.height - LH * sc - offy) / sc + 10;   // extra logical rows visible below the arena in portrait
-  ctx.fillStyle = sp ? '#3c4048' : (wl ? '#6f5238' : '#c6d0e6'); ctx.fillRect(-10, LH, LW + 20, EXT + 10);
+  ctx.fillStyle = tc[1]; ctx.fillRect(-10, LH, LW + 20, EXT + 10);
   var t = G ? G.t : performance.now() / 1000;
   var ox = 0, oy = 0;
   if (shake > 0){ ox = (Math.random() - .5) * shake; oy = (Math.random() - .5) * shake; }
@@ -1715,10 +1901,11 @@ function draw(){
   ctx.save(); ctx.translate(G ? -camX : 0, 0);   // world layer
   if (G){
     var p = G.p, rr = G.r;
-    // shadows
-    ctx.fillStyle = 'rgba(70,80,120,.28)';
-    G.rhinos.forEach(function(r0){ if (r0.state !== 'gone'){ var rc = rhinoRect(r0); ctx.beginPath(); ctx.ellipse((rc.x0 + rc.x1) / 2, GROUND, (rc.x1 - rc.x0) / 2, 12, 0, 0, 6.283); ctx.fill(); } });
-    G.players.forEach(function(q){ var js = 1 - Math.min(1, q.y / 220), pscl = ((q.state === 'special' && q.scale) ? q.scale : 1) * (q.size || 1); ctx.beginPath(); ctx.ellipse(q.x, GROUND, (40 * js + 8) * pscl, 8 * pscl, 0, 0, 6.283); ctx.fill(); });
+    if (G.square){ ctx.save(); sqRoomPath(8); ctx.clip(); }
+    // shadows (in the square each one in its owner's frame, on the wall it stands on)
+    ctx.fillStyle = mu ? 'rgba(10,6,2,.35)' : 'rgba(70,80,120,.28)';
+    G.rhinos.forEach(function(r0){ if (r0.state !== 'gone') inFrame(r0, function(){ var rc = rhinoRect(r0); ctx.beginPath(); ctx.ellipse((rc.x0 + rc.x1) / 2, GROUND, (rc.x1 - rc.x0) / 2, 12 * (r0.size || 1), 0, 0, 6.283); ctx.fill(); }); });
+    G.players.forEach(function(q){ inFrame(q, function(){ var js = 1 - Math.min(1, q.y / 220), pscl = ((q.state === 'special' && q.scale) ? q.scale : 1) * (q.size || 1); ctx.beginPath(); ctx.ellipse(q.x, GROUND, (40 * js + 8) * pscl, 8 * pscl, 0, 0, 6.283); ctx.fill(); }); });
     // radioactive hot spots
     for (var hh = 0; hh < hot.length; hh++){
       var hs = hot[hh], ha = Math.min(1, hs.t * 3) * (1 - smooth(hs.life - 1.5, hs.life, hs.t)) * (.75 + .25 * Math.sin(G.t * 6 + hh));
@@ -1726,12 +1913,12 @@ function draw(){
       ctx.fillStyle = hg; ctx.beginPath(); ctx.ellipse(hs.x, GROUND - 2, hs.r, hs.r * .28, 0, 0, 6.283); ctx.fill();
       ctx.fillStyle = 'rgba(220,255,180,' + (.8 * ha) + ')'; for (var bb = 0; bb < 3; bb++){ var bt = (G.t * .8 + bb * .37 + hh * .2) % 1; ctx.beginPath(); ctx.arc(hs.x + Math.sin(bb * 2.1 + hh) * hs.r * .5, GROUND - 4 - bt * 26, 3 * (1 - bt) + 1, 0, 6.283); ctx.fill(); }
     }
-    G.rhinos.forEach(function(rr){
+    G.rhinos.forEach(function(rr){ inFrame(rr, function(){
     // radiation glow around a mutant that is about to vent
     if (rr.mutant && rr.glow > 0 && rr.state !== 'gone'){ var gl = ctx.createRadialGradient(rr.x, GROUND - 110, 20, rr.x, GROUND - 110, 260); gl.addColorStop(0, 'rgba(160,255,110,' + (.55 * rr.glow) + ')'); gl.addColorStop(1, 'rgba(160,255,110,0)'); ctx.fillStyle = gl; ctx.fillRect(rr.x - 260, GROUND - 370, 520, 380); }
     if (rr.state === 'jetstomp' && rr.st > .4 && rr.st < 1.4){ var ta = .5 + .5 * Math.sin(G.t * 18); ctx.strokeStyle = 'rgba(255,70,60,' + (.5 + .5 * ta) + ')'; ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(rr.targetX, GROUND - 2, 150, 26, 0, 0, 6.283); ctx.stroke(); ctx.beginPath(); ctx.ellipse(rr.targetX, GROUND - 2, 60, 11, 0, 0, 6.283); ctx.stroke(); }
     // warning marker when the rhino is about to charge
-    if (rr.state === 'paw'){ ctx.font = '400 40px Bangers, Impact, sans-serif'; ctx.fillStyle = '#ff5a3c'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 5; ctx.textAlign = 'center'; var yy = GROUND - 2.4 * rs(rr) - 10 + 6 * Math.sin(rr.st * 30), mx = clamp(rr.x, camX + 40, camX + LW - 40); ctx.strokeText('!', mx, yy); ctx.fillText('!', mx, yy); ctx.textAlign = 'left'; }
+    if (rr.state === 'paw' && !G.square){ ctx.font = '400 40px Bangers, Impact, sans-serif'; ctx.fillStyle = '#ff5a3c'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 5; ctx.textAlign = 'center'; var yy = GROUND - 2.4 * rs(rr) - 10 + 6 * Math.sin(rr.st * 30), mx = clamp(rr.x, camX + 40, camX + LW - 40); ctx.strokeText('!', mx, yy); ctx.fillText('!', mx, yy); ctx.textAlign = 'left'; }
     if (rr.state !== 'gone') drawRhino(rr);
     if (rr.space && rr.state !== 'gone'){
       var SR = rs(rr), jx = rr.x - rr.facing * .95 * SR, jy = GROUND - rr.jump - 1.85 * SR;
@@ -1742,40 +1929,41 @@ function draw(){
       ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(hx - .3 * SR, hy - .4 * SR, .45 * SR, .25 * SR, -.6, 3.4, 5.6); ctx.stroke();
       if (rr.glow > 0){ var tipx = rr.x + rr.facing * 2.55 * SR, tipy = GROUND - rr.jump - 1.3 * SR; var lg = ctx.createRadialGradient(tipx, tipy, 2, tipx, tipy, 40 * rr.glow); lg.addColorStop(0, 'rgba(255,90,60,.9)'); lg.addColorStop(1, 'rgba(255,90,60,0)'); ctx.fillStyle = lg; ctx.fillRect(tipx - 50, tipy - 50, 100, 100); }
     }
-    });
+    }); if (G.square && rr.state === 'paw') sqPawMark(rr); });
     for (var bl = 0; bl < bolts.length; bl++){ var bo2 = bolts[bl]; ctx.strokeStyle = 'rgba(255,120,80,.45)'; ctx.lineWidth = 12; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(bo2.x - bo2.dir * 34, GROUND - 95); ctx.lineTo(bo2.x + bo2.dir * 8, GROUND - 95); ctx.stroke(); ctx.strokeStyle = '#ff4d3a'; ctx.lineWidth = 5; ctx.stroke(); ctx.strokeStyle = '#fff1c0'; ctx.lineWidth = 2; ctx.stroke(); }
-    G.rhinos.forEach(function(rr){ if (rr.state !== 'sleep') return;
-      // blanket over the back + pacifier + floating Zzz
-      var rc4 = rhinoRect(rr), bx0 = rr.x - rr.facing * 20, bw = 150;
+    G.rhinos.forEach(function(rr){ if (rr.state !== 'sleep') return; inFrame(rr, function(){
+      // blanket over the back + pacifier + floating Zzz, in rig units so a smaller rhino gets a smaller blanket
+      var k = rs(rr) / RS, gy = GROUND - (rr.jump || 0), bx0 = rr.x - rr.facing * 20 * k, bw = 150 * k;
       ctx.fillStyle = '#ffd1e0'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.moveTo(bx0 - bw / 2, GROUND - 168); ctx.quadraticCurveTo(bx0, GROUND - 205, bx0 + bw / 2, GROUND - 168); ctx.lineTo(bx0 + bw / 2 + 10, GROUND - 100); ctx.lineTo(bx0 - bw / 2 - 10, GROUND - 100); ctx.closePath(); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#ff8fb8'; for (var hb = 0; hb < 3; hb++){ ctx.beginPath(); ctx.arc(bx0 - 40 + hb * 40, GROUND - 140 + (hb % 2) * 14, 7, 0, 6.283); ctx.fill(); }
-      var snout = [rr.x + rr.facing * 2.35 * rs(rr), GROUND - .6 * rs(rr)];
-      ctx.fillStyle = '#6fd6ff'; ctx.beginPath(); ctx.arc(snout[0], snout[1], 11, 0, 6.283); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(snout[0], snout[1], 4, 0, 6.283); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(bx0 - bw / 2, gy - 168 * k); ctx.quadraticCurveTo(bx0, gy - 205 * k, bx0 + bw / 2, gy - 168 * k); ctx.lineTo(bx0 + bw / 2 + 10 * k, gy - 100 * k); ctx.lineTo(bx0 - bw / 2 - 10 * k, gy - 100 * k); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#ff8fb8'; for (var hb = 0; hb < 3; hb++){ ctx.beginPath(); ctx.arc(bx0 + (-40 + hb * 40) * k, gy + (-140 + (hb % 2) * 14) * k, 7 * k, 0, 6.283); ctx.fill(); }
+      var snout = [rr.x + rr.facing * 2.35 * rs(rr), gy - .6 * rs(rr)];
+      ctx.fillStyle = '#6fd6ff'; ctx.beginPath(); ctx.arc(snout[0], snout[1], Math.max(6, 11 * k), 0, 6.283); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(snout[0], snout[1], Math.max(2, 4 * k), 0, 6.283); ctx.fill();
       ctx.font = '400 30px Bangers, Impact, sans-serif'; ctx.fillStyle = '#eef2f8'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 4;
-      for (var zi = 0; zi < 3; zi++){ var zt = (G.t * .7 + zi * .33) % 1; var zx = rr.x + rr.facing * 1.6 * rs(rr) + zi * 12 + zt * 30, zy = GROUND - 2.0 * rs(rr) - zt * 80; ctx.globalAlpha = 1 - zt; ctx.strokeText('z', zx, zy); ctx.fillText('z', zx, zy); }
+      for (var zi = 0; zi < 3; zi++){ var zt = (G.t * .7 + zi * .33) % 1; var zx = rr.x + rr.facing * 1.6 * rs(rr) + zi * 12 + zt * 30, zy = gy - 2.0 * rs(rr) - zt * 80; ctx.globalAlpha = 1 - zt; ctx.strokeText('z', zx, zy); ctx.fillText('z', zx, zy); }
       ctx.globalAlpha = 1;
-    });
+    }); });
     for (var pi = G.players.length - 1; pi >= 0; pi--){ var q2 = G.players[pi];
       if (q2.inv > 0 && q2.state !== 'ko' && q2.state !== 'special' && Math.floor(G.t * 20) % 2 === 0) ctx.globalAlpha = .4;
-      fighterDraw(q2, t); ctx.globalAlpha = 1; }
+      inFrame(q2, function(){ fighterDraw(q2, t); }); ctx.globalAlpha = 1; }
     // radiation burst rings
     for (var ri = 0; ri < rings.length; ri++){ var rn = rings[ri], ru = rn.t / .6; ctx.strokeStyle = (rn.grey ? 'rgba(200,205,215,' : 'rgba(160,255,110,') + (1 - ru) + ')'; ctx.lineWidth = 14 * (1 - ru) + 2; ctx.beginPath(); ctx.ellipse(rn.x, GROUND - 60, 40 + 420 * ru, 20 + 150 * ru, 0, 0, 6.283); ctx.stroke(); }
+    if (G.square) ctx.restore();   // end of the room clip; the hit stars may reach over the walls
     drawFX();
   }
   ctx.restore();   // end of the world layer
   if (G){
     // speed lines during a charge / the flying kick (screen space)
     var anyFly = G.players.some(function(q){ return q.state === 'special' && q.def.special.kind === 'fly'; }), anyCharge = G.rhinos.some(function(r0){ return r0.state === 'charge'; });
-    if (anyCharge || anyFly){
+    if ((anyCharge || anyFly) && !G.square){
       ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 2;
       for (var i = 0; i < 9; i++){ var y = 120 + i * 40 + (i * 37) % 23, x0 = ((i * 211 + G.t * 900) % (LW + 200)) - 100; ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + 80 + i * 10, y); ctx.stroke(); }
     }
   }
   // snowflakes (round 1), rising embers (round 2) or space dust streaming past (round 3)
-  ctx.fillStyle = sp ? 'rgba(200,220,255,.5)' : (wl ? 'rgba(255,170,80,.75)' : '#f6f9ff');
-  for (var f = 0; f < flakes.length; f++){ var fl = flakes[f]; ctx.beginPath(); ctx.arc(fl.x, fl.y, wl ? fl.r * .8 : fl.r, 0, 6.283); ctx.fill(); }
+  ctx.fillStyle = mu ? 'rgba(255,236,196,.32)' : (sp ? 'rgba(200,220,255,.5)' : (wl ? 'rgba(255,170,80,.75)' : '#f6f9ff'));
+  for (var f = 0; f < flakes.length; f++){ var fl = flakes[f]; ctx.beginPath(); ctx.arc(fl.x, fl.y, mu ? fl.r * .55 : (wl ? fl.r * .8 : fl.r), 0, 6.283); ctx.fill(); }
   ctx.restore();
   // vignette
   var vg = ctx.createRadialGradient(LW / 2, LH / 2, LH * .45, LW / 2, LH / 2, LH * .95); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.42)');
@@ -2060,7 +2248,7 @@ function netData(d, tid, via){
   if (d.t === 'hello'){ updateCoopLine(); }
   else if (d.t === 'ready'){ Net.peerReady = d.f; updateCoopLine(); if (Net.host && Net.ready && scene === 'select') coopStart(clampLevel($('startLevel').value)); }
   else if (d.t === 'unready'){ Net.peerReady = null; updateCoopLine(); }
-  else if (d.t === 'start'){ if (!Net.host){ LEVEL = clampLevel(d.level); Net.f = d.f; Net.mode = d.vs ? 'vs' : 'coop'; beginCoopRound(); } }
+  else if (d.t === 'start'){ if (!Net.host){ LEVEL = d.vs ? clampVsLevel(d.level) : clampLevel(d.level); Net.f = d.f; Net.mode = d.vs ? 'vs' : 'coop'; beginCoopRound(); } }
   else if (d.t === 'in'){ if (Net.host){ var ko = {}; (d.k || []).forEach(function(k){ ko[k] = true; }); Net.guestInp.keys = ko; (d.p || []).forEach(function(k){ Net.guestInp.pressed[k] = true; }); } }
   else if (d.t === 's'){ if (!Net.host && scene === 'fight') applySnap(d); }
   else if (d.t === 'result'){ if (!Net.host) showResult(); }
@@ -2090,10 +2278,13 @@ function coopReady(){
 function coopStart(level){
   // host only: same fighters again (rematch / next round) or the freshly picked pair
   if (!Net.host || !Net.peer) return;
-  LEVEL = level; Net.f = [myPickId(), Net.peerReady || (Net.f && Net.f[1]) || 'albertas'];
+  LEVEL = Net.mode === 'vs' ? clampVsLevel(level) : clampLevel(level); Net.f = [myPickId(), Net.peerReady || (Net.f && Net.f[1]) || 'albertas'];
   sendNet({t:'start', f: Net.f, level: LEVEL, vs: Net.mode === 'vs' ? 1 : 0}); beginCoopRound();
 }
 function clampLevel(v){ v = parseInt(v, 10); return (v >= 0 && v < LEVELS.length) ? v : 0; }
+// versus arenas are rounds 1-5 only: an online duel takes its arena from the round picker, which also lists rounds 6-8
+var VS_ARENAS = 5;
+function clampVsLevel(v){ v = clampLevel(v); return v < VS_ARENAS ? v : 0; }
 function defById(id){ for (var i = 0; i < ROSTER.length; i++) if (ROSTER[i].id === id) return ROSTER[i]; return ROSTER[0]; }
 function beginCoopRound(){
   if (Net.mode === 'vs'){ vsLocal = false; newVsFight(Net.f[0], Net.f[1]); }
@@ -2220,7 +2411,7 @@ function beginRound(){
   unlockAudio(); sfx('gong', {f: LEVEL ? 70 : 96, v: .6}); fightTimeout(function(){ sfx('drum'); }, 800);
   if (LEVEL && !LEVELS[LEVEL].calm) fightTimeout(function(){ sfx('geiger'); }, 300);
 }
-var termTimer = null;
+var termTimer = null, CARD_STYLES = ['rad', 'blue', 'museum', 'lab', 'cafe'];
 function showLevelCard(){
   var lv = LEVELS[LEVEL]; show('levelCard'); scene = 'card';
   $('startLevel').value = String(LEVEL);   // BACK must not throw away the round you just unlocked
@@ -2231,9 +2422,11 @@ function showLevelCard(){
     if (i >= html.length){ el.innerHTML = html; clearInterval(termTimer); termTimer = null; return; }   // drop the cursor when the text is done
     if (html[i] === '<'){ var j = html.indexOf('>', i); i = j + 1; } else i++;
     el.innerHTML = html.slice(0, i) + '<span style="opacity:' + (Math.floor(Date.now() / 300) % 2) + '">█</span>';
-    if (i % 3 === 0) sfx('geiger');
+    if (i % 3 === 0){ if (lv.calm) sfx('tick'); else sfx('geiger'); }
   }, 18);
-  $('btnLevelGo').textContent = 'FIGHT ' + lv.name; el.classList.toggle('blue', !!lv.blue); $('btnLevelGo').classList.toggle('blue', !!lv.blue); $('btnLevelGo').classList.toggle('rad', !lv.blue);
+  var cs = lv.cardStyle || (lv.blue ? 'blue' : 'rad');
+  $('btnLevelGo').textContent = 'FIGHT ' + lv.name;
+  CARD_STYLES.forEach(function(c){ el.classList.toggle(c, c === cs && c !== 'rad'); $('btnLevelGo').classList.toggle(c, c === cs); });
 }
 function startFight(){
   if (Net.on){ coopReady(); return; }
@@ -2276,7 +2469,13 @@ function showResult(){
       $('resReadout').innerHTML = '> duplicate reads: <b>Rhinoceros ×2 (PCR duplicate)</b> — status: <b>REMOVED</b><br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · round bonus: <b>+4500</b><br>> lesson: PCR copies of one molecule are not independent evidence. Deduplicate before you count.<br>> next: the counts are only <b>relative</b>. Round 5.';
     } else if (LEVEL === 4){
       $('resBig').textContent = 'DOMINANT'; $('resTitle').textContent = 'FALSE POSITIVES BELOW DETECTION LIMIT';
-      $('resReadout').innerHTML = '> reads: <b>Rhinoceros + Zebra (relative abundance)</b> — status: <b>NOT DETECTED</b><br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · share of the ring: <b>' + Math.round(p.share * 100) + ' %</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · round bonus: <b>+6000</b><br>> lesson: sequencing counts are compositional. They only say what fraction of the reads each species got, and the fractions always sum to one — so when one goes down, the others go up without changing at all. Dataset clean. The crew can go home.';
+      $('resReadout').innerHTML = '> reads: <b>Rhinoceros + Zebra (relative abundance)</b> — status: <b>NOT DETECTED</b><br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · share of the ring: <b>' + Math.round(p.share * 100) + ' %</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · round bonus: <b>+6000</b><br>> lesson: sequencing counts are compositional. They only say what fraction of the reads each species got, and the fractions always sum to one — so when one goes down, the others go up without changing at all.<br>> next: the reference specimen itself is <b>mislabelled</b>. Round 6.';
+    } else if (LEVELS[LEVEL].win){
+      var wv = LEVELS[LEVEL].win;
+      $('resBig').textContent = wv.big; $('resTitle').textContent = wv.title;
+      $('resReadout').innerHTML = '> read: <b>' + LEVELS[LEVEL].read + '</b> — status: <b>' + wv.status + '</b><br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · ' + winStats(p) +
+        '<br>> hits landed: <b>' + p.hitsLanded + '</b> · round bonus: <b>+' + fmtScore(LEVEL * 1500) + '</b><br>> lesson: ' + wv.lesson +
+        (LEVEL < LEVELS.length - 1 ? '<br>> next: ' + wv.next : '<br>> dataset clean. The crew can go home.');
     } else {
       $('resBig').textContent = 'CLEAN'; $('resTitle').textContent = 'REFERENCE DECONTAMINATED';
       $('resReadout').innerHTML = '> mutant read: <b>Rhinoceros (contaminant match)</b> — status: <b>REMOVED</b><br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · round bonus: <b>+1500</b><br>> lesson: a read can match a contaminant inside a reference genome, not the species the genome is named after.<br>> next: the read is on the move. Round 3.';
@@ -2289,6 +2488,7 @@ function showResult(){
   }
   show('result'); scene = 'result';
 }
+function winStats(p){ return 'HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b>'; }
 // the word for a lost round, shared by the canvas banner and the result panel so they can never disagree
 function lossWord(p){ return G.comp ? 'OUTCOMPETED' : (p && p.killedBy === 'rads') ? 'IRRADIATED' : 'TRAMPLED'; }
 function stillThere(){
