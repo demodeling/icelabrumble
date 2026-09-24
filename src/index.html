@@ -36,6 +36,7 @@
   .overlay{position:absolute;inset:0;display:flex;overflow-y:auto;-webkit-overflow-scrolling:touch;
            background:rgba(10,14,30,.8);text-align:center;padding:14px 16px;box-sizing:border-box;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);}
   .panel{margin:auto;display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;}
+  .panel:focus{outline:none;}
   @media (orientation:portrait){#stage{aspect-ratio:4/5;width:100%;}}   /* taller than square: room for the overlays and the pads */
   /* small stages (phones): tighter panels, the action buttons come before the long readout so nothing important needs a scroll,
      the corner buttons shrink to icons so they cannot sit on a heading or on the SPECIAL pad, and the scores table scrolls sideways */
@@ -70,13 +71,14 @@
   .btn:active{transform:translateY(4px);box-shadow:0 1px 0 #a9822f;}
   .btn.secondary{background:var(--snow2);box-shadow:0 5px 0 #8b97b3,0 10px 22px rgba(0,0,0,.4);}
   .btn:focus-visible{outline:3px solid var(--aurora);outline-offset:3px;}
-  .roster{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;width:min(100%,900px);}
+  .roster{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;width:min(100%,960px);}
   @media (max-width:640px){.roster{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}}
   .fighter{background:var(--night2);border:3px solid transparent;border-radius:12px;padding:6px 4px 5px;min-width:0;cursor:pointer;
            display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--snow);transition:transform .1s,border-color .1s;}
   .fighter:hover,.fighter:focus-visible{transform:translateY(-3px);border-color:var(--aurora);outline:none;}
   .fighter.sel{border-color:var(--gold);background:#2a2b48;}
-  .fighter img{height:clamp(40px,7vw,84px);width:auto;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5));}
+  .fighter img{height:clamp(40px,6vw,66px);width:auto;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5));}
+  .fighter .best:empty{display:none;}
   .fighter .name{font-family:var(--display);font-size:clamp(15px,2.2vw,22px);letter-spacing:.05em;}
   .fighter .move{font-size:clamp(9px,1.2vw,12px);color:var(--muted);line-height:1.15;}
   .fighter .best{font-size:clamp(9px,1.1vw,11px);color:var(--gold);font-variant-numeric:tabular-nums;margin-top:2px;min-height:1.2em;}
@@ -93,12 +95,13 @@
   #touch.on{display:block;}
   .pad{position:absolute;bottom:4%;display:flex;gap:10px;pointer-events:auto;}
   .pad.left{left:3%;} .pad.right{right:3%;flex-wrap:wrap;width:34%;justify-content:flex-end;}
-  .tb{width:clamp(46px,9vw,72px);height:clamp(46px,9vw,72px);border-radius:50%;border:3px solid rgba(255,255,255,.45);
+  .tb{box-sizing:border-box;width:clamp(46px,9vw,72px);height:clamp(46px,9vw,72px);border-radius:50%;border:3px solid rgba(255,255,255,.45);
       background:rgba(20,26,52,.55);color:var(--snow);font-family:var(--display);font-size:clamp(14px,2.4vw,22px);
       display:flex;align-items:center;justify-content:center;letter-spacing:.04em;-webkit-tap-highlight-color:transparent;}
   .tb.act{background:rgba(242,197,107,.85);color:var(--ink);border-color:var(--gold);}
   .tb.big{width:clamp(56px,11vw,86px);height:clamp(56px,11vw,86px);}
   .tb.sp{border-color:var(--aurora);}
+  @media (orientation:portrait){ .pad.right{width:calc(2 * clamp(56px,11vw,86px) + 10px);} .pad{bottom:3%;} }
   .result-big{font-family:var(--display);font-size:clamp(48px,10vw,120px);color:var(--gold);text-shadow:5px 5px 0 var(--ember),10px 10px 0 rgba(0,0,0,.5);margin:0;line-height:1;}
   .readout{font-family:var(--mono);background:#0b1224;border:1px solid var(--aurora);color:var(--aurora);border-radius:8px;padding:8px 14px;font-size:clamp(11px,1.5vw,14px);text-align:left;overflow-y:auto;}
   .readout b{color:var(--gold);font-weight:400;}
@@ -183,6 +186,7 @@
         <button class="btn" id="btnFight"><span id="fightVerb">FIGHT AS</span> <span id="selName">ALBERTAS</span>!</button>
         <button class="btn secondary" id="btnVideo">SHOW ME <span id="selName2">ALBERTAS</span>’S VIDEO</button>
       </div>
+      <p class="small" id="selMove"></p>
       <p class="small">Tap a fighter to select — tap again to fight.</p>
       <p class="small coop" id="selCoop" hidden></p>
       <label class="check">Start at <select id="startLevel"><option value="0">Round 1 — Kiruna</option><option value="1">Round 2 — The Wasteland</option><option value="2">Round 3 — The Asteroid</option><option value="3">Round 4 — The Duplicates</option><option value="4">Round 5 — Compositional</option></select></label>
@@ -557,7 +561,7 @@ function typingIn(e){ var t = e.target, n = (t && t.tagName) || ''; return n ===
 function ownsKeys(e){ var n = (e.target && e.target.tagName) || ''; return n === 'BUTTON' || n === 'SELECT' || n === 'A' || n === 'OPTION'; }
 window.addEventListener('keydown', function(e){
   if (typingIn(e)) return;
-  if (e.key === 'Escape' || e.key === 'Esc'){ goMenu(); return; }
+  if (e.key === 'Escape' || e.key === 'Esc'){ if (!$('videoBox').hidden){ closeVideo(); return; } goMenu(); return; }
   if (ownsKeys(e)) return;
   var hit;
   if (vsLocal) hit = keyDown(KEYMAP2, keys2, pressed2, e.key) || keyDown(KEYMAP1, keys, pressed, e.key);
@@ -578,8 +582,9 @@ function blurFocus(){ var a = document.activeElement; if (a && a !== document.bo
 function clearKeys(){ var k; for (k in keys) keys[k] = false; for (k in keys2) keys2[k] = false; pressed = {}; pressed2 = {}; }
 Array.prototype.forEach.call(document.querySelectorAll('.tb'), function(b){
   var k = b.getAttribute('data-k');
-  function down(e){ e.preventDefault(); unlockAudio(); if (!keys[k]) pressed[k] = true; keys[k] = true; b.classList.add('act'); }
-  function up(e){ e.preventDefault(); keys[k] = false; b.classList.remove('act'); }
+  var fingers = {};
+  function down(e){ e.preventDefault(); unlockAudio(); fingers[e.pointerId] = 1; if (!keys[k]) pressed[k] = true; keys[k] = true; b.classList.add('act'); }
+  function up(e){ e.preventDefault(); delete fingers[e.pointerId]; if (Object.keys(fingers).length) return; keys[k] = false; b.classList.remove('act'); }
   b.addEventListener('pointerdown', down); b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up); b.addEventListener('pointerleave', up);
 });
 
@@ -929,14 +934,14 @@ function shade(hex, d){
 
 // ------------------------------------------------------------ game state
 var LEVELS = [
-  {name: 'ROUND 1', theme: 'kiruna', rhino: {hp: 380, mutant: false}, hud: 'THE RHINO · false positive'},
-  {name: 'ROUND 2', theme: 'wasteland', rhino: {hp: 460, mutant: true}, hud: 'THE MUTANT RHINO · contaminated reference',
+  {name: 'ROUND 1', theme: 'kiruna', rhino: {hp: 380, mutant: false}, hud: 'THE RHINO · false positive', read: 'Rhinoceros (98.7%)'},
+  {name: 'ROUND 2', theme: 'wasteland', rhino: {hp: 460, mutant: true}, hud: 'THE MUTANT RHINO · contaminated reference', read: 'Rhinoceros (contaminant match)',
    next: 'NEXT ROUND: THE WASTELAND', card: "> ROUND 2 — THE WASTELAND\n> reference genome: <b>CONTAMINATED</b>\n\nSome reference genomes carry bits of other organisms. A read can match the contaminant, not the rhino — and the rhino gets the credit.\n\nThe mutant rhino <b>feints</b> before it charges, leaves <b>hot spots</b> where it skids, and <b>vents radiation</b> up close.\n\n> jump the real charge, not the feint\n> stay out of the green\n> jump the burst"},
-  {name: 'ROUND 3', theme: 'space', rhino: {hp: 520, mutant: false, space: true}, hud: 'THE SPACE RHINO · index hopping', gravity: .5, next: 'NEXT ROUND: THE ASTEROID', blue: true,
+  {name: 'ROUND 3', theme: 'space', rhino: {hp: 520, mutant: false, space: true}, hud: 'THE SPACE RHINO · index hopping', read: 'Rhinoceros (wrong sample)', gravity: .5, next: 'NEXT ROUND: THE ASTEROID', blue: true,
    card: "> ROUND 3 — THE ASTEROID\n> sample barcode: <b>WRONG</b>\n\nDuring sequencing a single read can <b>hop</b> onto another sample's barcode and turn up somewhere it never was. The rhino hitched a ride on an asteroid and is drifting into the next sample.\n\n> gravity is low: jumps go high and land late\n> jump or duck the horn laser\n> the red ring is where it lands — be in the air\n> knock it off the rock before it reaches the next sample"},
-  {name: 'ROUND 4', theme: 'kiruna', rhino: {hp: 400, mutant: false}, rhinos: 2, width: 1920, hud: 'THE DUPLICATES · PCR duplicate', next: 'NEXT ROUND: THE DUPLICATES',
+  {name: 'ROUND 4', theme: 'kiruna', rhino: {hp: 400, mutant: false}, rhinos: 2, width: 1920, hud: 'THE DUPLICATES · PCR duplicate', read: 'Rhinoceros ×2 (PCR duplicate)', next: 'NEXT ROUND: THE DUPLICATES',
    card: "> ROUND 4 — THE DUPLICATES\n> read: <b>PCR DUPLICATE</b>\n\nDuring library prep one molecule can be copied and sequenced twice. One wrong read shows up as two, and both get counted.\n\nTwo rhinos on a field <b>twice as wide</b>. The camera follows you.\n\n> split them up: hit one while the other skids\n> the <b>!</b> marks the one about to charge\n> both have to go"},
-  {name: 'ROUND 5', theme: 'wasteland', rhino: {hp: 100, mutant: false}, rhinos: 2, width: 1440, comp: true, skins: [null, 'zebra'], hud: 'THE RHINO · false positive', huds: ['THE RHINO · false positive', 'THE ZEBRA · false positive'],
+  {name: 'ROUND 5', theme: 'wasteland', rhino: {hp: 100, mutant: false}, rhinos: 2, width: 1440, comp: true, skins: [null, 'zebra'], hud: 'THE RHINO · false positive', huds: ['THE RHINO · false positive', 'THE ZEBRA · false positive'], read: 'Rhinoceros + Zebra (relative abundance)',
    pacifist: 60, reveal: {rhino: 'bear', zebra: 'moose'}, next: 'NEXT ROUND: COMPOSITIONAL',
    card: "> ROUND 5 — COMPOSITIONAL\n> counts: <b>RELATIVE</b>\n\nSequencing never tells you how much of anything there is — only what fraction of the reads each species got. The shares always <b>add up to one</b>.\n\nA rhino, a zebra and you share one ring. Whoever takes damage shrinks, and the size they lose goes to everyone else — the rhino, the zebra, <b>and you</b>.\n\n> hit them and you grow; get hit and they grow\n> a false positive is gone once its share drops below the <b>detection limit</b> (6 %)\n> be the dominant species"}
 ];
@@ -1002,7 +1007,7 @@ function newVsFight(idA, idB){
 function beginVsLocal(){
   vsLocal = true; LEVEL = clampLevel($('vsArena').value);
   newVsFight($('vsP1').value, $('vsP2').value); scene = 'fight'; show(null);
-  unlockAudio(); sfx('gong', {f: 96, v: .6}); setTimeout(function(){ sfx('drum'); }, 800);
+  unlockAudio(); sfx('gong', {f: 96, v: .6}); fightTimeout(function(){ sfx('drum'); }, 800);
 }
 // a fighter's body box, so two fighters can hit each other (rounds only ever hit the rhino)
 function fighterRect(p){
@@ -1039,9 +1044,10 @@ function hitEnt(t, atk, dmg, label, knock){
 function vsRhinoIdle(r, dt){
   var keys = r.inp.keys, pressed = r.inp.pressed, foe = vsFoeOf(r), moving = false;
   r.tilt *= Math.pow(.05, dt); r.head *= Math.pow(.05, dt);
-  if (!G.over && r.jump <= 0){
-    if (keys.left){ r.x -= 250 * dt; moving = true; r.facing = -1; }
-    if (keys.right){ r.x += 250 * dt; moving = true; r.facing = 1; }
+  if (!G.over){
+    var rsp = r.jump > 0 ? 150 : 250;   // some air control, less than on the ground
+    if (keys.left && !keys.right){ r.x -= rsp * dt; moving = r.jump <= 0; r.facing = -1; }
+    if (keys.right && !keys.left){ r.x += rsp * dt; moving = r.jump <= 0; r.facing = 1; }
   }
   if (!moving && foe) r.facing = foe.x > r.x ? 1 : -1;
   r.run = moving ? .8 : 0; if (moving){ r.phase += dt * 12; if (Math.random() < .2) puffs.push({x: r.x - r.facing * rnd(40, 110), y: GROUND - rnd(0, 18), t: 0, r: rnd(4, 9)}); }
@@ -1050,7 +1056,7 @@ function vsRhinoIdle(r, dt){
   if (r.jump > 0) return;                                   // attacks are ground moves
   if (pressed.punch){ r.state = 'horn'; r.st = 0; r.chargeHit = false; sfx('whoosh'); }
   else if (pressed.kick){ r.state = 'paw'; r.st = 0; r.willFeint = false; }
-  else if (pressed.special && r.meter >= 100){ r.meter = 0; r.state = 'jetstomp'; r.st = 0; r.chargeHit = false; r.targetX = foe ? foe.x : r.x; r.jx0 = r.x; sfx('jet'); sfx('roar'); }
+  else if (pressed.special && r.meter >= 100){ r.meter = 0; r.state = 'jetstomp'; r.st = 0; r.chargeHit = false; var rbk = rhinoBounds(r); r.targetX = clamp(foe ? foe.x : r.x, rbk[0], rbk[1]); r.jx0 = r.x; sfx('jet'); sfx('roar'); }
 }
 function vsRhinoJump(r, dt){
   if (r.state === 'jetstomp'){ r.vj = 0; return; }
@@ -1075,30 +1081,29 @@ function vsTimeUp(){
   if (Math.abs(fa - fb) < .005){ G.over = true; G.won = true; G.vsWin = -1; G.koT = 0; sfx('gong', {f: 90, v: .6}); fightTimeout(showResult, 2600); return; }
   vsEnd(fa > fb ? 0 : 1);
 }
-function vsPct(e){ return Math.round(Math.max(0, e.hp) / e.maxhp * 100); }
+function vsPct(e){
+  if (G.comp){ var pp = pct100(G.sides.map(function(c){ return c.share || 0; })); return pp[G.sides.indexOf(e)]; }
+  return Math.round(Math.max(0, e.hp) / e.maxhp * 100);
+}
 function drawVsHUD(){
   ctx.font = '700 15px Nunito, sans-serif'; ctx.textBaseline = 'top';
-  var cols = ['#6fe3a0', '#ffb44d'];
+  var cols = ['#6fe3a0', '#ffb44d'], compact = hudCompact(), y = hudRightTop(), yEnd = y;   // below the MENU / FULLSCREEN buttons
+  var pcts = G.comp ? pct100(G.sides.map(function(e){ return e.share || 0; })) : null;
   G.sides.forEach(function(e, i){
-    var w = 330, x = i ? LW - 24 - w : 24, al = i ? 'right' : 'left', y = 72;   // below the MENU / FULLSCREEN buttons
+    var w = 330, x = i ? LW - 24 - w : 24, al = i ? 'right' : 'left';
     var mine = (!Net.on || !Net.peer) ? (vsLocal ? false : i === 0) : i === Net.me;
-    bar(x, y, w, 20, Math.max(0, e.hp) / e.maxhp, e.state === 'ko' ? '#8a8fa3' : cols[i], '#c8262c',
-        (vsLocal ? 'P' + (i + 1) + ' · ' : (mine ? 'YOU · ' : '')) + vsName(e) + (G.comp ? ' · ' + Math.round((e.share || 0) * 100) + ' %' : ''), al, G.comp ? COMP_LIMIT : 0);
-    var mx = i ? LW - 24 - 200 : 24;
-    ctx.fillStyle = 'rgba(10,14,30,.55)'; roundRect(mx, y + 44, 200, 10, 5); ctx.fill();
-    ctx.fillStyle = e.meter >= 100 ? '#6fe3a0' : '#93a0bf'; roundRect(i ? mx + 200 - 200 * e.meter / 100 : mx, y + 44, 200 * e.meter / 100, 10, 5); ctx.fill();
-    ctx.fillStyle = e.meter >= 100 ? '#6fe3a0' : '#c9d3e6'; ctx.font = '900 11px Nunito, sans-serif'; ctx.textAlign = al;
-    ctx.fillText(e.meter >= 100 ? 'SPECIAL READY — ' + e.def.special.name : 'SPECIAL ' + Math.floor(e.meter) + '%', i ? LW - 24 : 24, y + 58);
-    ctx.textAlign = 'left'; ctx.font = '700 15px Nunito, sans-serif';
+    var used = bar(x, y, w, 20, Math.max(0, e.hp) / e.maxhp, e.state === 'ko' ? '#8a8fa3' : cols[i], '#c8262c',
+        (vsLocal ? 'P' + (i + 1) + ' · ' : (mine ? 'YOU · ' : '')) + vsName(e) + (pcts ? ' · ' + pcts[i] + ' %' : ''), al, G.comp ? COMP_LIMIT : 0);
+    var mx = i ? LW - 24 - 200 : 24, my = compact ? y + used + 5 : y + 44, mh = compact ? hudPx(6) : 10;
+    meterBar(mx, my, 200, mh, e.meter, al, e.meter >= 100 ? 'SPECIAL READY — ' + e.def.special.name : 'SPECIAL ' + Math.floor(e.meter) + '%', compact, true);
+    yEnd = Math.max(yEnd, my + mh);
   });
-  if (Net.on && Net.lost){ ctx.font = '900 13px Nunito, sans-serif'; ctx.fillStyle = '#ffd166'; ctx.textAlign = 'center'; ctx.fillText('OPPONENT RECONNECTING…', LW / 2, 140); ctx.textAlign = 'left'; }
+  if (Net.on && Net.lost){ ctx.font = '900 ' + (compact ? hudPx(10) : 13) + 'px Nunito, sans-serif'; ctx.fillStyle = '#ffd166'; ctx.textAlign = 'center'; ctx.fillText('OPPONENT RECONNECTING…', LW / 2, compact ? yEnd + hudPx(22) : 140); ctx.textAlign = 'left'; }
   if (G.comp){
-    ctx.fillStyle = '#c9d3e6'; ctx.font = '900 11px Nunito, sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText('ONE RING · SUMS TO 1 · LIMIT ' + Math.round(COMP_LIMIT * 100) + ' %', LW / 2, 130); ctx.textAlign = 'left';
+    ctx.fillStyle = '#c9d3e6'; ctx.font = '900 ' + (compact ? hudPx(9) : 11) + 'px Nunito, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(compact ? 'SUM = 1 · LIMIT ' + Math.round(COMP_LIMIT * 100) + ' %' : 'ONE RING · SUMS TO 1 · LIMIT ' + Math.round(COMP_LIMIT * 100) + ' %', LW / 2, compact ? yEnd + hudPx(8) : 130); ctx.textAlign = 'left';
   }
-  ctx.textAlign = 'center'; ctx.font = '400 30px Bangers, Impact, sans-serif'; ctx.fillStyle = '#eef2f8'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 4;
-  var left = Math.max(0, Math.ceil(VS_TIME - G.elapsed)), tt = (left < 10 ? '0' : '') + left;
-  ctx.strokeText(tt, LW / 2, 16); ctx.fillText(tt, LW / 2, 16); ctx.textAlign = 'left';
+  hudTimer(Math.max(0, Math.ceil(VS_TIME - G.elapsed)));
 }
 
 var G = null;   // current fight
@@ -1208,8 +1213,8 @@ function rhinoKO(r){
 }
 // pacifist ending: never land a hit and outlast the rhino (60 s in round 1, +30 s per round) and the read turns out to be something else
 var LOCAL_BUILD = /^(localhost|127\.0\.0\.1|)$/.test(location.hostname);   // file:// or a dev server: debug hooks allowed
-var PACIFIST_DEBUG = LOCAL_BUILD ? parseFloat((location.hash.match(/pacifist=(\d+(?:\.\d+)?)/) || [])[1]) : NaN;
-if (LOCAL_BUILD) window.__fight = function(){ return G; };   // tests peek at the fight state
+var PACIFIST_DEBUG = LOCAL_BUILD ? parseFloat((location.hash.match(/pacifist=([0-9]*\.?[0-9]+(?:e[+-]?[0-9]+)?)/i) || [])[1]) : NaN;
+if (LOCAL_BUILD){ window.__fight = function(){ return G; }; window.__pct100 = function(v){ return pct100(v); }; }   // tests peek at the fight state
 function pacifistTime(){ return PACIFIST_DEBUG > 0 ? PACIFIST_DEBUG : (LEVELS[LEVEL].pacifist || 60 + 30 * LEVEL); }
 function rhinoReveal(){
   if (G.over) return;
@@ -1218,7 +1223,7 @@ function rhinoReveal(){
     r.morph = reveal ? reveal[r.skin || 'rhino'] : kinds[i % kinds.length]; r.revealed = false;
     r.state = 'morph'; r.st = 0; r.run = 0; r.jump = 0; r.glow = 0; r.angry = false; r.chargeHit = true;
   });
-  bolts = [];
+  bolts = []; hot = [];
   G.over = true; G.won = true; G.pacifist = true; G.koT = 0;
   alivePlayers().forEach(function(q){ q.state = 'win'; q.st = 0; });
   sfx('gong', {f: 96, v: .5}); sfx('drum');
@@ -1250,8 +1255,8 @@ function updatePlayer(p, dt){
   if (!busy || p.state === 'hurt') p.facing = r.x > p.x ? 1 : -1;
   var moving = false;
   if (!busy && !G.over){
-    if (keys.left){ p.x -= speed * dt; moving = true; }
-    if (keys.right){ p.x += speed * dt; moving = true; }
+    if (keys.left && !keys.right){ p.x -= speed * dt; moving = true; }
+    if (keys.right && !keys.left){ p.x += speed * dt; moving = true; }
     if (pressed.jump && onGround){ p.vy = 690 * def.jump * (LEVELS[LEVEL].gravity ? .82 : 1); p.y = 1; sfx('jump'); }
     if (pressed.punch && onGround) startAttack(p, 'punch');
     else if (pressed.kick && onGround) startAttack(p, 'kick');
@@ -1412,7 +1417,7 @@ function updateRhino(r, dt){
     if (r.timer <= 0){
       if (r.mutant && adist < 280 && Math.random() < .5){ r.state = 'burst'; r.st = 0; r.chargeHit = false; }
       else if (r.space && adist > 240 && Math.random() < .45){ r.state = 'laser'; r.st = 0; r.chargeHit = false; r.shots = 0; }
-      else if (r.space && Math.random() < .35){ r.state = 'jetstomp'; r.st = 0; r.chargeHit = false; r.targetX = p.x; r.jx0 = r.x; sfx('jet'); }
+      else if (r.space && Math.random() < .35){ r.state = 'jetstomp'; r.st = 0; r.chargeHit = false; var rbj = rhinoBounds(r); r.targetX = clamp(p.x, rbj[0], rbj[1]); r.jx0 = r.x; sfx('jet'); }
       else if (adist > 300 || Math.random() < .3){ r.state = 'paw'; r.st = 0; r.willFeint = r.mutant && Math.random() < .55; }
       else if (Math.random() < .75){ r.state = 'horn'; r.st = 0; }
       else { r.state = 'paw'; r.st = 0; r.willFeint = r.mutant && Math.random() < .55; }
@@ -1554,41 +1559,100 @@ function tickAmbient(dt){
 // ------------------------------------------------------------ draw
 function drawHUD(){
   if (G.vs){ drawVsHUD(); return; }
-  var p = G.p, r = G.r;
-  ctx.font = '700 15px ' + 'Nunito, sans-serif'; ctx.textBaseline = 'top';
+  var lv = LEVELS[LEVEL], compact = hudCompact();
+  var chars = G.players.concat(G.rhinos), pcts = G.comp ? pct100(chars.map(function(c){ return c.share || 0; })) : null;
+  ctx.font = '700 15px Nunito, sans-serif'; ctx.textBaseline = 'top';
   // one bar + special meter per fighter (the second one below the first)
+  var yP = 22;
   G.players.forEach(function(q, i){
-    var oy = i * 72, mine = !Net.on || !Net.peer || i === Net.me;
-    bar(24, 22 + oy, i ? 260 : 330, i ? 16 : 20, q.hp / q.maxhp, q.state === 'ko' ? '#8a8fa3' : '#6fe3a0', '#c8262c', q.def.name.toUpperCase() + (G.players.length > 1 && mine ? ' (YOU)' : '') + (G.comp ? ' · ' + Math.round(q.share * 100) + ' %' : ''), 'left', G.comp ? COMP_LIMIT : 0);
-    ctx.fillStyle = 'rgba(10,14,30,.55)'; roundRect(24, 66 + oy, 200, 10, 5); ctx.fill();
-    ctx.fillStyle = q.meter >= 100 ? '#6fe3a0' : '#93a0bf'; roundRect(24, 66 + oy, 200 * q.meter / 100, 10, 5); ctx.fill();
-    ctx.fillStyle = q.meter >= 100 ? '#6fe3a0' : '#c9d3e6'; ctx.font = '900 11px Nunito, sans-serif';
-    ctx.fillText(q.meter >= 100 ? 'SPECIAL READY — ' + q.def.special.name.toUpperCase() : 'SPECIAL ' + Math.floor(q.meter) + '%', 232, 63 + oy);
-    ctx.font = '700 15px Nunito, sans-serif';
+    var mine = !Net.on || !Net.peer || i === Net.me, w = i ? 260 : 330;
+    var lab = q.def.name.toUpperCase() + (G.players.length > 1 && mine ? ' (YOU)' : '') + (pcts ? ' · ' + pcts[chars.indexOf(q)] + ' %' : '');
+    var used = bar(24, yP, w, i ? 16 : 20, q.hp / q.maxhp, q.state === 'ko' ? '#8a8fa3' : '#6fe3a0', '#c8262c', lab, 'left', G.comp ? COMP_LIMIT : 0);
+    var my = compact ? yP + used + 5 : yP + 44, mh = compact ? hudPx(6) : 10;
+    meterBar(24, my, 200, mh, q.meter, 'left', q.meter >= 100 ? 'SPECIAL READY — ' + q.def.special.name.toUpperCase() : 'SPECIAL ' + Math.floor(q.meter) + '%', compact);
+    yP = compact ? my + mh + hudPx(8) : yP + 72;
   });
+  var yR = hudRightTop();   // below the MENU / FULLSCREEN buttons in the corner
   G.rhinos.forEach(function(r, i){
-    var oy = 50 + i * 42, w = i ? 260 : 330, h = i ? 16 : 20;   // below the MENU / FULLSCREEN buttons in the corner
-    bar(LW - 24 - w, 22 + oy, w, h, r.hp / r.maxhp, r.space ? (r.angry ? '#ff8ad0' : '#7fe7ff') : r.mutant ? (r.angry ? '#ccff66' : '#8dff5a') : (r.angry ? '#ff5a3c' : '#f2c56b'), '#c8262c', ((r.morph && r.revealed) ? ANIMALS[r.morph].label : (LEVELS[LEVEL].huds ? LEVELS[LEVEL].huds[i] : LEVELS[LEVEL].hud + (i ? ' #' + (i + 1) : ''))) + (G.comp ? ' · ' + Math.round(r.share * 100) + ' %' : ''), 'right', G.comp ? COMP_LIMIT : 0);
+    var w = i ? 260 : 330, h = i ? 16 : 20, revealed = r.morph && r.revealed;
+    var base = revealed ? ANIMALS[r.morph].label : (lv.huds ? lv.huds[i] : lv.hud + (i ? ' #' + (i + 1) : ''));
+    if (compact) base = base.split(' · ')[0] + (!revealed && !lv.huds && i ? ' #' + (i + 1) : '');   // the name, not the lesson, on a phone
+    var used = bar(LW - 24 - w, yR, w, h, r.hp / r.maxhp, r.space ? (r.angry ? '#ff8ad0' : '#7fe7ff') : r.mutant ? (r.angry ? '#ccff66' : '#8dff5a') : (r.angry ? '#ff5a3c' : '#f2c56b'), '#c8262c',
+      base + (pcts ? ' · ' + pcts[chars.indexOf(r)] + ' %' : ''), 'right', G.comp ? COMP_LIMIT : 0);
+    yR += compact ? used + hudPx(6) : 42;
   });
   if (G.comp){
     // the whole ring as one stacked bar: it always fills up, whoever holds the pieces
-    var cw = 260, cx0 = LW / 2 - cw / 2, cy0 = 100, cx = cx0;   // between the fighter bars and the rhino bars
-    ctx.fillStyle = 'rgba(10,14,30,.6)'; roundRect(cx0 - 3, cy0 - 3, cw + 6, 18, 6); ctx.fill();
-    G.players.concat(G.rhinos).forEach(function(c){ var w = cw * (c.share || 0); if (w <= 0) return; ctx.fillStyle = c.def ? '#6fe3a0' : (c.skin === 'zebra' ? '#f4f0ea' : '#b0a89c'); ctx.fillRect(cx, cy0, w, 12); ctx.fillStyle = '#1a141e'; ctx.fillRect(cx, cy0, 1, 12); cx += w; });
-    ctx.fillStyle = '#c9d3e6'; ctx.font = '900 11px Nunito, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('ONE RING · SUMS TO 1 · LIMIT ' + Math.round(COMP_LIMIT * 100) + ' %', LW / 2, cy0 + 16); ctx.textAlign = 'left';
+    var cw = compact ? 220 : 260, cx0 = LW / 2 - cw / 2, cy0 = compact ? 22 + hudPx(34) : 100, cx = cx0, sh = compact ? hudPx(7) : 12;
+    ctx.fillStyle = 'rgba(10,14,30,.6)'; roundRect(cx0 - 3, cy0 - 3, cw + 6, sh + 6, 6); ctx.fill();
+    chars.forEach(function(c){ var w = cw * (c.share || 0); if (w <= 0) return; ctx.fillStyle = c.def && !c.isRhino ? '#6fe3a0' : (c.skin === 'zebra' ? '#f4f0ea' : '#b0a89c'); ctx.fillRect(cx, cy0, w, sh); ctx.fillStyle = '#1a141e'; ctx.fillRect(cx, cy0, 1, sh); cx += w; });
+    ctx.fillStyle = '#c9d3e6'; ctx.font = '900 ' + (compact ? hudPx(9) : 11) + 'px Nunito, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(compact ? 'SUM = 1 · LIMIT ' + Math.round(COMP_LIMIT * 100) + ' %' : 'ONE RING · SUMS TO 1 · LIMIT ' + Math.round(COMP_LIMIT * 100) + ' %', LW / 2, cy0 + sh + 4); ctx.textAlign = 'left';
   }
-  if (Net.on && Net.lost){ ctx.font = '900 13px Nunito, sans-serif'; ctx.fillStyle = '#ffd166'; ctx.textAlign = 'center'; ctx.fillText('FRIEND RECONNECTING…', LW / 2, 52); ctx.textAlign = 'left'; }
-  // timer
-  ctx.textAlign = 'center'; ctx.font = '400 30px Bangers, Impact, sans-serif'; ctx.fillStyle = '#eef2f8'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 4;
-  var s = Math.floor(G.elapsed); var tt = (s < 10 ? '0' : '') + s;
+  if (Net.on && Net.lost){ ctx.font = '900 ' + (compact ? hudPx(10) : 13) + 'px Nunito, sans-serif'; ctx.fillStyle = '#ffd166'; ctx.textAlign = 'center'; ctx.fillText('FRIEND RECONNECTING…', LW / 2, compact ? Math.max(yP, yR) + 6 : 52); ctx.textAlign = 'left'; }
+  hudTimer(Math.floor(G.elapsed));
+}
+function hudTimer(s){
+  var fz = Math.round(30 * (hudCompact() ? Math.min(HUD_K, 1.5) : 1));
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.font = '400 ' + fz + 'px Bangers, Impact, sans-serif'; ctx.fillStyle = '#eef2f8'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 4;
+  var tt = (s < 10 ? '0' : '') + s;
   ctx.strokeText(tt, LW / 2, 16); ctx.fillText(tt, LW / 2, 16); ctx.textAlign = 'left';
 }
+// the special meter under a bar; on a phone its caption is the short one and sits beside it
+function meterBar(x, y, w, h, m, align, caption, compact, capBelow){
+  var full = m >= 100;
+  ctx.fillStyle = 'rgba(10,14,30,.55)'; roundRect(x, y, w, h, h / 2); ctx.fill();
+  ctx.fillStyle = full ? '#6fe3a0' : '#93a0bf'; roundRect(align === 'right' ? x + w - w * m / 100 : x, y, w * m / 100, h, h / 2); ctx.fill();
+  ctx.fillStyle = full ? '#6fe3a0' : '#c9d3e6';
+  if (compact){
+    ctx.font = '900 ' + hudPx(9) + 'px Nunito, sans-serif'; ctx.textBaseline = 'middle'; ctx.textAlign = align === 'right' ? 'right' : 'left';
+    ctx.fillText(full ? 'SPECIAL!' : 'SPC ' + Math.floor(m) + '%', align === 'right' ? x - 8 : x + w + 8, y + h / 2 + 1);
+    ctx.textBaseline = 'top';
+  } else {
+    ctx.font = '900 11px Nunito, sans-serif'; ctx.textAlign = align === 'right' ? 'right' : 'left';
+    if (capBelow) ctx.fillText(caption, align === 'right' ? x + w : x, y + 14);   // versus: under the meter, both sides
+    else ctx.fillText(caption, x + w + 8, y - 3);                                   // rounds: beside it
+  }
+  ctx.textAlign = 'left'; ctx.font = '700 15px Nunito, sans-serif';
+}
+// HUD sizing: the canvas is drawn at LW x LH logical px and scaled to fit the stage; on a phone that scale is ~0.37, so 13 px
+// text renders under 5 CSS px. HUD_K (set every frame in draw) grows the HUD text until it reads at ~9 CSS px, and in that
+// compact mode the labels ride inside the bars so the bigger type does not stack into the arena.
+var HUD_K = 1, HUD_CSS = 1;
+function hudCompact(){ return HUD_K > 1.25; }
+function hudPx(px){ return Math.round(px * HUD_K); }
+function hudRightTop(){ return hudCompact() ? Math.max(72, Math.round(46 / HUD_CSS)) : 72; }   // clear the corner buttons
+// whole percentages that add up to exactly 100 (largest remainder), for labels printed under a "sums to 1" caption
+function pct100(vals){
+  var tot = 0; vals.forEach(function(v){ tot += v; });
+  if (!(tot > 0)) return vals.map(function(){ return 0; });
+  var raw = vals.map(function(v){ return v / tot * 100; }), fl = raw.map(function(v){ return Math.floor(v); });
+  var left = 100 - fl.reduce(function(a, b){ return a + b; }, 0);
+  var order = raw.map(function(v, i){ return i; }).sort(function(a, b){ return (raw[b] - fl[b]) - (raw[a] - fl[a]); });
+  for (var k = 0; k < left && k < order.length; k++) if (vals[order[k]] > 0) fl[order[k]]++;
+  return fl;
+}
 function bar(x, y, w, h, v, col, back, label, align, tick){
+  var compact = hudCompact();
+  if (compact) h = Math.max(h, hudPx(11) + 8);
+  v = Math.max(0, Math.min(1, v));
   ctx.fillStyle = 'rgba(10,14,30,.6)'; roundRect(x - 3, y - 3, w + 6, h + 6, 6); ctx.fill();
   ctx.fillStyle = back; roundRect(x, y, w, h, 4); ctx.fill();
   ctx.fillStyle = col; if (align === 'left') { roundRect(x, y, w * v, h, 4); } else { roundRect(x + w * (1 - v), y, w * v, h, 4); } ctx.fill();
   if (tick){ ctx.fillStyle = '#eef2f8'; ctx.fillRect(align === 'left' ? x + w * tick - 1 : x + w * (1 - tick) - 1, y - 3, 2, h + 6); }   // detection limit
-  ctx.fillStyle = '#eef2f8'; ctx.font = '900 13px Nunito, sans-serif'; ctx.textAlign = align; ctx.fillText(label, align === 'left' ? x + 2 : x + w - 2, y + h + 6); ctx.textAlign = 'left';
+  ctx.textAlign = align;
+  if (compact){
+    // inside the bar, outlined so it reads over any fill, shrunk to fit rather than spill onto the arena
+    var fs = hudPx(11); ctx.font = '900 ' + fs + 'px Nunito, sans-serif';
+    while (fs > 10 && ctx.measureText(label).width > w - 12){ fs--; ctx.font = '900 ' + fs + 'px Nunito, sans-serif'; }
+    var tx = align === 'left' ? x + 6 : x + w - 6, ty = y + h / 2 + 1;
+    ctx.textBaseline = 'middle'; ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(3, hudPx(3)); ctx.strokeStyle = 'rgba(10,14,30,.9)';
+    ctx.strokeText(label, tx, ty); ctx.fillStyle = '#ffffff'; ctx.fillText(label, tx, ty); ctx.textBaseline = 'top';
+  } else {
+    ctx.fillStyle = '#eef2f8'; ctx.font = '900 13px Nunito, sans-serif'; ctx.fillText(label, align === 'left' ? x + 2 : x + w - 2, y + h + 6);
+  }
+  ctx.textAlign = 'left';
+  return compact ? h : h + 22;   // the height it used, label included, so callers can stack the next one
 }
 function roundRect(x, y, w, h, r){ if (w < 0) w = 0; ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 function star(cx, cy, R, n, inner, ang){ ctx.beginPath(); for (var k = 0; k < 2 * n; k++){ var rr = k % 2 ? R * inner : R, a = ang + Math.PI * k / n; var x = cx + rr * Math.cos(a), y = cy + rr * Math.sin(a); if (k === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); } ctx.closePath(); }
@@ -1630,10 +1694,14 @@ function drawFX(){
 }
 function draw(){
   var sc = Math.min(canvas.width / LW, canvas.height / LH), offx = (canvas.width - LW * sc) / 2, offy = (canvas.height - LH * sc) / 2;
+  // a touch phone held upright has spare height: put the arena at the top and leave the band below it to the pads,
+  // so the right-hand column no longer sits on the rhino
+  if (isTouch && offy > 0) offy = 0;
+  HUD_CSS = sc / (dpr || 1); HUD_K = Math.max(1, Math.min(2.6, 8.6 / (13 * HUD_CSS)));
   var wl = LEVELS[LEVEL].theme === 'wasteland', sp = LEVELS[LEVEL].theme === 'space';
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = sp ? '#02030c' : (wl ? '#2a1a14' : '#0c1434'); ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.setTransform(sc, 0, 0, sc, offx, offy);
-  var EXT = offy / sc + 10;   // extra logical rows visible above/below in portrait
+  var EXT = (canvas.height - LH * sc - offy) / sc + 10;   // extra logical rows visible below the arena in portrait
   ctx.fillStyle = sp ? '#3c4048' : (wl ? '#6f5238' : '#c6d0e6'); ctx.fillRect(-10, LH, LW + 20, EXT + 10);
   var t = G ? G.t : performance.now() / 1000;
   var ox = 0, oy = 0;
@@ -1729,7 +1797,7 @@ function draw(){
     }
     else if (G.over && G.won && !allGone){ bigText('K.O.!', LW / 2, 200, 120); }
     else if (G.over && G.won && allGone){ bigText('FALSE POSITIVE', LW / 2, 190, 78); }
-    if (!G.vs && G.over && !G.won){ bigText('TRAMPLED', LW / 2, 200, 100); }
+    if (!G.vs && G.over && !G.won){ var lw = lossWord(G.players[(Net.on && Net.peer) ? Net.me : 0] || G.p); bigText(lw, LW / 2, 200, lw.length > 9 ? 84 : 100); }
     if (!G.vs && !G.over && G.elapsed < 1.6){ var a = 1 - smooth(1.1, 1.6, G.elapsed); ctx.globalAlpha = a; bigText(G.elapsed < .8 ? LEVELS[LEVEL].name : 'FIGHT!', LW / 2, 220, 96); ctx.globalAlpha = 1; }
     if (wl){
       // CRT look: green cast, scanlines, faint flicker
@@ -1925,7 +1993,12 @@ function coopJoin(){
     Net.joining = false; $('btnCoopJoin').disabled = false; $('btnVsJoin').disabled = false;
     buildRoster(); show('select'); scene = 'select'; updateCoopLine();
     if (Net.timer) clearInterval(Net.timer);
-    Net.timer = setInterval(function(){ if (!Net.on){ clearInterval(Net.timer); Net.timer = null; return; } if (scene === 'select') updateCoopLine(); }, 1000);
+    Net.timer = setInterval(function(){
+      if (!Net.on){ clearInterval(Net.timer); Net.timer = null; return; }
+      if (scene === 'select') updateCoopLine();
+      // unpaired: say hello again every few seconds, so a partner who was mid-fight pairs once they are free
+      if (!Net.peer && !Net.full && (Net.helloTick = (Net.helloTick || 0) + 1) % 3 === 0){ sendVia({t:'hello', paired: null}, 'relay'); if (Net.rtc) sendVia({t:'hello', paired: null}, 'rtc'); }
+    }, 1000);
   }).catch(function(e){ Net.on = false; Net.joining = false; $('btnCoopJoin').disabled = false; $('btnVsJoin').disabled = false; coopStatus('Could not start the multiplayer module: ' + ((e && e.message) || e) + '. Reload the page and try again.'); });
 }
 function netLeave(){
@@ -1937,7 +2010,7 @@ function netLeave(){
   Net.on = false; Net.rtc = null; Net.rtcUp = false; Net.rtcPeer = null; Net.relay = null; Net.relayPeer = false; Net.peer = null; Net.ready = false; Net.peerReady = null; Net.host = false; Net.me = 0; Net.f = null; Net.err = ''; Net.full = false; Net.lost = false; Net.joining = false;
   Net.guestInp = {keys:{}, pressed:{}};
   Net.mode = 'coop';
-  $('selCoop').hidden = true; $('fightVerb').textContent = 'FIGHT AS';
+  $('selCoop').hidden = true; $('fightVerb').textContent = 'FIGHT AS'; $('startLevel').disabled = false; $('startLevel').title = '';
 }
 function setPeer(id){
   id = String(id);
@@ -1975,7 +2048,11 @@ function netData(d, tid, via){
   if (d.to && d.to !== Net.id) return;                       // addressed to somebody else in the room
   // busy, or a hello from someone who is already with somebody else: this room is taken
   if (d.t === 'busy' || (d.t === 'hello' && d.paired && d.paired !== Net.id)){ if (!Net.peer){ Net.full = true; Net.err = 'that room already has two players — try another code'; updateCoopLine(); } return; }
-  if (!Net.peer){ if (scene === 'fight') return; setPeer(d.from); }           // never re-pair mid-fight
+  if (d.t === 'mid'){ if (!Net.peer){ Net.err = 'your friend is mid-fight — you pair as soon as it ends'; updateCoopLine(); } return; }
+  if (!Net.peer){
+    if (scene === 'fight'){ if (d.t === 'hello') sendVia({t:'mid', to: d.from}, via, tid); return; }   // never re-pair mid-fight, but say so
+    setPeer(d.from); Net.err = '';
+  }
   else if (Net.peer !== d.from){ if (d.t === 'hello') sendVia({t:'busy', to: d.from}, via, tid); return; }
   if (via === 'rtc'){ Net.rtcPeer = String(tid); Net.rtcUp = true; }
   if (via === 'relay') Net.relayPeer = true;
@@ -1999,8 +2076,10 @@ function updateCoopLine(){
   else if (Net.lost) el.textContent = room + ' · connection to your friend lost — waiting up to 8 s for it to come back…';
   else if (Net.ready && !Net.peerReady) el.textContent = room + ' · you are ready — waiting for your friend to press FIGHT…' + via;
   else if (Net.ready && Net.peerReady) el.textContent = room + ' · starting…' + via;
+  else if (!Net.ready && Net.peerReady) el.textContent = room + ' · your friend is ready as ' + sideDefById(Net.peerReady).name.toUpperCase() + ' — press FIGHT to start' + via;
   else el.textContent = room + ' · friend connected' + via + (Net.host ? ' · you are the host and pick the round' : ' · the host picks the round') + ' · press FIGHT when ready.';
   $('fightVerb').textContent = Net.on ? 'READY AS' : 'FIGHT AS';
+  var guest = !!(Net.on && Net.peer && !Net.host); $('startLevel').disabled = guest; $('startLevel').title = guest ? 'the host picks the round' : '';
 }
 // a new pick after READY has to reach the partner, or you play the fighter you changed your mind about
 function repickReady(){ if (Net.on && Net.peer && Net.ready){ sendNet({t:'ready', f: myPickId()}); updateCoopLine(); } }
@@ -2021,7 +2100,7 @@ function beginCoopRound(){
   else newFight(defById(Net.f[0]), defById(Net.f[1]));
   scene = 'fight'; show(null);
   Net.guestInp = {keys:{}, pressed:{}}; Net.sfxQ = []; Net.frame = 0; Net.lastKeys = '';
-  unlockAudio(); sfx('gong', {f: LEVEL ? 70 : 96, v: .6}); setTimeout(function(){ sfx('drum'); }, 800);
+  unlockAudio(); sfx('gong', {f: LEVEL ? 70 : 96, v: .6}); fightTimeout(function(){ sfx('drum'); }, 800);
 }
 function hostTick(dt){
   var guest = G ? (G.vs ? G.sides[1] : G.p2) : null;
@@ -2047,8 +2126,8 @@ function r2(v){ return Math.round((v || 0) * 100) / 100; }
 function r3(v){ return v == null ? null : Math.round(v * 1000) / 1000; }
 function packP(p){ return [r1(p.x), r1(p.y), p.facing, r1(p.hp), p.meter | 0, p.state, r2(p.st), r2(p.inv), r2(p.flash), r2(p.scale || 1), p.ducking ? 1 : 0, POSE_KEYS.map(function(k){ return r2(p.pose[k]); }), p.alt ? 1 : 0, p.hitsLanded, r3(p.share)]; }
 function unpackP(p, a){ p.x = a[0]; p.y = a[1]; p.facing = a[2]; p.hp = a[3]; p.meter = a[4]; p.state = a[5]; p.st = a[6]; p.inv = a[7]; p.flash = a[8]; p.scale = a[9]; p.ducking = !!a[10]; var o = {}; POSE_KEYS.forEach(function(k, i){ o[k] = a[11][i]; }); p.pose = o; p.alt = !!a[12]; p.hitsLanded = a[13]; if (a[14] != null){ p.share = a[14]; p.size = sizeOf(a[14]); } }
-function packR(r){ return [r1(r.x), r.facing, r.hp, r.state, r2(r.st), r1(r.jump), r2(r.tilt), r2(r.head), r2(r.squash), r2(r.run), r2(r.phase), r2(r.tail), r2(r.flash), r2(r.glow), r.angry ? 1 : 0, r.dir, r1(r.targetX), r.morph || '', r.revealed ? 1 : 0, r.willFeint ? 1 : 0, r3(r.share), r.meter | 0]; }
-function unpackR(r, a){ r.x = a[0]; r.facing = a[1]; r.hp = a[2]; r.state = a[3]; r.st = a[4]; r.jump = a[5]; r.tilt = a[6]; r.head = a[7]; r.squash = a[8]; r.run = a[9]; r.phase = a[10]; r.tail = a[11]; r.flash = a[12]; r.glow = a[13]; r.angry = !!a[14]; r.dir = a[15]; r.targetX = a[16]; r.morph = a[17] || null; r.revealed = !!a[18]; r.willFeint = !!a[19]; if (a[20] != null){ r.share = a[20]; r.size = sizeOf(a[20]); } if (a[21] != null) r.meter = a[21]; }
+function packR(r){ return [r1(r.x), r.facing, r.hp, r.state, r2(r.st), r1(r.jump), r2(r.tilt), r2(r.head), r2(r.squash), r2(r.run), r2(r.phase), r2(r.tail), r2(r.flash), r2(r.glow), r.angry ? 1 : 0, r.dir, r1(r.targetX), r.morph || '', r.revealed ? 1 : 0, r.willFeint ? 1 : 0, r3(r.share), r.meter | 0, r.hitsLanded | 0]; }
+function unpackR(r, a){ r.x = a[0]; r.facing = a[1]; r.hp = a[2]; r.state = a[3]; r.st = a[4]; r.jump = a[5]; r.tilt = a[6]; r.head = a[7]; r.squash = a[8]; r.run = a[9]; r.phase = a[10]; r.tail = a[11]; r.flash = a[12]; r.glow = a[13]; r.angry = !!a[14]; r.dir = a[15]; r.targetX = a[16]; r.morph = a[17] || null; r.revealed = !!a[18]; r.willFeint = !!a[19]; if (a[20] != null){ r.share = a[20]; r.size = sizeOf(a[20]); } if (a[21] != null) r.meter = a[21]; if (a[22] != null) r.hitsLanded = a[22]; }
 function sendSnap(){
   var snap = {t:'s', T: r2(G.t), e: r2(G.elapsed), o: G.over ? 1 : 0, w: G.won ? 1 : 0, pf: G.pacifist ? 1 : 0,
     P: G.players.map(packP), R: G.rhinos.map(packR),
@@ -2056,12 +2135,12 @@ function sendSnap(){
     hot: hot.map(function(h){ return [r1(h.x), r1(h.r), r2(h.t), h.life]; }),
     rg: rings.map(function(g){ return [r1(g.x), r2(g.t), g.grey ? 1 : 0]; }),
     bo: bolts.map(function(b){ return [r1(b.x), b.dir, r2(b.t)]; }),
-    sh: r1(shake), fl: r2(flashA), sm: r2(slowmo), imf: impactFrame, sx: Net.sfxQ, vw: G.vsWin};
+    sh: r1(shake), fl: r2(flashA), sm: r2(slowmo), imf: impactFrame, sx: Net.sfxQ, vw: G.vsWin, vt: G.vsTime ? 1 : 0};
   Net.sfxQ = []; sendNet(snap);
 }
 function applySnap(d){
   if (!G || !d.P) return;
-  G.t = d.T; G.elapsed = d.e; G.over = !!d.o; G.won = !!d.w; G.pacifist = !!d.pf; if (d.vw != null) G.vsWin = d.vw;
+  G.t = d.T; G.elapsed = d.e; G.over = !!d.o; G.won = !!d.w; G.pacifist = !!d.pf; if (d.vw != null) G.vsWin = d.vw; if (d.vt != null) G.vsTime = !!d.vt;
   for (var i = 0; i < G.players.length && i < d.P.length; i++) unpackP(G.players[i], d.P[i]);
   for (var ri = 0; ri < G.rhinos.length && ri < d.R.length; ri++){
     var r = G.rhinos[ri], wasGone = r.state === 'gone'; unpackR(r, d.R[ri]);
@@ -2077,7 +2156,13 @@ function applySnap(d){
 
 // ------------------------------------------------------------ screens
 var $ = function(id){ return document.getElementById(id); };
-function show(id){ ['title', 'select', 'result', 'scores', 'levelCard', 'coop', 'versus'].forEach(function(s){ $(s).hidden = s !== id; }); $('menuBtn').hidden = id === 'title'; document.body.setAttribute('data-scene', id || 'fight'); }
+function show(id){
+  ['title', 'select', 'result', 'scores', 'levelCard', 'coop', 'versus'].forEach(function(s){ $(s).hidden = s !== id; });
+  $('menuBtn').hidden = id === 'title'; document.body.setAttribute('data-scene', id || 'fight');
+  // focus the new panel (not a button: a stray Space must not press REMATCH) so Tab and screen readers start there
+  var pn = id ? $(id).querySelector('.panel') : null;
+  if (pn){ if (!pn.hasAttribute('tabindex')) pn.setAttribute('tabindex', '-1'); try { pn.focus({preventScroll: true}); } catch (e) { try { pn.focus(); } catch (e2) {} } }
+}
 // back to the main menu from anywhere (Esc, or the ☰ MENU button): abandons a running fight
 function goMenu(){
   if (scene === 'title') return;
@@ -2125,13 +2210,15 @@ function buildRoster(){
 function setPickName(){
   var n = pickRhino ? 'THE RHINO' : ROSTER[selected].name.toUpperCase();
   $('selName').textContent = n; $('selName2').textContent = n;
+  var sp = pickRhino ? {name: 'Jet Stomp', desc: 'Horn sweep on punch, a charge on kick, and a jet stomp when the meter is full.'} : ROSTER[selected].special;
+  $('selMove').textContent = 'Special: ' + sp.name + ' — ' + sp.desc;
   $('btnVideo').hidden = pickRhino;
 }
 function beginRound(){
   $('startLevel').value = String(LEVEL);
   newFight(ROSTER[selected]); scene = 'fight'; show(null);
-  unlockAudio(); sfx('gong', {f: LEVEL ? 70 : 96, v: .6}); setTimeout(function(){ sfx('drum'); }, 800);
-  if (LEVEL) setTimeout(function(){ sfx('geiger'); }, 300);
+  unlockAudio(); sfx('gong', {f: LEVEL ? 70 : 96, v: .6}); fightTimeout(function(){ sfx('drum'); }, 800);
+  if (LEVEL && !LEVELS[LEVEL].calm) fightTimeout(function(){ sfx('geiger'); }, 300);
 }
 var termTimer = null;
 function showLevelCard(){
@@ -2168,9 +2255,16 @@ function showResult(){
     var sc = scoreFor(G); $('scoreLine').textContent = 'SCORE ' + sc.toLocaleString();
     $('playerName').value = p.def.name;
     if (G.pacifist){
-      var animals = G.rhinos.filter(function(r0){ return r0.morph; }).map(function(r0){ return ANIMALS[r0.morph].name; }).join(' + '), readLabel = LEVEL === 4 ? 'Rhinoceros + Zebra (relative abundance)' : 'Rhinoceros' + (LEVEL === 3 ? ' ×2 (PCR duplicate)' : LEVEL === 2 ? ' (wrong sample)' : LEVEL ? ' (contaminant match)' : ' (98.7%)');
+      var animals = G.rhinos.filter(function(r0){ return r0.morph; }).map(function(r0){ return ANIMALS[r0.morph].name; }).join(' + '), readLabel = LEVELS[LEVEL].read;
       $('resBig').textContent = 'PEACE'; $('resTitle').textContent = 'FALSE POSITIVE RECLASSIFIED';
-      $('resReadout').innerHTML = '> read: <b>' + readLabel + '</b> — status: <b>RECLASSIFIED → ' + animals + '</b><br>> fighter: <b>' + teamName(G) + '</b> · waited <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>0</b> · pacifist bonus: <b>+2500</b><br>> lesson: you never had to hit it. Look at the alignment long enough and the rhino is a ' + animals + ' — a related sequence that scored high, not a rhino. Never was.' + (LEVEL < LEVELS.length - 1 ? '<br>> next: round ' + (LEVEL + 2) + '.' : '<br>> dataset clean. The crew can go home.');
+      var morphs = G.rhinos.filter(function(r0){ return r0.morph; }), many = morphs.length > 1;
+      var whoWas = many ? (LEVELS[LEVEL].huds ? 'the rhino and the zebra are' : 'the two rhinos are') : 'the rhino is';
+      var whatNow = morphs.map(function(r0){ return 'a ' + ANIMALS[r0.morph].name; }).join(' and ');
+      $('resReadout').innerHTML = '> read: <b>' + readLabel + '</b> — status: <b>RECLASSIFIED → ' + animals + '</b><br>> fighter: <b>' + teamName(G) + '</b> · waited <b>' + G.elapsed.toFixed(1) + ' s</b> · ' +
+        (G.comp ? 'share of the ring: <b>' + Math.round((p.share || 0) * 100) + ' %</b>' : 'HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b>') +
+        '<br>> hits landed: <b>0</b> · pacifist bonus: <b>+2500</b><br>> lesson: you never had to hit ' + (many ? 'them' : 'it') + '. Look at the alignment long enough and ' + whoWas + ' ' + whatNow + ' — ' +
+        (many ? 'related sequences that scored high, not rhinos' : 'a related sequence that scored high, not a rhino') + '. Never ' + (many ? 'were' : 'was') + '.' +
+        (LEVEL < LEVELS.length - 1 ? '<br>> next: round ' + (LEVEL + 2) + '.' : '<br>> dataset clean. The crew can go home.');
     } else if (LEVEL === 0){
       $('resBig').textContent = 'K.O.!'; $('resTitle').textContent = 'FALSE POSITIVE REMOVED';
       $('resReadout').innerHTML = '> read: <b>Rhinoceros (98.7%)</b> — status: <b>REMOVED</b><br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · finisher: <b>' + (p.lastMove || p.def.special.name) + '</b><br>> no rhinos were harmed. It was one short read that looked like a horse.<br>> next: the reference genome itself is <b>contaminated</b>. Round 2.';
@@ -2189,11 +2283,17 @@ function showResult(){
     }
   } else {
     var rads = p.killedBy === 'rads';
-    $('resBig').textContent = G.comp ? 'OUTCOMPETED' : rads ? 'IRRADIATED' : 'TRAMPLED'; $('resTitle').textContent = G.comp ? 'THE FALSE POSITIVES DOMINATE THE SAMPLE' : rads ? 'THE CONTAMINATED GROUND GOT YOU' : 'THE RHINO STAYS IN THE DATASET';
+    $('resBig').textContent = lossWord(p); $('resTitle').textContent = G.comp ? 'THE FALSE POSITIVES DOMINATE THE SAMPLE' : rads ? 'THE CONTAMINATED GROUND GOT YOU' : 'THE RHINO STAYS IN THE DATASET';
     $('resReadout').innerHTML = G.comp ? ('> reads: <b>Rhinoceros + Zebra (relative abundance)</b> — status: <b>' + G.rhinos.map(function(r0){ return Math.round((r0.share || 0) * 100) + ' %'; }).join(' + ') + '</b><br>> fighter: <b>' + teamName(G) + '</b> · survived <b>' + G.elapsed.toFixed(1) + ' s</b> · your share fell below the <b>detection limit</b><br>> tip: every hit you take makes both of them bigger. Land hits and keep the share coming your way.')
-      : ('> read: <b>Rhinoceros' + (LEVEL === 3 ? ' ×2 (PCR duplicate)' : LEVEL === 2 ? ' (wrong sample)' : LEVEL ? ' (contaminant match)' : ' (98.7%)') + '</b> — status: <b>still there</b><br>> fighter: <b>' + teamName(G) + '</b> · survived <b>' + G.elapsed.toFixed(1) + ' s</b> · rhino HP left: <b>' + G.rhinos.map(function(r0){ return Math.round(r0.hp) + '/' + r0.maxhp; }).join(' + ') + '</b><br>> tip: ' + (rads ? 'the green patches keep burning while you stand in them — jump out, or stay off the ground the rhino skidded over.' : 'jump the charge when you see the <b>!</b>, duck the horn sweep, and hit it while it skids (or sleeps).'));
+      : ('> read: <b>' + LEVELS[LEVEL].read + '</b> — status: <b>' + stillThere() + '</b><br>> fighter: <b>' + teamName(G) + '</b> · survived <b>' + G.elapsed.toFixed(1) + ' s</b> · rhino HP left: <b>' + G.rhinos.map(function(r0){ return r0.state === 'gone' || r0.state === 'ko' ? 'removed' : Math.round(r0.hp) + '/' + r0.maxhp; }).join(' + ') + '</b><br>> tip: ' + (rads ? 'the green patches keep burning while you stand in them — jump out, or stay off the ground the rhino skidded over.' : (LEVELS[LEVEL].tip || 'jump the charge when you see the <b>!</b>, duck the horn sweep, and hit it while it skids (or sleeps).')));
   }
   show('result'); scene = 'result';
+}
+// the word for a lost round, shared by the canvas banner and the result panel so they can never disagree
+function lossWord(p){ return G.comp ? 'OUTCOMPETED' : (p && p.killedBy === 'rads') ? 'IRRADIATED' : 'TRAMPLED'; }
+function stillThere(){
+  var n = G.rhinos.length, live = liveRhinos().length;
+  return n > 1 ? (live + ' of ' + n + ' still there') : 'still there';
 }
 function showVsResult(){
   var online = Net.on && Net.peer, me = online ? Net.me : 0, win = G.vsWin, a = G.sides[0], b = G.sides[1];
@@ -2245,10 +2345,9 @@ $('theVideo').addEventListener('ended', function(){ setTimeout(closeVideo, 800);
 $('btnScores').addEventListener('click', function(){ unlockAudio(); openScores(); });
 $('btnScoresBack').addEventListener('click', function(){ show('title'); scene = 'title'; });
 $('btnSave').addEventListener('click', function(){
-  if (!G || !G.won) return;
+  if (!G || !G.won || G.vs || $('nameBox').hidden) return;   // versus never reaches the leaderboard, and a hidden box saves nothing
   var mine = G.players[(Net.on && Net.peer) ? Net.me : 0] || G.p;
   var name = ($('playerName').value || mine.def.name).replace(/[\u0000-\u001f\u007f]/g, '').replace(/\s+/g, ' ').trim().slice(0, 16) || mine.def.name;
-  try { localStorage.setItem('swebits_name', name); } catch (e) {}
   lastEntry = {name: name, fighter: teamName(G).slice(0, 24), score: scoreFor(G), time: Math.round(G.elapsed * 10) / 10, level: LEVEL + 1, t: Date.now()};
   $('btnSave').disabled = true; $('btnSave').textContent = 'SAVING…';
   Scores.add(lastEntry).then(function(list){ $('btnSave').textContent = Scores.savedRemote() ? 'SAVED' : 'SAVED ON THIS DEVICE ONLY'; sfx('chime', {f: Scores.savedRemote() ? 2093 : 1046}); renderScores(list); renderBest(); show('scores'); scene = 'scores'; });

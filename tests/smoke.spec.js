@@ -409,6 +409,104 @@ test('versus: the five arenas are five different fights', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test('Esc closes an open video instead of leaving the screen it was opened from', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  await page.click('#btnStart');
+  await page.click('#btnVideo');
+  await expect(page.locator('#videoBox')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#videoBox')).toBeHidden();
+  await expect(page.locator('#select')).toBeVisible();          // still on the fighter screen
+  await page.goto(URL);
+  await page.click('#btnIntro');
+  await expect(page.locator('#videoBox')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#videoBox')).toBeHidden();          // the intro clip closes on Esc too
+  expect(errors).toEqual([]);
+});
+
+test('versus can never write a score, even if the save button is forced', async ({ page }) => {
+  const errors = []; let posts = 0;
+  page.on('pageerror', e => errors.push(e.message));
+  await page.route(/\/rest\/v1\//, r => { if (r.request().method() === 'POST') posts++; return r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }); });
+  await page.goto(URL);
+  await page.click('#btnVersus');
+  await page.selectOption('#vsP1', 'albertas');
+  await page.selectOption('#vsP2', 'rhino');
+  await page.click('#btnVsFight');
+  await page.waitForTimeout(400);
+  await page.evaluate(() => { const g = window.__fight(); g.sides[1].hp = 1; g.sides[1].x = g.sides[0].x + 90; g.sides[1].inv = 0; });
+  for (let i = 0; i < 6 && await page.evaluate(() => !window.__fight().over); i++) { await page.keyboard.press('j'); await page.waitForTimeout(250); }
+  await expect(page.locator('#result')).toBeVisible({ timeout: 12000 });
+  await page.evaluate(async () => { const b = document.getElementById('btnSave'); b.disabled = false; b.click(); await new Promise(r => setTimeout(r, 600)); });
+  expect(posts).toBe(0);
+  expect(errors).toEqual([]);
+});
+
+test('round 5 percentages add up to 100 and both directions held stand still', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  await page.click('#btnStart');
+  await page.selectOption('#startLevel', '4');
+  await page.click('#btnFight');
+  await expect(page.locator('#btnLevelGo')).toBeVisible();
+  await page.click('#btnLevelGo');
+  await page.waitForTimeout(400);
+  const sums = await page.evaluate(() => {
+    // the HUD's rounding is largest-remainder: every split must print as 100
+    const g = window.__fight(), all = g.players.concat(g.rhinos), out = [];
+    for (const split of [[1, 1, 1], [0.505, 0.26, 0.235], [0.9, 0.05, 0.05], [0.333, 0.333, 0.334]]) {
+      split.forEach((v, i) => { all[i].share = v; });
+      out.push(window.__pct100 ? window.__pct100(all.map(c => c.share)).reduce((a, b) => a + b, 0) : null);
+    }
+    return out;
+  });
+  expect(sums).toEqual([100, 100, 100, 100]);
+  // holding ← and → together is standing still
+  await page.evaluate(() => { const g = window.__fight(); g.rhinos.forEach(r => { r.timer = 9999; r.state = 'idle'; r.x = 1300; }); });
+  await page.keyboard.down('ArrowLeft'); await page.keyboard.down('ArrowRight');
+  await page.waitForTimeout(100);                                   // both are down now; from here nothing may move
+  const x0 = await page.evaluate(() => window.__fight().p.x);
+  await page.waitForTimeout(500);
+  const st = await page.evaluate(() => ({ x: window.__fight().p.x }));
+  await page.keyboard.up('ArrowLeft'); await page.keyboard.up('ArrowRight');
+  expect(Math.abs(st.x - x0)).toBeLessThan(1);
+  expect(errors).toEqual([]);
+});
+
+test('phone portrait: the arena sits at the top and no touch pad covers it', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  const page = await ctx.newPage();
+  await page.goto(URL);
+  await page.click('#btnStart');
+  await page.click('#btnFight');
+  await page.waitForTimeout(800);
+  const over = await page.evaluate(() => {
+    const c = document.querySelector('canvas').getBoundingClientRect(), sc = Math.min(c.width / 960, c.height / 600);
+    const arenaBottom = c.top + 600 * sc;
+    return Array.from(document.querySelectorAll('.tb')).filter(el => el.getBoundingClientRect().top < arenaBottom).map(el => el.getAttribute('data-k'));
+  });
+  expect(over).toEqual([]);
+  await ctx.close();
+});
+
+test('desktop: the whole roster fits in the frame, eleven fighters in two rows', async ({ browser }) => {
+  for (const viewport of [{ width: 1366, height: 768 }, { width: 1920, height: 1080 }]) {
+    const ctx = await browser.newContext({ viewport });
+    const page = await ctx.newPage();
+    await page.route(/\/rest\/v1\//, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await page.goto(URL);
+    await page.click('#btnStart');
+    const hidden = await page.evaluate(() => { const st = document.getElementById('stage').getBoundingClientRect();
+      return Array.from(document.querySelectorAll('.fighter')).filter(c => c.getBoundingClientRect().bottom > st.bottom + 1).map(c => c.getAttribute('aria-label')); });
+    expect(hidden).toEqual([]);
+    await ctx.close();
+  }
+});
+
 test('pacifist ending: outlast the rhino without hitting it', async ({ page }) => {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
