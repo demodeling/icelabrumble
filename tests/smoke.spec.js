@@ -37,16 +37,19 @@ test('every fighter has a video', async ({ page }) => {
   }
 });
 
-test('all five rounds start', async ({ page }) => {
+test('all eight rounds start, each with its own rules switched on', async ({ page }) => {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(URL);
   await page.click('#btnStart');
-  for (const lvl of ['0', '1', '2', '3', '4']) {
+  for (const lvl of ['0', '1', '2', '3', '4', '5', '6', '7']) {
     await page.selectOption('#startLevel', lvl);
     await page.click('#btnFight');
     if (lvl !== '0') { await expect(page.locator('#btnLevelGo')).toBeVisible(); await page.click('#btnLevelGo'); }
     await page.waitForTimeout(1200);
+    // a round that silently fell back to the normal rules would still start without an error: check the switch itself
+    const mode = await page.evaluate(() => { const g = window.__fight(); return { square: !!g.square, push: !!g.push, buns: !!g.buns, comp: !!g.comp }; });
+    expect(mode).toEqual({ square: lvl === '5', push: lvl === '6', buns: lvl === '7', comp: lvl === '4' });
     await page.keyboard.press('ArrowUp'); await page.keyboard.press('j');
     if (lvl === '3' || lvl === '4') { for (let i = 0; i < 12; i++) { await page.keyboard.down('ArrowRight'); await page.waitForTimeout(80); await page.keyboard.up('ArrowRight'); } }   // round 4: walk right so the camera scrolls
     await page.waitForTimeout(400);
@@ -289,7 +292,7 @@ test('phone: every round-5 result button is on screen, even with the display fon
     await expect(page.locator('#result')).toBeVisible({ timeout: 15000 });
     const reach = await page.evaluate(() => {
       const bad = [];
-      ['playerName', 'btnSave', 'btnAgain', 'btnChoose'].forEach(id => {
+      ['playerName', 'btnSave', 'btnNext', 'btnAgain', 'btnChoose'].forEach(id => {   // round 5 is no longer the last: NEXT ROUND is there too
         const el = document.getElementById(id);
         const r = el.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
         const hit = document.elementFromPoint(cx, cy);
@@ -1021,6 +1024,205 @@ test('co-op: a third player on the same code is told the room is full and never 
   await b.keyboard.press('ArrowRight'); await b.waitForTimeout(1500);
   await expect(a.locator('#select')).toBeHidden(); await expect(b.locator('#select')).toBeHidden();     // the real pair keeps fighting
   await expect(a.locator('#result')).toBeHidden(); await expect(b.locator('#result')).toBeHidden();
+  expect(errors).toEqual([]);
+  await ctx.close();
+});
+
+// ---------------------------------------------------------------- rounds 6-8
+async function startRound(page, lvl, nth) {
+  await page.click('#btnStart');
+  await page.selectOption('#startLevel', String(lvl));
+  if (nth) await page.click(`.fighter:nth-child(${nth})`);   // never the pre-selected first card: a second click starts the fight
+  await page.click('#btnFight');
+  await expect(page.locator('#btnLevelGo')).toBeVisible();
+  await page.click('#btnLevelGo');
+  await page.waitForTimeout(1750);                           // past the ROUND n / FIGHT! banner
+}
+
+test('round 6: the fight runs round the hall — up the wall, across the seam, and a charge ends once it is past you', async ({ page }) => {
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  await startRound(page, 5, 5);                              // Per
+  const setup = await page.evaluate(() => { const g = window.__fight(); return { square: g.square, p: g.p.size, r: g.r.size }; });
+  expect(setup).toEqual({ square: true, p: 0.66, r: 0.66 });
+  // walk right off the end of the floor: the track turns up the right wall (no wall stops you)
+  await page.evaluate(() => { const g = window.__fight(); g.r.state = 'idle'; g.r.timer = 1e9; g.r.x = g.p.x - 700; g.p.inv = 99; });
+  await page.keyboard.down('ArrowRight');
+  await expect.poll(() => page.evaluate(() => { const g = window.__fight(), b = window.__sq().base(g.p.x); return b.x > 900 && b.y < 430; }), { timeout: 6000 }).toBe(true);
+  await page.keyboard.up('ArrowRight');
+  // a rhino a whole lap (plus a step) ahead is right in front of you: players are re-expressed the short way round
+  const P = await page.evaluate(() => window.__sq().P);
+  await page.evaluate((P) => { const g = window.__fight(); g.r.state = 'idle'; g.r.timer = 1e9; g.p.x = 300; g.p.state = 'idle'; g.p.y = 0; g.p.vy = 0; g.r.x = 300 + 150 + P; }, P);
+  await page.waitForTimeout(80);
+  const near = await page.evaluate(() => { const g = window.__fight(); return { d: g.r.x - g.p.x, hp: g.r.hp }; });
+  expect(Math.abs(near.d - 150)).toBeLessThan(40);
+  for (let i = 0; i < 4; i++) { await page.keyboard.press('j'); await page.waitForTimeout(380); }
+  expect(await page.evaluate(() => window.__fight().r.hp)).toBeLessThan(near.hp);
+  // a charge has no arena wall to stop at here: it ends once it has run 200 px past its target, well inside 2.6 s
+  await page.evaluate(() => { const g = window.__fight(); g.p.x = g.r.x + 400; g.p.inv = 99; g.r.facing = 1; g.r.state = 'charge'; g.r.st = 0; g.r.dir = 1; g.r.cx0 = g.r.x; g.r.trampled = {}; });
+  const t0 = Date.now();
+  await expect.poll(() => page.evaluate(() => window.__fight().r.state), { timeout: 4000 }).not.toBe('charge');
+  const past = await page.evaluate(() => { const g = window.__fight(); return (g.r.x - g.p.x) * g.r.dir; });
+  expect(past).toBeGreaterThan(150);
+  expect(Date.now() - t0).toBeLessThan(3200);
+  expect(errors).toEqual([]);
+});
+
+const ARROW = { A: 'ArrowLeft', T: 'ArrowRight', C: 'ArrowUp', G: 'ArrowDown' };
+test('round 7: typing the repeat shoves the rhino back, a finished repeat moves on, and over the edge it goes', async ({ page }) => {
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  await startRound(page, 6, 5);
+  const x0 = await page.evaluate(() => window.__fight().push.x);
+  for (const L of 'ATATA') { await page.keyboard.press(ARROW[L]); await page.waitForTimeout(40); }
+  await page.keyboard.press('t');                                // the letter key works as well as its arrow
+  await page.waitForTimeout(100);
+  const u = await page.evaluate(() => { const g = window.__fight(); return { stage: g.p.pu.stage, pos: g.p.pu.pos, slips: g.p.pu.slips, letters: g.p.pu.letters, x: g.push.x }; });
+  expect(u).toMatchObject({ stage: 1, pos: 0, slips: 0, letters: 6 });
+  expect(u.x).toBeGreaterThan(x0 + 20);
+  // the next repeat is AAT: one right letter at the rhino's edge pushes it off
+  const edge = await page.evaluate(() => window.__push().win);
+  await page.evaluate((e) => { window.__fight().push.x = e - 2; }, edge);
+  await page.keyboard.press('ArrowLeft');
+  await expect.poll(() => page.evaluate(() => window.__fight().won)).toBe(true);
+  await expect(page.locator('#result')).toBeVisible({ timeout: 8000 });
+  await expect(page.locator('#resBig')).toHaveText('PUSHED OFF');
+  await expect(page.locator('#btnNext')).toBeVisible();
+  await expect(page.locator('#btnNext')).toHaveText('NEXT ROUND: CINNAMON BUN DAY');
+  expect(errors).toEqual([]);
+});
+
+test('round 7: a four-arrow chord is one slip, never a letter, and there is no pacifist ending', async ({ page }) => {
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL + '#pacifist=1');                          // the pacifist timer would run out after 1 s
+  await startRound(page, 6, 5);
+  // all four in one frame, the wrong one first: mashing must never find the right letter by luck
+  await page.evaluate(() => { ['ArrowUp', 'ArrowLeft', 'ArrowRight', 'ArrowDown'].forEach(k => window.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }))); });
+  await page.waitForTimeout(120);
+  await page.evaluate(() => { ['ArrowUp', 'ArrowLeft', 'ArrowRight', 'ArrowDown'].forEach(k => window.dispatchEvent(new KeyboardEvent('keyup', { key: k, bubbles: true }))); });
+  const u = await page.evaluate(() => { const p = window.__fight().p.pu; return { slips: p.slips, letters: p.letters, pos: p.pos }; });
+  expect(u).toEqual({ slips: 1, letters: 0, pos: 0 });
+  await page.waitForTimeout(1800);
+  const g = await page.evaluate(() => { const g = window.__fight(); return { over: g.over, pacifist: g.pacifist }; });
+  expect(g).toEqual({ over: false, pacifist: false });
+  // and pushed off your own edge is a loss that says what happened
+  const lose = await page.evaluate(() => window.__push().lose);
+  await page.evaluate((l) => { window.__fight().push.x = l + 1; }, lose);
+  await expect(page.locator('#result')).toBeVisible({ timeout: 8000 });
+  await expect(page.locator('#resBig')).toHaveText('PUSHED OUT');
+  await expect(page.locator('#resReadout')).toContainText('slips');
+  expect(errors).toEqual([]);
+});
+
+test('round 8: only a bun hurts the rhino, and a tray never refunds its own meter', async ({ page }) => {
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  await startRound(page, 7, 5);                                  // Per: PER-ZILLA would flatten it in any other round
+  const freeze = () => page.evaluate(() => { const g = window.__fight(); g.r.state = 'idle'; g.r.timer = 1e9; g.p.inv = 99; });
+  await freeze();
+  await page.evaluate(() => { const g = window.__fight(); g.r.x = g.p.x + 230; });
+  const before = await page.evaluate(() => { const g = window.__fight(); return { hp: g.r.hp, hits: g.p.hitsLanded }; });
+  // a fist or a special that somehow started anyway still does nothing (the guard sits in hitRhino itself)
+  await page.evaluate(() => { const g = window.__fight(); g.p.state = 'punch'; g.p.st = .05; g.p.attackHit = false; });
+  await page.waitForTimeout(400);
+  await page.evaluate(() => { const g = window.__fight(); g.p.state = 'special'; g.p.st = 0; g.p.attackHit = false; });
+  await page.waitForTimeout(2800);
+  await freeze();
+  const after = await page.evaluate(() => { const g = window.__fight(); return { hp: g.r.hp, hits: g.p.hitsLanded }; });
+  expect(after).toEqual(before);
+  // J throws a bun: that one counts
+  await page.evaluate(() => { const g = window.__fight(); g.p.state = 'idle'; g.p.scale = 1; g.r.x = g.p.x + 300; });
+  await page.keyboard.press('j');
+  await expect.poll(() => page.evaluate(() => window.__fight().p.hitsLanded)).toBe(1);
+  expect(await page.evaluate(() => window.__fight().r.hp)).toBeLessThan(before.hp);
+  // L with a full meter sends the whole tray: the meter is spent and stays spent however many buns land
+  await freeze();
+  await page.evaluate(() => { const g = window.__fight(); g.p.meter = 100; g.r.x = g.p.x + 320; });
+  await page.keyboard.press('l');
+  await page.waitForTimeout(900);
+  const tray = await page.evaluate(() => { const g = window.__fight(); return { meter: g.p.meter, hits: g.p.hitsLanded, thrown: g.bunStats.thrown }; });
+  expect(tray.thrown).toBe(6);
+  expect(tray.hits).toBeGreaterThan(2);
+  expect(tray.meter).toBe(0);
+  expect(errors).toEqual([]);
+});
+
+test('round 8: a dropped bun feeds the rhino (never past full) unless you pick it up first, and a late bun cannot flip a loss', async ({ page }) => {
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  await startRound(page, 7, 5);
+  await page.evaluate(() => { const g = window.__fight(); g.r.state = 'idle'; g.r.timer = 1e9; g.p.inv = 99; g.r.x = 700; g.p.x = 200; g.r.facing = -1;
+    g.r.hp = g.r.maxhp - 4; g.bunsGround.push({ x: g.r.x - 2.35 * 84, t: 0 }); });
+  await page.waitForTimeout(150);
+  const fed = await page.evaluate(() => { const g = window.__fight(); return { hp: g.r.hp, max: g.r.maxhp, eaten: g.bunStats.eaten, left: g.bunsGround.length }; });
+  expect(fed).toEqual({ hp: fed.max, max: fed.max, eaten: 1, left: 0 });
+  // one that lands at your feet fills the tray instead
+  await page.evaluate(() => { const g = window.__fight(); g.p.meter = 0; g.bunsGround.push({ x: g.p.x + 5, t: 0 }); });
+  await page.waitForTimeout(150);
+  const picked = await page.evaluate(() => { const g = window.__fight(); return { meter: g.p.meter, picked: g.bunStats.picked }; });
+  expect(picked).toEqual({ meter: 12, picked: 1 });
+  // foraging: it walks over to a dropped bun and eats it
+  await page.evaluate(() => { const g = window.__fight(); g.r.hp = 100; g.bunsGround.push({ x: 380, t: 0 }); g.r.state = 'forage'; g.r.st = 0; });
+  await expect.poll(() => page.evaluate(() => window.__fight().bunStats.eaten), { timeout: 4000 }).toBe(2);
+  // the crew is down with a bun still in the air: it lands on nothing, and the loss stays a loss
+  await page.evaluate(() => { const g = window.__fight(); g.r.state = 'idle'; g.r.timer = 1e9; g.r.hp = 3; g.r.x = g.p.x + 420; });
+  await page.keyboard.press('j');
+  await page.waitForTimeout(60);
+  await page.evaluate(() => { const g = window.__fight(); g.over = true; g.won = false; });
+  await page.waitForTimeout(900);
+  const end = await page.evaluate(() => { const g = window.__fight(); return { won: g.won, hp: g.r.hp, state: g.r.state }; });
+  expect(end).toEqual({ won: false, hp: 3, state: 'idle' });
+  expect(errors).toEqual([]);
+});
+
+test('versus online: a duel is always on one of the five duel arenas, whatever the round picker says', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 1100, height: 720 } });
+  const A = await ctx.newPage(), B = await ctx.newPage();
+  const errors = []; [A, B].forEach(p => p.on('pageerror', e => errors.push(e.message)));
+  await wireCoop(A, 'a', () => B, {}); await wireCoop(B, 'b', () => A, {});
+  for (const p of [A, B]) {
+    await p.route(/\/rest\/v1\//, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await p.goto(URL);
+    await p.click('#btnVersus'); await p.fill('#vsCode', 'duel'); await p.click('#btnVsJoin');
+    await expect(p.locator('#select')).toBeVisible();
+  }
+  await A.evaluate(() => window.__coopPeer('b')); await B.evaluate(() => window.__coopPeer('a'));
+  // rounds 6-8 are not arenas: the picker will not offer them in a versus room
+  expect(await A.evaluate(() => Array.from(document.getElementById('startLevel').options).filter(o => !o.disabled).map(o => o.value))).toEqual(['0', '1', '2', '3', '4']);
+  await A.evaluate(() => { document.getElementById('startLevel').value = '7'; });   // forced anyway
+  await A.click('.fighter:nth-child(5)'); await A.click('#btnFight');
+  await B.click('.fighter:nth-child(2)'); await B.click('#btnFight');
+  await expect(A.locator('#select')).toBeHidden(); await expect(B.locator('#select')).toBeHidden();
+  for (const p of [A, B]) {
+    const s = await p.evaluate(() => { const g = window.__fight(); return { vs: !!g.vs, level: window.__level(), square: !!g.square, push: !!g.push, buns: !!g.buns }; });
+    expect(s.vs).toBe(true); expect(s.level).toBeLessThanOrEqual(4); expect(s).toMatchObject({ square: false, push: false, buns: false });
+  }
+  expect(errors).toEqual([]);
+  await ctx.close();
+});
+
+test('co-op round 7: the guest\'s letters reach the host in the order they were typed', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 1100, height: 720 } });
+  const A = await ctx.newPage(), B = await ctx.newPage();
+  const errors = []; [A, B].forEach(p => p.on('pageerror', e => errors.push(e.message)));
+  await wireCoop(A, 'a', () => B, {}); await wireCoop(B, 'b', () => A, {});
+  for (const p of [A, B]) {
+    await p.route(/\/rest\/v1\//, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await p.goto(URL);
+    await p.click('#btnCoop'); await p.fill('#coopCode', 'lab'); await p.click('#btnCoopJoin');
+    await expect(p.locator('#select')).toBeVisible();
+  }
+  await A.evaluate(() => window.__coopPeer('b')); await B.evaluate(() => window.__coopPeer('a'));
+  await A.selectOption('#startLevel', '6');
+  await A.click('.fighter:nth-child(5)'); await A.click('#btnFight');
+  await B.click('.fighter:nth-child(2)'); await B.click('#btnFight');
+  await expect(A.locator('#select')).toBeHidden(); await expect(B.locator('#select')).toBeHidden();
+  await B.waitForTimeout(1900);
+  // four letters inside one guest frame: a per-frame set would have kept two of them, in no particular order
+  await B.evaluate(() => { ['ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight'].forEach(k => { window.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true })); window.dispatchEvent(new KeyboardEvent('keyup', { key: k, bubbles: true })); }); });
+  await expect.poll(() => A.evaluate(() => { const u = window.__fight().players[1].pu; return [u.letters, u.slips, u.pos]; }), { timeout: 4000 }).toEqual([4, 0, 4]);
+  await expect.poll(() => B.evaluate(() => { const g = window.__fight(); return g.push.pred ? g.push.pred.pos : -1; }), { timeout: 4000 }).toBe(4);
+  expect(await A.evaluate(() => window.__fight().players[0].pu.letters)).toBe(0);   // and none of them went to the host's own row
   expect(errors).toEqual([]);
   await ctx.close();
 });

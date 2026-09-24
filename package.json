@@ -1,6 +1,6 @@
 {
   "name": "swebits-rumble",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "private": true,
   "description": "Swebits Rumble \u2014 pick a crew member, remove the false-positive rhino.",
   "scripts": {

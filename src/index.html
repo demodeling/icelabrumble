@@ -139,6 +139,12 @@
   .term.blue b{color:#dff7ff;}
   .term.museum{color:#f2d492;border-color:#7a5a2a;background:#120d08;text-shadow:0 0 6px rgba(242,212,146,.4);}
   .term.museum b{color:#fff3d6;}
+  .term.lab{color:#dff1ff;border-color:#5f7890;background:#060b12;text-shadow:0 0 6px rgba(160,210,255,.4);}
+  .term.lab b{color:#ffffff;}
+  .btn.lab{background:#dff1ff;box-shadow:0 5px 0 #5f7890,0 10px 22px rgba(0,0,0,.4);}
+  .term.cafe{color:#ffd9a0;border-color:#8a5a2a;background:#140b05;text-shadow:0 0 6px rgba(255,190,110,.4);}
+  .term.cafe b{color:#fff4e0;}
+  .btn.cafe{background:#ffc98a;box-shadow:0 5px 0 #8a5a2a,0 10px 22px rgba(0,0,0,.4);}
   .btn.museum{background:#f2d492;box-shadow:0 5px 0 #8a6a2a,0 10px 22px rgba(0,0,0,.4);}
   .btn.blue{background:#7fe7ff;box-shadow:0 5px 0 #2a6d8a,0 10px 22px rgba(0,0,0,.4);}
   .check select{font-family:var(--body);font-weight:700;background:#0b1224;color:var(--snow);border:2px solid var(--snow2);border-radius:6px;padding:3px 6px;}
@@ -192,7 +198,7 @@
       <p class="small" id="selMove"></p>
       <p class="small">Tap a fighter to select — tap again to fight.</p>
       <p class="small coop" id="selCoop" hidden></p>
-      <label class="check">Start at <select id="startLevel"><option value="0">Round 1 — Kiruna</option><option value="1">Round 2 — The Wasteland</option><option value="2">Round 3 — The Asteroid</option><option value="3">Round 4 — The Duplicates</option><option value="4">Round 5 — Compositional</option><option value="5">Round 6 — The Square</option></select></label>
+      <label class="check">Start at <select id="startLevel"><option value="0">Round 1 — Kiruna</option><option value="1">Round 2 — The Wasteland</option><option value="2">Round 3 — The Asteroid</option><option value="3">Round 4 — The Duplicates</option><option value="4">Round 5 — Compositional</option><option value="5">Round 6 — The Square</option><option value="6">Round 7 — The Push</option><option value="7">Round 8 — Cinnamon Bun Day</option></select></label>
       <div class="roster" id="roster"></div>
       <div class="controls" id="ctrlHelp"><kbd>←</kbd><kbd>→</kbd> move · <kbd>↑</kbd>/<kbd>space</kbd> jump · <kbd>↓</kbd> duck · <kbd>J</kbd> punch · <kbd>K</kbd> kick · <kbd>L</kbd> special (when the meter is full) · <kbd>Esc</kbd> menu</div>
     </div></div>
@@ -409,7 +415,7 @@ function toggleFS(){
   if (!inFS && fsOn && nativeFS()){ fsOn = false; applyFS(); document.getElementById('fsBtn').innerHTML = '⛶<span> FULLSCREEN</span>'; }
   setTimeout(resize, 50);
 }); });
-document.getElementById('fsBtn').addEventListener('click', function(){ unlockAudio(); toggleFS(); });
+document.getElementById('fsBtn').addEventListener('click', function(){ unlockAudio(); toggleFS(); if (scene === 'fight') blurFocus(); });
 document.getElementById('menuBtn').addEventListener('click', function(){ unlockAudio(); goMenu(); });
 var isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 if (isTouch) { document.getElementById('touch').classList.add('on'); document.getElementById('ctrlHelp').textContent = 'Use the on-screen buttons. Fill the meter with hits to unlock your special.'; }
@@ -557,6 +563,9 @@ var keys = {};
 var KEYMAP = {ArrowLeft:'left', a:'left', A:'left', ArrowRight:'right', d:'right', D:'right', ArrowUp:'jump', w:'jump', W:'jump', ' ':'jump',
               ArrowDown:'down', s:'down', S:'down', j:'punch', J:'punch', z:'punch', Z:'punch', k:'kick', K:'kick', x:'kick', X:'kick', l:'special', L:'special', c:'special', C:'special'};
 var pressed = {};   // edge-triggered
+var typedQ = [];    // round 7: letters in the order they were typed (A C G T)
+var PUSH_LETTER = {ArrowLeft:'A', a:'A', A:'A', ArrowRight:'T', d:'T', D:'T', t:'T', T:'T', ArrowUp:'C', w:'C', W:'C', c:'C', C:'C', ArrowDown:'G', s:'G', S:'G', g:'G', G:'G'};
+var PUSH_PAD = {left: 'A', right: 'T', jump: 'C', down: 'G'};
 // a local versus fight splits the keyboard: player 1 keeps the arrows + J/K/L, player 2 gets W/A/S/D + F/G/H
 var keys2 = {}, pressed2 = {};
 var KEYMAP1 = {ArrowLeft:'left', ArrowRight:'right', ArrowUp:'jump', ' ':'jump', ArrowDown:'down', j:'punch', J:'punch', k:'kick', K:'kick', l:'special', L:'special'};
@@ -573,6 +582,7 @@ window.addEventListener('keydown', function(e){
   var hit;
   if (vsLocal) hit = keyDown(KEYMAP2, keys2, pressed2, e.key) || keyDown(KEYMAP1, keys, pressed, e.key);
   else hit = keyDown(KEYMAP, keys, pressed, e.key);
+  if (G && G.push && scene === 'fight'){ var lt = PUSH_LETTER[e.key]; if (lt){ if (!e.repeat && typedQ.length < 32) typedQ.push(lt); hit = true; } }
   if (hit) e.preventDefault();
 });
 // a release always releases, whatever has focus — a keyup that lands in the name box used to leave the
@@ -586,11 +596,21 @@ window.addEventListener('keyup', function(e){
 });
 window.addEventListener('blur', function(){ clearKeys(); });   // alt-tab away mid-stride and the fighter stops
 function blurFocus(){ var a = document.activeElement; if (a && a !== document.body && a.blur) a.blur(); }
-function clearKeys(){ var k; for (k in keys) keys[k] = false; for (k in keys2) keys2[k] = false; pressed = {}; pressed2 = {}; }
+function clearKeys(){ var k; for (k in keys) keys[k] = false; for (k in keys2) keys2[k] = false; pressed = {}; pressed2 = {}; typedQ.length = 0; }
+var PAD_LABELS = {push: {left: '◀ A', right: '▶ T', jump: '▲ C', down: '▼ G', punch: '', kick: '', special: ''}, buns: {punch: 'THROW', kick: 'LOB', special: 'TRAY'}};
+function setPadLabels(mode){
+  var m = mode ? PAD_LABELS[mode] : null;
+  Array.prototype.forEach.call(document.querySelectorAll('.tb'), function(b){
+    var k = b.getAttribute('data-k'); if (!b.hasAttribute('data-l0')) b.setAttribute('data-l0', b.textContent);
+    var v = (m && m[k] != null) ? m[k] : b.getAttribute('data-l0');
+    b.textContent = v; b.style.visibility = v === '' ? 'hidden' : '';
+  });
+}
 Array.prototype.forEach.call(document.querySelectorAll('.tb'), function(b){
   var k = b.getAttribute('data-k');
   var fingers = {};
-  function down(e){ e.preventDefault(); unlockAudio(); fingers[e.pointerId] = 1; if (!keys[k]) pressed[k] = true; keys[k] = true; b.classList.add('act'); }
+  function down(e){ e.preventDefault(); unlockAudio(); fingers[e.pointerId] = 1; if (!keys[k]) pressed[k] = true; keys[k] = true; b.classList.add('act');
+    if (G && G.push && scene === 'fight' && PUSH_PAD[k] && typedQ.length < 32) typedQ.push(PUSH_PAD[k]); }   // every tap is a letter, even a second finger on the same pad
   function up(e){ e.preventDefault(); delete fingers[e.pointerId]; if (Object.keys(fingers).length) return; keys[k] = false; b.classList.remove('act'); }
   b.addEventListener('pointerdown', down); b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up); b.addEventListener('pointerleave', up);
 });
@@ -687,6 +707,8 @@ function drawSpace(t){
 }
 function drawBackground(t){
   if (LEVELS[LEVEL].theme === 'museum'){ drawMuseum(t); return; }
+  if (LEVELS[LEVEL].theme === 'lab'){ drawLab(t); return; }
+  if (LEVELS[LEVEL].theme === 'cafe'){ drawCafe(t); return; }
   if (LEVELS[LEVEL].theme === 'space'){ drawSpace(t); return; }
   if (LEVELS[LEVEL].theme === 'wasteland'){ drawWasteland(t); return; }
   if (!skyGrad){ skyGrad = ctx.createLinearGradient(0, 0, 0, 360); skyGrad.addColorStop(0, '#0c1434'); skyGrad.addColorStop(.6, '#425a96'); skyGrad.addColorStop(1, '#f0b282'); }
@@ -823,6 +845,110 @@ function drawMuseum(t){
   ctx.strokeStyle = 'rgba(0,0,0,.28)'; ctx.lineWidth = 6; roundRect(X0 + 3, Y0 + 3, W - 6, H - 6, R - 3); ctx.stroke();
   ctx.strokeStyle = '#b8ab92'; ctx.lineWidth = 2; roundRect(X0 - 8, Y0 - 8, W + 16, H + 16, R + 8); ctx.stroke();
 }
+// round 7: a sequencing lab. Static art (it also draws on the menus, where there is no G)
+var LAB_TRACE = {A: '#2bb24c', C: '#2a7de1', G: '#e0c020', T: '#e0302a'};
+function drawLab(t){
+  var wg = ctx.createLinearGradient(0, 0, 0, 412); wg.addColorStop(0, '#e3e9f0'); wg.addColorStop(1, '#b7c2d0');
+  ctx.fillStyle = wg; ctx.fillRect(0, 0, LW, 412);
+  ctx.fillStyle = 'rgba(80,100,130,.12)'; for (var tx = 0; tx < LW; tx += 80) ctx.fillRect(tx, 0, 1, 364);
+  // ceiling lights
+  [[250], [710]].forEach(function(l){ var lg = ctx.createRadialGradient(l[0], 10, 10, l[0], 60, 260); lg.addColorStop(0, 'rgba(255,255,255,.75)'); lg.addColorStop(1, 'rgba(255,255,255,0)'); ctx.fillStyle = lg; ctx.fillRect(l[0] - 270, 0, 540, 300); ctx.fillStyle = '#fbfdff'; ctx.fillRect(l[0] - 130, 4, 260, 9); ctx.fillStyle = '#9aa8b8'; ctx.fillRect(l[0] - 130, 13, 260, 2); });
+  // the wall screen: a capillary trace with stutter peaks in front of every real one
+  var mx = 548, my = 188, mw = 360, mh = 150;
+  ctx.fillStyle = '#26303c'; roundRect(mx - 10, my - 10, mw + 20, mh + 34, 8); ctx.fill();
+  ctx.fillStyle = '#0b1320'; ctx.fillRect(mx, my, mw, mh);
+  ctx.strokeStyle = 'rgba(140,170,210,.14)'; ctx.lineWidth = 1; ctx.beginPath(); for (var gx = mx; gx <= mx + mw; gx += 30){ ctx.moveTo(gx, my); ctx.lineTo(gx, my + mh); } for (var gy = my; gy <= my + mh; gy += 30){ ctx.moveTo(mx, gy); ctx.lineTo(mx + mw, gy); } ctx.stroke();
+  var peaks = [['A', 40, .35], ['T', 62, .9], ['A', 104, .3], ['T', 126, .95], ['A', 168, .28], ['T', 190, .85], ['C', 236, .5], ['G', 262, .7], ['A', 300, .4], ['T', 330, .6]];
+  ['A', 'C', 'G', 'T'].forEach(function(b){
+    ctx.strokeStyle = LAB_TRACE[b]; ctx.lineWidth = 2; ctx.beginPath();
+    for (var x = 0; x <= mw; x += 3){
+      var y = 0; peaks.forEach(function(pk){ if (pk[0] === b){ var d = (x - pk[1]) / 7; y += pk[2] * Math.exp(-d * d); } });
+      var yy = my + mh - 8 - y * (mh - 24); if (x === 0) ctx.moveTo(mx + x, yy); else ctx.lineTo(mx + x, yy);
+    }
+    ctx.stroke();
+  });
+  ctx.fillStyle = '#ffd166'; ctx.font = '900 10px Nunito, sans-serif'; ctx.textAlign = 'center';
+  [40, 104, 168].forEach(function(px){ ctx.fillText('stutter', mx + px, my + mh - 8 - .42 * (mh - 24) - 6); });
+  ctx.fillStyle = '#c9d3e6'; ctx.font = '900 11px Nunito, sans-serif'; ctx.fillText('READ 7 · (AT)n · REPEAT COUNT: ?', mx + mw / 2, my + mh + 14);
+  // blinking cursor on the screen
+  if (Math.floor(t * 2) % 2 === 0){ ctx.fillStyle = '#6fe3a0'; ctx.fillRect(mx + mw - 18, my + 8, 8, 12); }
+  ctx.textAlign = 'left';
+  // a poster by the door
+  ctx.fillStyle = '#fbfcfe'; ctx.fillRect(62, 150, 150, 104); ctx.strokeStyle = '#8a98aa'; ctx.lineWidth = 2; ctx.strokeRect(62, 150, 150, 104);
+  ctx.fillStyle = '#c8262c'; ctx.font = '900 14px Nunito, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('MIND THE REPEAT', 137, 172);
+  ctx.font = '900 13px "Courier New", monospace'; var rep7 = 'ATATATATAT'; for (var ri = 0; ri < rep7.length; ri++){ ctx.fillStyle = LAB_TRACE[rep7[ri]]; ctx.fillText(rep7[ri], 88 + ri * 11, 196); }
+  ctx.fillStyle = '#3a4a5e'; ctx.font = '700 10px Nunito, sans-serif'; ctx.fillText('the polymerase loses count', 137, 218); ctx.fillText('one unit more, one unit less', 137, 232); ctx.fillText('= a variant that is not there', 137, 246);
+  ctx.textAlign = 'left';
+  // the bench along the back wall
+  ctx.fillStyle = '#eef2f7'; ctx.fillRect(0, 356, LW, 12); ctx.fillStyle = '#7d8a9a'; ctx.fillRect(0, 368, LW, 6);
+  ctx.fillStyle = '#c5ced9'; ctx.fillRect(0, 374, LW, 38); ctx.strokeStyle = 'rgba(60,80,100,.35)'; ctx.lineWidth = 2; for (var cb = 0; cb < LW; cb += 120){ ctx.strokeRect(cb + 6, 378, 108, 30); ctx.fillStyle = '#8a98aa'; ctx.fillRect(cb + 52, 384, 16, 3); }
+  // the sequencer
+  ctx.fillStyle = '#f7f9fc'; roundRect(250, 262, 170, 94, 10); ctx.fill(); ctx.strokeStyle = '#8a98aa'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = '#1c2a3a'; ctx.fillRect(266, 276, 70, 44); ctx.fillStyle = '#6ed2ff'; ctx.fillRect(272, 282, 58 * (.5 + .5 * Math.sin(t * .7)), 5);
+  ctx.fillStyle = '#9fb0c4'; ctx.fillRect(350, 280, 56, 8); ctx.fillStyle = Math.floor(t * 1.5) % 2 ? '#6fe3a0' : '#2e5a3a'; ctx.beginPath(); ctx.arc(398, 334, 4, 0, 6.283); ctx.fill();
+  ctx.fillStyle = '#3a4a5e'; ctx.font = '900 9px Nunito, sans-serif'; ctx.fillText('SEQ-7', 352, 304);
+  // tubes and a pipette
+  for (var tb = 0; tb < 8; tb++){ ctx.fillStyle = 'rgba(220,235,250,.9)'; ctx.fillRect(452 + tb * 11, 330, 7, 26); ctx.fillStyle = ['#2bb24c', '#2a7de1', '#e0c020', '#e0302a'][tb % 4]; ctx.fillRect(451 + tb * 11, 326, 9, 5); }
+  ctx.fillStyle = '#8a98aa'; ctx.fillRect(446, 354, 96, 4);
+  ctx.save(); ctx.translate(180, 356); ctx.rotate(-.35); ctx.fillStyle = '#e8edf3'; ctx.fillRect(-6, -70, 12, 58); ctx.fillStyle = '#2a7de1'; ctx.fillRect(-7, -82, 14, 12); ctx.fillStyle = '#b7c2d0'; ctx.beginPath(); ctx.moveTo(-4, -12); ctx.lineTo(4, -12); ctx.lineTo(0, 6); ctx.closePath(); ctx.fill(); ctx.restore();
+  // the floor: grey vinyl, and hazard tape at both edges — the lines you get pushed over
+  var fg = ctx.createLinearGradient(0, 412, 0, LH); fg.addColorStop(0, '#cfd6de'); fg.addColorStop(1, '#98a2ae'); ctx.fillStyle = fg; ctx.fillRect(0, 412, LW, LH - 412);
+  ctx.strokeStyle = 'rgba(80,95,115,.25)'; ctx.lineWidth = 1; ctx.beginPath(); for (var fl = 0; fl < 12; fl++){ var fy = 430 + fl * 16; ctx.moveTo(0, fy); ctx.lineTo(LW, fy); } for (var fx0 = -200; fx0 < LW + 200; fx0 += 90){ ctx.moveTo(fx0, 412); ctx.lineTo(fx0 + (fx0 - LW / 2) * .5, LH); } ctx.stroke();
+  [[0, 28], [LW - 28, 28]].forEach(function(h){ for (var hy = 412; hy < LH; hy += 16){ ctx.fillStyle = ((hy - 412) / 16) % 2 ? '#1a141e' : '#f2c21b'; ctx.fillRect(h[0], hy, h[1], 16); } });
+}
+// round 8: a cinnamon bun, drawn once into a sprite (no per-bun gradients at 30 buns a second)
+function drawBun(g, cx, cy, R){
+  g.fillStyle = '#1a141e'; g.beginPath(); g.arc(cx, cy, R + 2.5, 0, 6.283); g.fill();
+  var bg = g.createRadialGradient(cx - R * .3, cy - R * .35, R * .15, cx, cy, R); bg.addColorStop(0, '#f0b765'); bg.addColorStop(1, '#a8621f');
+  g.fillStyle = bg; g.beginPath(); g.arc(cx, cy, R, 0, 6.283); g.fill();
+  g.strokeStyle = '#6e3610'; g.lineWidth = Math.max(1.5, R * .17); g.lineCap = 'round'; g.beginPath();
+  for (var a = 0; a <= 13.5; a += .2){ var rr = R * (.08 + .74 * a / 13.5), x = cx + rr * Math.cos(a), y = cy + rr * Math.sin(a); if (a === 0) g.moveTo(x, y); else g.lineTo(x, y); }
+  g.stroke(); g.lineCap = 'butt';
+  g.fillStyle = '#fbf7ee'; [[.3, -.42], [-.45, .1], [.08, .46], [.52, .18], [-.18, -.58], [-.52, -.3], [.36, .56], [-.3, .5]].forEach(function(q){ g.beginPath(); g.arc(cx + q[0] * R, cy + q[1] * R, Math.max(1, R * .09), 0, 6.283); g.fill(); });
+}
+var BUN_IMG = (function(){ var c = document.createElement('canvas'); c.width = c.height = 64; drawBun(c.getContext('2d'), 32, 32, 27); return c; })();
+function drawCafe(t){
+  // autumn afternoon over Gamla stan-ish facades
+  var sg = ctx.createLinearGradient(0, 0, 0, 300); sg.addColorStop(0, '#7fa7d6'); sg.addColorStop(1, '#f3c79a');
+  ctx.fillStyle = sg; ctx.fillRect(0, 0, LW, 300);
+  var fac = [[-20, 150, '#c9793e'], [150, 110, '#e2b457'], [330, 80, '#b8513a'], [700, 120, '#d99a4e'], [860, 140, '#9c5b3c']];
+  fac.forEach(function(f, i){ var w = i === 2 ? 370 : 180; ctx.fillStyle = f[2]; ctx.fillRect(f[0], f[1], w, 330 - f[1] + 90);
+    ctx.fillStyle = 'rgba(0,0,0,.12)'; ctx.fillRect(f[0], f[1], w, 8);
+    ctx.fillStyle = '#2a2230'; ctx.beginPath(); ctx.moveTo(f[0] - 6, f[1]); ctx.lineTo(f[0] + w / 2, f[1] - 34); ctx.lineTo(f[0] + w + 6, f[1]); ctx.closePath(); ctx.fill();
+    if (i !== 2) for (var wy = f[1] + 26; wy < 300; wy += 58) for (var wx = f[0] + 26; wx < f[0] + w - 40; wx += 60){ ctx.fillStyle = '#f7ecd0'; ctx.fillRect(wx, wy, 30, 38); ctx.fillStyle = '#5a7a9a'; ctx.fillRect(wx + 3, wy + 3, 24, 32); ctx.fillStyle = '#f7ecd0'; ctx.fillRect(wx + 14, wy + 3, 2, 32); ctx.fillRect(wx + 3, wy + 17, 24, 2); } });
+  // the konditori: striped awning, gold letters, buns in the window
+  ctx.fillStyle = '#3a2418'; ctx.fillRect(372, 118, 286, 36); ctx.strokeStyle = '#c9a36a'; ctx.lineWidth = 2; ctx.strokeRect(376, 122, 278, 28);
+  ctx.fillStyle = '#e8c070'; ctx.font = '700 24px Georgia, "Times New Roman", serif'; ctx.textAlign = 'center'; ctx.fillText('KONDITORI', 515, 145);
+  ctx.fillStyle = '#3a2418'; ctx.fillRect(360, 180, 310, 232);
+  for (var aw = 0; aw < 10; aw++){ ctx.fillStyle = aw % 2 ? '#fdfaf2' : '#2f6fb0'; ctx.beginPath(); ctx.moveTo(350 + aw * 33, 158); ctx.lineTo(383 + aw * 33, 158); ctx.lineTo(383 + aw * 33, 190); ctx.quadraticCurveTo(366 + aw * 33, 202, 350 + aw * 33, 190); ctx.closePath(); ctx.fill(); }
+  ctx.fillStyle = '#b98a56'; ctx.fillRect(380, 214, 190, 130); ctx.fillStyle = '#fdf1d8'; ctx.fillRect(386, 220, 178, 118);
+  var wgl = ctx.createLinearGradient(386, 220, 564, 338); wgl.addColorStop(0, 'rgba(255,255,255,.35)'); wgl.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = '#c9a36a'; ctx.fillRect(392, 292, 166, 6); ctx.fillRect(392, 330, 166, 5);
+  for (var b1 = 0; b1 < 6; b1++){ ctx.drawImage(BUN_IMG, 398 + b1 * 26, 270, 24, 24); ctx.drawImage(BUN_IMG, 404 + b1 * 25, 308, 22, 22); }
+  ctx.fillStyle = wgl; ctx.fillRect(386, 220, 178, 118);
+  ctx.fillStyle = '#6e3a1c'; ctx.fillRect(588, 214, 64, 198); ctx.fillStyle = '#8a5028'; ctx.fillRect(594, 220, 52, 186); ctx.fillStyle = '#e8c070'; ctx.beginPath(); ctx.arc(636, 318, 4, 0, 6.283); ctx.fill();
+  ctx.fillStyle = '#6e3a1c'; ctx.font = 'italic 700 14px Georgia, "Times New Roman", serif'; ctx.fillText('Bageri & Café', 475, 250);
+  // bunting in the flag's colours
+  ctx.strokeStyle = '#3a2a1e'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0, 60); ctx.quadraticCurveTo(LW / 2, 100, LW, 56); ctx.stroke();
+  for (var bn = 0; bn < 24; bn++){ var bx = 20 + bn * 40, by = 60 + 40 * (1 - Math.pow((bx - LW / 2) / (LW / 2), 2)) * .95 - (bx / LW) * 4;
+    ctx.fillStyle = bn % 2 ? '#fecc02' : '#006aa7'; ctx.beginPath(); ctx.moveTo(bx - 11, by); ctx.lineTo(bx + 11, by); ctx.lineTo(bx, by + 20 + 2 * Math.sin(t * 2 + bn)); ctx.closePath(); ctx.fill(); }
+  // a street lamp and a tree turning
+  ctx.fillStyle = '#2a2632'; ctx.fillRect(116, 190, 7, 222); ctx.fillRect(104, 186, 32, 8); ctx.fillStyle = '#ffe9b0'; ctx.beginPath(); ctx.arc(120, 180, 10, 0, 6.283); ctx.fill();
+  ctx.fillStyle = '#4a3226'; ctx.fillRect(820, 250, 12, 162);
+  [['#d9822b', 826, 210, 62], ['#c0392b', 792, 236, 40], ['#e6b422', 862, 232, 44], ['#b8612a', 830, 250, 46]].forEach(function(c){ ctx.fillStyle = c[0]; ctx.beginPath(); ctx.arc(c[1], c[2], c[3], 0, 6.283); ctx.fill(); });
+  // the chalkboard on the pavement
+  ctx.fillStyle = '#6e4a2a'; ctx.beginPath(); ctx.moveTo(686, 412); ctx.lineTo(704, 300); ctx.lineTo(774, 300); ctx.lineTo(792, 412); ctx.lineTo(782, 412); ctx.lineTo(766, 312); ctx.lineTo(712, 312); ctx.lineTo(696, 412); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#1f2a24'; ctx.fillRect(708, 312, 62, 78);
+  ctx.fillStyle = '#f2f2ea'; ctx.font = '700 11px "Comic Sans MS", "Chalkboard SE", cursive'; ctx.fillText('4 OKT', 739, 330); ctx.font = '700 8px "Comic Sans MS", "Chalkboard SE", cursive'; ctx.fillText('KANELBULLENS', 739, 346); ctx.fillText('DAG', 739, 357); ctx.fillStyle = '#ffd166'; ctx.fillText('2 för 30 kr', 739, 377);
+  ctx.textAlign = 'left';
+  // a bicycle against the wall
+  ctx.strokeStyle = '#2a2632'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(236, 390, 20, 0, 6.283); ctx.moveTo(310, 390); ctx.arc(290, 390, 20, 0, 6.283); ctx.moveTo(236, 390); ctx.lineTo(262, 358); ctx.lineTo(290, 390); ctx.moveTo(262, 358); ctx.lineTo(284, 358); ctx.lineTo(290, 390); ctx.moveTo(256, 350); ctx.lineTo(268, 350); ctx.moveTo(284, 358); ctx.lineTo(288, 346); ctx.stroke();
+  // cobbles
+  var cg = ctx.createLinearGradient(0, 412, 0, LH); cg.addColorStop(0, '#8d8278'); cg.addColorStop(1, '#5d544c'); ctx.fillStyle = cg; ctx.fillRect(0, 412, LW, LH - 412);
+  ctx.fillStyle = '#a79a8c'; ctx.fillRect(0, 406, LW, 8);
+  for (var cy = 0; cy < 12; cy++){ var yy = 424 + cy * 15; for (var cx = (cy % 2) * 18; cx < LW + 30; cx += 36){ ctx.fillStyle = (cx + cy * 7) % 5 === 0 ? '#9a8e82' : '#7d7268'; ctx.beginPath(); ctx.ellipse(cx, yy, 15, 6 + cy * .3, 0, 0, 6.283); ctx.fill(); } }
+  ctx.fillStyle = 'rgba(0,0,0,.16)'; ctx.fillRect(0, 412, LW, 10);
+}
 function drawTree(x, y, size, depth, seed){
   var r = seed;
   function rand(){ r = (r * 9301 + 49297) % 233280; return r / 233280; }
@@ -942,7 +1068,8 @@ var POSE = {
   hurt:   {crouch:.15, lean:-.35, lh:-20, lk:20, rh:20, rk:20, la:-60, le:40, ra:-50, re:30},
   ko:     {crouch:.9, lean:1.3, lh:80, lk:20, rh:60, rk:10, la:120, le:20, ra:100, re:30},
   win:    {crouch:0, lean:-.08, lh:14, lk:0, rh:-14, rk:0, la:172, le:8, ra:168, re:8},
-  grab:   {crouch:.3, lean:.35, lh:40, lk:40, rh:-30, rk:30, la:80, le:20, ra:80, re:20}
+  grab:   {crouch:.3, lean:.35, lh:40, lk:40, rh:-30, rk:30, la:80, le:20, ra:80, re:20},
+  push:   {crouch:.35, lean:.6, lh:55, lk:55, rh:-38, rk:18, la:88, le:12, ra:82, re:22}
 };
 function mixPose(a, b, u){ var o = {}; for (var k in a) o[k] = lerp(a[k], b[k], u); return o; }
 function fighterDraw(f, t){
@@ -990,7 +1117,7 @@ function fighterDrawInner(f, t){
   seg(legNear, legw, pants); foot(legNear[2], fac, '#1c1a1c');
   // neck + head
   ctx.strokeStyle = '#e8bea5'; ctx.lineWidth = hr * .8; ctx.beginPath(); ctx.moveTo(neck[0], neck[1]); ctx.lineTo(hc[0], hc[1] + hr * .5); ctx.stroke();
-  var mouthNow = f.state === 'hurt' ? 'open' : (f.state === 'special' || f.state === 'punch' || f.state === 'kick') ? 'grr' : (f.state === 'win' ? 'open' : null);
+  var mouthNow = f.state === 'hurt' ? 'open' : (f.state === 'special' || f.state === 'punch' || f.state === 'kick' || f.state === 'push') ? 'grr' : (f.state === 'win' ? 'open' : null);
   if (f.flash > 0) ctx.globalAlpha = .5;
   drawCutoutFace(ctx, hc[0], hc[1] - hr * .1, hr * 2.9, LOOK[f.def.face], fac, {mouth: mouthNow, angry: f.state === 'special'});
   ctx.globalAlpha = 1;
@@ -1055,7 +1182,21 @@ var LEVELS = [
    win: {big: 'RELABELLED', title: 'VOUCHER SPECIMEN CORRECTED', status: 'RELABELLED',
          lesson: 'every species name in a reference database traces back to a museum specimen. Label one jar wrong and every read that matches it inherits the wrong name — a false positive that looks like a true positive from every corner of the matrix.',
          next: 'the sequencer starts to <b>stutter</b>. Round 7.'},
-   card: "> ROUND 6 — THE SQUARE\n> reference specimen: <b>MISLABELLED</b>\n\nEvery species name in a reference database goes back to a museum specimen. Give one jar the wrong label and every read that matches it gets the wrong name.\n\nThis fight runs round the walls of the exhibition hall: floor, wall, ceiling, wall. You stand on whichever side your feet are on.\n\n> → always walks you anticlockwise, ← clockwise\n> the rhino follows you round the corners\n> each corner is one cell of the confusion matrix"}
+   card: "> ROUND 6 — THE SQUARE\n> reference specimen: <b>MISLABELLED</b>\n\nEvery species name in a reference database goes back to a museum specimen. Give one jar the wrong label and every read that matches it gets the wrong name.\n\nThis fight runs round the walls of the exhibition hall: floor, wall, ceiling, wall. You stand on whichever side your feet are on.\n\n> → always walks you anticlockwise, ← clockwise\n> the rhino follows you round the corners\n> each corner is one cell of the confusion matrix"},
+  {name: 'ROUND 7', theme: 'lab', push: true, calm: true, rhino: {hp: 500, mutant: false}, hud: 'THE STUTTER · tandem-repeat slippage', read: 'Rhinoceros (tandem-repeat stutter)',
+   next: 'NEXT ROUND: THE PUSH', cardStyle: 'lab', puff: '#e8edf3', start: 'PUSH!',
+   lose: {title: 'THE STUTTER WINS — THE RHINO STAYS IN THE DATASET', tip: 'A = ←, T = →, C = ↑, G = ↓. A slip shoves you back and starts the unit over — slow and right beats fast and wrong.'},
+   win: {big: 'PUSHED OFF', title: 'REPEAT COUNTED RIGHT', status: 'STUTTER RESOLVED',
+         lesson: 'tandem repeats are where the polymerase stutters: it loses count and adds or drops a unit, and a stutter read can pass for a real variant — or for a different species. Count the repeat right and the false match falls apart.',
+         next: 'it is <b>Kanelbullens dag</b>, and the bakery next door is in the sample. Round 8.'},
+   card: "> ROUND 7 — THE PUSH\n> read: <b>TANDEM REPEAT</b>\n\nWhere DNA repeats itself — ATATAT, CAGCAGCAG — the polymerase slips. It loses count, adds or drops a unit, and the stutter reads like a real variant: a match to something that is not there.\n\nNo punching this round. You and the rhino are locked horn to hands. Type the repeat, one arrow per letter, and every right letter shoves it back.\n\n> A = ←   T = →   C = ↑   G = ↓   (the letter keys work too)\n> a wrong letter is a slip: it shoves you back and the unit starts over\n> push it off the right edge before it pushes you off the left"},
+  {name: 'ROUND 8', theme: 'cafe', buns: true, calm: true, rhino: {hp: 480, mutant: false}, hud: 'THE BAKERY RHINO · food contaminant', read: 'Rhinoceros (bakery contaminant)',
+   pacifist: 90, next: 'NEXT ROUND: CINNAMON BUN DAY', cardStyle: 'cafe', puff: '#f3e3c8', start: 'FIKA!',
+   tip: 'only buns hurt it: <b>J</b> throws, <b>K</b> lobs one high, <b>L</b> sends the whole tray. A bun that misses lands on the cobbles and it eats it — walk over it first and it fills your tray.',
+   win: {big: 'FIKA!', title: 'BAKERY CONTAMINANT REMOVED', status: 'EXCLUDED',
+         lesson: 'food is a classic eDNA contaminant. Wheat, yeast, cinnamon and cardamom from the bakery next door drift into the sampler, and a loose database match calls the crumbs wildlife. Know what is in the air around your sampler before you believe the rhino.',
+         next: ''},
+   card: "> ROUND 8 — CINNAMON BUN DAY\n> 4 October: <b>KANELBULLENS DAG</b>\n\nThe sampler stands next to a konditori. Wheat, yeast, cinnamon, cardamom — everything the bakery breathes out ends up in the sample, and a loose database match turns the crumbs into wildlife.\n\nToday fists, kicks and specials do nothing. Only cinnamon buns hurt the rhino.\n\n> J throws a bun, K lobs one high, L (full meter) sends the whole tray\n> a bun that misses lands on the cobbles — the rhino eats it and heals\n> walk over a dropped bun first and it fills your tray instead"}
 ];
 // ------------------------------------------------------------ round 6: the square
 // The four sides of the room are one flat track, unrolled. Every entity keeps its logical x (distance along the track)
@@ -1115,6 +1256,76 @@ function sqPawMark(r){
   ctx.font = '400 40px Bangers, Impact, sans-serif'; ctx.fillStyle = '#ff5a3c'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 5; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.strokeText('!', q[0], q[1]); ctx.fillText('!', q[0], q[1]); ctx.textAlign = 'left'; ctx.textBaseline = 'top';
 }
+// ------------------------------------------------------------ round 7: the push
+// A shoving match, horn to hands, at one contact point (G.push.x). Every player types the current repeat; each right
+// letter shoves the rhino back, a finished unit and a finished repeat shove harder, and a slip (a wrong letter) shoves
+// you back, restarts the unit and locks you out for a moment. The rhino leans in harder over time. All geometry is here
+// so updatePush, the tug-of-war bar and the tests agree.
+var PUSH = {start: 400, step: 5.5, unitB: 2, stageB: 12, slip: 16, lock: .3, stand: 52, gap: 40, cap: 6};
+PUSH.win = LW - 40 - 2.55 * RS;   // the rhino's body centre reaches the right edge: over it goes
+var PUSH_STAGES = [['AT', 3], ['AAT', 3], ['ACG', 2], ['CAG', 3], ['GATA', 2], ['ACGT', 2]];   // CAG: the Huntington repeat; GATA: a forensic STR
+var PUSH_COL = {A: '#78ffa0', C: '#6ed2ff', G: '#ffdc6e', T: '#ff82be'}, PUSH_ARROW = {A: '←', T: '→', C: '↑', G: '↓'};
+function pushSeq(stage){ var st = PUSH_STAGES[stage % PUSH_STAGES.length], seq = ''; for (var i = 0; i < st[1]; i++) seq += st[0]; return {unit: st[0], seq: seq}; }
+function pushLoseX(){ return 40 + PUSH.stand + PUSH.gap * (G.players.length - 1); }   // the rearmost fighter reaches the left edge
+function mkPushState(){ return {stage: 0, pos: 0, lock: 0, slipT: 0, okT: 0, slips: 0, units: 0, letters: 0, lastT: -9, ack: 0}; }
+// one typed letter against a player's place in the repeat: 'ok', 'unit' (a unit finished), 'stage' (the repeat finished) or 'slip'
+function pushTry(u, letter){
+  var q = pushSeq(u.stage), L = q.unit.length;
+  if (u.pos >= q.seq.length) u.pos = 0;
+  if (letter !== q.seq.charAt(u.pos)){ u.pos -= u.pos % L; return 'slip'; }
+  u.pos++;
+  if (u.pos >= q.seq.length){ u.stage++; u.pos = 0; return 'stage'; }
+  return u.pos % L === 0 ? 'unit' : 'ok';
+}
+function pushPose(p){
+  var u = p.pu, o = mixPose(POSE.push, POSE.grab, .25 * (.5 + .5 * Math.sin(G.t * 9 + (p === G.p ? 0 : 1.7))));   // straining
+  if (u && u.okT > 0) o = mixPose(o, POSE.punch, .4 * u.okT / .12);                                             // a shove
+  if (u && u.slipT > 0) o = mixPose(o, POSE.hurt, .7 * Math.min(1, u.slipT / .35));                             // a slip
+  return o;
+}
+function updatePush(dt){
+  var pu = G.push, r = G.r;
+  if (!G.over && G.elapsed >= 1.6){
+    // the rhino digs in near its own edge and leans a little harder over time (capped), so steady, correct typing
+    // always gets there: ~45 s at 2 letters a second, ~15 s at 4. Two typists face twice the weight.
+    var active = 0, near = clamp((pu.x - pushLoseX()) / (PUSH.win - pushLoseX()), 0, 1);
+    G.players.forEach(function(q){ if (q.state !== 'ko' && G.elapsed - q.pu.lastT < 2.5) active++; });
+    pu.pressure = (8 + 3 * near + Math.min(4, .04 * (G.elapsed - 1.6))) * Math.max(1, active);
+    pu.x -= pu.pressure * dt;
+    G.players.forEach(function(q){
+      var u = q.pu, typed = q.inp.typed, used = 0;
+      if (u.lock > 0) u.lock -= dt; if (u.slipT > 0) u.slipT -= dt; if (u.okT > 0) u.okT -= dt;
+      if (q.state === 'ko' || !typed) return;
+      while (typed.length && used < PUSH.cap){
+        var e = typed.shift(), L = typeof e === 'string' ? e : e.l; used++;
+        if (typeof e === 'object') u.ack = e.i + 1;
+        if (u.lock > 0) continue;   // still reeling from a slip: the letter is lost
+        var res = pushTry(u, L); u.lastT = G.elapsed;
+        if (res === 'slip'){
+          u.slips++; u.lock = PUSH.lock; u.slipT = .35; pu.x -= PUSH.slip; r.squash = .06; shake = Math.max(shake, 6); sfx('hurt');
+          fx.push({x: pu.x - 20, y: GROUND - 150, t: 0, life: .45, r: 38, label: 'SLIP!', big: false, red: true});
+          while (typed.length){ var e2 = typed.shift(); if (typeof e2 === 'object') u.ack = e2.i + 1; }   // a chord costs one slip, not four
+          break;
+        }
+        q.hitsLanded++; u.letters++; u.okT = .12; pu.x += PUSH.step; sfx('pluck', {f: {A: 440, C: 523, G: 587, T: 659}[L]});
+        if (res !== 'ok'){ u.units++; pu.x += PUSH.unitB * pushSeq(u.stage - (res === 'stage' ? 1 : 0)).unit.length; }
+        if (res === 'stage'){ pu.x += PUSH.stageB; sfx('chime', {f: 1568}); fx.push({x: pu.x + 30, y: GROUND - 230, t: 0, life: .8, r: 70, label: 'REPEAT CLEARED!', big: true}); }
+      }
+    });
+    if (pu.x >= PUSH.win){ pu.x = PUSH.win; rhinoKO(r); }
+    else if (pu.x <= pushLoseX()){ pu.x = pushLoseX(); G.players.forEach(function(q){ if (q.state !== 'ko'){ q.killedBy = 'pushed'; playerKO(q); } }); }
+  }
+  else G.players.forEach(function(q){   // during the banner and after the end, letters are read and dropped (never saved up for later)
+    var typed = q.inp.typed; while (typed && typed.length){ var e3 = typed.shift(); if (typeof e3 === 'object') q.pu.ack = e3.i + 1; } });
+  if (G.over && !G.won){ pu.endT = (pu.endT || 0) + dt; if (pu.endT < 1.4) pu.x -= 230 * dt; }   // shoved off together
+  // everything stands where the contact point says, set last and outside every clamp
+  if (r.state === 'shove'){
+    r.facing = -1; r.x = pu.x + 2.55 * rs(r); r.st += dt; if (r.flash > 0) r.flash -= dt; r.squash = Math.max(0, (r.squash || 0) - dt * .4);
+    r.run = .55; r.phase += dt * (6 + (pu.pressure || 11) * .25); r.head = lerp(r.head || 0, -.18 + .05 * Math.sin(G.t * 7), Math.min(1, dt * 6)); r.tilt = .05; r.tail = .12 * Math.sin(G.t * 1.4);
+    r.angry = (pu.pressure || 0) > 11.5 * Math.max(1, G.players.length - 1);
+  }
+  G.players.forEach(function(q, i){ q.x = pu.x - PUSH.stand - PUSH.gap * i; q.y = 0; q.vy = 0; q.facing = 1; });
+}
 // in the square everything is smaller (a rhino has to fit on a wall), and jumps shrink with the rig: same airtime,
 // lower arc, so the dodge windows (which already scale with size) still work
 function jumpK(e){ return (G && G.square) ? (e.size || 1) : 1; }
@@ -1159,7 +1370,7 @@ function mkVsRhino(x, facing){
           cx0: 0, vx: 0, trampled: {}, skin: null, size: 1, inp: {keys: {}, pressed: {}}};
 }
 function newVsFight(idA, idB){
-  vsPicks = [idA, idB];
+  vsPicks = [idA, idB]; setPadLabels(null);
   var lv = LEVELS[LEVEL];
   AW = lv.width || LW;                                   // a duel arena can be wider than the screen; the camera follows both sides
   var players = [], rhinos = [], sides = [];
@@ -1300,6 +1511,9 @@ function newFight(def, def2){
        square: !!lv.square};
   // both co-op pages run this, so both draw the room and the smaller rigs; nothing else may switch the square on
   if (G.square) G.players.concat(rhinos).forEach(function(c){ c.size = SQ.size; });
+  if (lv.buns){ G.buns = true; G.bunsFly = []; G.bunsGround = []; G.bunStats = {thrown: 0, hit: 0, eaten: 0, picked: 0}; }
+  if (lv.push){ G.push = {x: PUSH.start, pressure: 0, endT: 0, pred: null}; G.players.forEach(function(q){ q.pu = mkPushState(); q.state = 'push'; }); rhinos[0].state = 'shove'; }
+  setPadLabels(G.push ? 'push' : (G.buns ? 'buns' : null));
   if (G.comp){ var chars = G.players.concat(rhinos); G.compN = chars.length; chars.forEach(function(c){ c.share = 1 / chars.length; c.size = 1; }); compSync(); }
   camX = clamp(p.x - LW / 2, 0, AW - LW);
   clearKeys(); blurFocus();
@@ -1312,6 +1526,59 @@ function startAttack(p, kind){
   if (kind === 'punch'){ p.alt = !p.alt; sfx('whoosh'); }
   if (kind === 'kick') sfx('whoosh');
   if (kind === 'special'){ if (p.def.special.kind === 'godzilla'){ sfx('roar'); sfx('drum'); } else if (p.def.special.kind === 'babysit'){ sfx('lullaby'); } else { sfx('shout'); sfx('whoosh'); } p.meter = 0; p.scale = 1; var sk = p.def.special.kind; if (sk === 'fly' || sk === 'upper'){ p.vy = (sk === 'upper' ? 620 : 470) * jumpK(p); p.y = Math.max(p.y, 1); } if (sk === 'fly' || sk === 'dash' || sk === 'grab'){ p.dashDir = p.facing; } if (sk === 'fly') slowmo = 0.9; }
+}
+// round 8: the only damage is a cinnamon bun. A throw is its own state (never startAttack, so no fist, foot or special
+// test can run), spends the tray's meter itself, and releases one bun (or five) at a fixed point in the swing.
+// flat: ~570 px, chest high; lob: over a close rhino's head, lands ~490 px out; tray: a fan of five
+var BUN = {flat: {vx: 680, vh: 130, g: 900, dmg: 7, cd: .3, label: 'BULLE!'}, lob: {vx: 380, vh: 640, g: 1100, dmg: 12, cd: .42, label: 'KANELBULLE!'},
+           tray: {dmg: 9, cd: .5, label: 'HELA PLÅTEN!'}, fly: 24, ground: 8, r: 14};
+function startThrow(p, kind){
+  p.state = 'throw'; p.st = 0; p.attackHit = false; p.throwKind = kind; p.alt = !p.alt; sfx('whoosh');
+  if (kind === 'tray'){ p.meter = 0; sfx('shout'); }
+}
+function releaseBun(p, kind){
+  var x = p.x + p.facing * 30 * (p.size || 1), h = p.y + 104 * (p.size || 1), fly = G.bunsFly;
+  function add(vx, vh, g, dmg, big, quiet){ if (fly.length >= BUN.fly) fly.shift(); fly.push({x: x, h: h, vx: p.facing * vx, vh: vh, g: g, dmg: dmg, big: big, kind: kind, owner: p, quiet: quiet, spin: 0}); G.bunStats.thrown++; }
+  if (kind === 'tray'){ [[900, 80], [820, 180], [720, 280], [600, 380], [480, 480]].forEach(function(v, i){ add(v[0], v[1], 700, BUN.tray.dmg, true, i > 0); }); }
+  else { var b = BUN[kind]; add(b.vx, b.vh, b.g, b.dmg, kind === 'lob', false); }
+}
+function throwPose(p){
+  var k = p.throwKind, rel = k === 'tray' ? .16 : .1, end = BUN[k].cd, st = p.st;
+  var fling = k === 'lob' ? POSE.upper : (k === 'tray' ? POSE.grab : (p.alt ? POSE.punch : POSE.punch2));
+  var pose = st < rel ? mixPose(POSE.guard, k === 'lob' ? POSE.kickWind : POSE.grab, st / rel) : mixPose(fling, POSE.guard, smooth(rel + .06, end, st));
+  if (!p.attackHit && st >= rel){ p.attackHit = true; releaseBun(p, k); }
+  if (st > end) p.state = 'idle';
+  return pose;
+}
+function nearestGroundBun(r, reach){ var best = null, bd = reach || 520; G.bunsGround.forEach(function(g){ var d = Math.abs(g.x - r.x); if (d < bd){ bd = d; best = g; } }); return best; }
+function crumbs(x, y, n){ for (var i = 0; i < n; i++) puffs.push({x: x + rnd(-24, 24), y: y - rnd(0, 18), t: rnd(0, .2), r: rnd(3, 7), col: i % 2 ? '#c98a44' : '#f3e3c8'}); }
+function updateBuns(dt){
+  var fly = G.bunsFly;
+  for (var i = fly.length - 1; i >= 0; i--){
+    var b = fly[i]; b.x += b.vx * dt; b.vh -= b.g * dt; b.h += b.vh * dt; b.spin += dt * 13 * (b.vx > 0 ? 1 : -1);
+    // only a live, still-hostile rhino takes a bun, and only while the fight is on (a bun in flight at the knockout, or at
+    // the reveal, must not flip the result)
+    var r = G.over ? null : rhinoAt([b.x, GROUND - b.h], BUN.r);
+    if (r && (r.state === 'morph' || r.state === 'graze' || r.state === 'trot')) r = null;
+    if (r){ fly.splice(i, 1); G.bunStats.hit++; crumbs(b.x, GROUND - b.h, 5);
+      hitRhino(r, b.owner, [b.x, GROUND - b.h], b.dmg, b.big, b.quiet ? '' : BUN[b.kind].label, {bun: true, noMeter: b.kind === 'tray', flinch: b.kind === 'flat', quiet: b.quiet, move: b.kind === 'tray' ? 'the whole tray' : (b.kind === 'lob' ? 'a lobbed bun' : 'a cinnamon bun')}); continue; }
+    if (b.h <= 0){ fly.splice(i, 1); crumbs(b.x, GROUND, 4);
+      // a missed bun is food; a tray bun that misses breaks up on the cobbles (a tray is five chances to feed it otherwise)
+      if (!G.over && b.kind !== 'tray' && b.x > 20 && b.x < AW - 20){ G.bunsGround.push({x: b.x, t: 0}); if (G.bunsGround.length > BUN.ground) G.bunsGround.shift(); }
+      continue; }
+    if (b.x < -80 || b.x > AW + 80) fly.splice(i, 1);
+  }
+  G.bunsGround.forEach(function(g){ g.t += dt; });
+}
+function drawBuns(ground){
+  if (ground){
+    G.bunsGround.forEach(function(g){ ctx.fillStyle = 'rgba(40,24,10,.3)'; ctx.beginPath(); ctx.ellipse(g.x, GROUND + 2, 16, 4, 0, 0, 6.283); ctx.fill();
+      ctx.save(); ctx.translate(g.x, GROUND - 7); ctx.scale(1, .62); ctx.drawImage(BUN_IMG, -14, -14, 28, 28); ctx.restore(); });
+    return;
+  }
+  G.bunsFly.forEach(function(b){
+    ctx.fillStyle = 'rgba(40,24,10,' + (.28 * Math.max(0, 1 - b.h / 300)) + ')'; ctx.beginPath(); ctx.ellipse(b.x, GROUND + 2, 12, 3, 0, 0, 6.283); ctx.fill();
+    ctx.save(); ctx.translate(b.x, GROUND - b.h); ctx.rotate(b.spin); ctx.drawImage(BUN_IMG, -BUN.r, -BUN.r, BUN.r * 2, BUN.r * 2); ctx.restore(); });
 }
 function rhinoRect(r){
   var S = rs(r), front = r.x + r.facing * 2.55 * S, back = r.x - r.facing * 1.6 * S;
@@ -1337,18 +1604,31 @@ function rhinoAt(pt, pad){
 // no rhino could reach (stand there and it paws and sweeps at its wall forever) and stopped them running past each other
 function rhinoBounds(r){ return (G && G.square) ? [-1e9, 1e9] : [100, AW - 100]; }
 function passesThrough(r){ return r.state === 'charge' || r.state === 'jetstomp'; }
-function hitRhino(r, p, pt, dmg, big, label){
+function hitRhino(r, p, pt, dmg, big, label, o){
+  if (G.buns && !(o && o.bun)) return;   // round 8: a fist, a kick, a special, a stomp — none of it reaches the rhino
   var vuln = (r.state === 'skid' || r.state === 'sleep') ? 1.6 : 1;
   dmg = Math.round(dmg * p.def.power * vuln);
   if (G.comp) compHit(r, dmg); else r.hp = Math.max(0, r.hp - dmg);
   r.flash = 0.12; r.rage += 1;
   p.hitsLanded++;
-  if (p.state !== 'special') p.meter = Math.min(100, p.meter + (big ? 26 : 14));   // a special costs the whole meter; its own hits must not refund it
-  p.lastMove = p.state === 'special' ? p.def.special.name : (p.state === 'kick' ? 'a kick' : 'a punch');
-  fx.push({x: pt[0], y: pt[1], t: 0, life: big ? .6 : .38, r: big ? 95 : 55, label: label || (big ? 'WHAM!' : (Math.random() < .5 ? 'POW!' : 'BAM!')), big: big});
-  shake = Math.max(shake, big ? 16 : 7); impactFrame = big ? 3 : 1;
-  sfx(big ? 'bighit' : 'hit');
-  if (r.state === 'idle' || r.state === 'paw' || r.state === 'stagger'){ r.state = 'stagger'; r.st = 0; r.x -= r.facing * (big ? 26 : 10); }
+  // a special costs the whole meter; its own hits must not refund it (nor may a tray's five buns)
+  if (p.state !== 'special' && !(o && o.noMeter)) p.meter = Math.min(100, p.meter + (big ? 26 : 14));
+  p.lastMove = (o && o.move) || (p.state === 'special' ? p.def.special.name : (p.state === 'kick' ? 'a kick' : 'a punch'));
+  if (!(o && o.quiet)){
+    fx.push({x: pt[0], y: pt[1], t: 0, life: big ? .6 : .38, r: big ? 95 : 55, label: label || (big ? 'WHAM!' : (Math.random() < .5 ? 'POW!' : 'BAM!')), big: big});
+    sfx(big ? 'bighit' : 'hit');
+  }
+  shake = Math.max(shake, big ? 16 : 7);
+  // the full-screen flash: every melee hit, but buns come too fast for that — a lob or a tray at most every 0.3 s
+  if (!(o && o.bun)) impactFrame = big ? 3 : 1;
+  else if (big && G.t - (G.lastFlash || -9) > .3){ impactFrame = 2; G.lastFlash = G.t; }
+  if (o && o.bun){
+    // a flat bun only makes it flinch; a lob or a tray staggers it, but never out of the charge wind-up, and not again
+    // straight away (two throwers could otherwise keep it from ever attacking)
+    if (G.t !== r.kbT){ r.kbT = G.t; r.x -= r.facing * (big ? 14 : 4); }
+    if (!o.flinch && (r.state === 'idle' || r.state === 'stagger' || r.state === 'forage') && G.t > (r.stagImm || 0)){ r.state = 'stagger'; r.st = 0; r.stagImm = G.t + 1.2; }
+  }
+  else if (r.state === 'idle' || r.state === 'paw' || r.state === 'stagger'){ r.state = 'stagger'; r.st = 0; r.x -= r.facing * (big ? 26 : 10); }
   if (r.state === 'sleep'){ r.x -= r.facing * 6; }
   if (G.comp ? r.share < COMP_LIMIT : r.hp <= 0) rhinoKO(r);
 }
@@ -1377,6 +1657,7 @@ function playerKO(p){
   if (!alivePlayers().length){ G.over = true; G.won = false; fightTimeout(showResult, 1800); }
 }
 function rhinoKO(r){
+  if (r.state === 'ko' || r.state === 'gone') return;
   r.state = 'ko'; r.st = 0; sfx('bighit');
   if (G.vs){ vsEnd(r.vsSide === 0 ? 1 : 0); return; }
   if (G.comp){ compDrop(r); fx.push({x: r.x, y: GROUND - 120 * (r.size || 1), t: 0, life: .9, r: 70, label: 'BELOW DETECTION LIMIT', big: false}); }
@@ -1390,7 +1671,7 @@ function rhinoKO(r){
 // pacifist ending: never land a hit and outlast the rhino (60 s in round 1, +30 s per round) and the read turns out to be something else
 var LOCAL_BUILD = /^(localhost|127\.0\.0\.1|)$/.test(location.hostname);   // file:// or a dev server: debug hooks allowed
 var PACIFIST_DEBUG = LOCAL_BUILD ? parseFloat((location.hash.match(/pacifist=([0-9]*\.?[0-9]+(?:e[+-]?[0-9]+)?)/i) || [])[1]) : NaN;
-if (LOCAL_BUILD){ window.__fight = function(){ return G; }; window.__pct100 = function(v){ return pct100(v); }; window.__sq = function(){ return {P: SQ.P, base: sqBase, pt: sqPt, wrap: wrapDelta}; }; }   // tests peek at the fight state
+if (LOCAL_BUILD){ window.__fight = function(){ return G; }; window.__pct100 = function(v){ return pct100(v); }; window.__sq = function(){ return {P: SQ.P, base: sqBase, pt: sqPt, wrap: wrapDelta}; }; window.__level = function(){ return LEVEL; }; window.__push = function(){ return {win: PUSH.win, lose: pushLoseX()}; }; }   // tests peek at the fight state
 function pacifistTime(){ return PACIFIST_DEBUG > 0 ? PACIFIST_DEBUG : (LEVELS[LEVEL].pacifist || 60 + 30 * LEVEL); }
 function rhinoReveal(){
   if (G.over) return;
@@ -1399,7 +1680,7 @@ function rhinoReveal(){
     r.morph = reveal ? reveal[r.skin || 'rhino'] : kinds[i % kinds.length]; r.revealed = false;
     r.state = 'morph'; r.st = 0; r.run = 0; r.jump = 0; r.glow = 0; r.angry = false; r.chargeHit = true;
   });
-  bolts = []; hot = [];
+  bolts = []; hot = []; if (G.buns) G.bunsFly = [];
   G.over = true; G.won = true; G.pacifist = true; G.koT = 0;
   alivePlayers().forEach(function(q){ q.state = 'win'; q.st = 0; });
   sfx('gong', {f: 96, v: .5}); sfx('drum');
@@ -1424,7 +1705,8 @@ function updatePlayer(p, dt){
   var def = p.def, keys = p.inp.keys, pressed = p.inp.pressed;
   var r = nearestRhino(p.x) || G.r || vsFoeOf(p) || p;
   p.st += dt; if (p.inv > 0) p.inv -= dt; if (p.flash > 0) p.flash -= dt;
-  var busy = p.state === 'punch' || p.state === 'kick' || p.state === 'special' || p.state === 'hurt' || p.state === 'ko' || p.state === 'win';
+  if (G.push){ p.ducking = false; p.pose = p.state === 'ko' ? POSE.ko : (p.state === 'win' ? mixPose(POSE.stand, POSE.win, smooth(0, .4, p.st)) : pushPose(p)); return; }
+  var busy = p.state === 'punch' || p.state === 'kick' || p.state === 'special' || p.state === 'throw' || p.state === 'hurt' || p.state === 'ko' || p.state === 'win';
   var speed = 300 * def.speed;
   var onGround = p.y <= 0 && p.vy <= 0;
   // face the rhino when not mid-attack
@@ -1434,7 +1716,10 @@ function updatePlayer(p, dt){
     if (keys.left && !keys.right){ p.x -= speed * dt; moving = true; }
     if (keys.right && !keys.left){ p.x += speed * dt; moving = true; }
     if (pressed.jump && onGround){ p.vy = 690 * def.jump * (LEVELS[LEVEL].gravity ? .82 : 1) * jumpK(p); p.y = 1; sfx('jump'); }
-    if (pressed.punch && onGround) startAttack(p, 'punch');
+    if (G.buns){   // round 8: buns only, thrown standing or in the air
+      if (pressed.punch) startThrow(p, 'flat'); else if (pressed.kick) startThrow(p, 'lob'); else if (pressed.special && p.meter >= 100) startThrow(p, 'tray');
+    }
+    else if (pressed.punch && onGround) startAttack(p, 'punch');
     else if (pressed.kick && onGround) startAttack(p, 'kick');
     else if (pressed.special && p.meter >= 100 && onGround) startAttack(p, 'special');
   }
@@ -1465,6 +1750,8 @@ function updatePlayer(p, dt){
     if (p.st > .5) p.state = 'idle';
   } else if (p.state === 'special'){
     pose = specialUpdate(p, dt);
+  } else if (p.state === 'throw'){
+    pose = throwPose(p);
   } else {
     if (moving && onGround){
       var ph = G.t * 11 * def.speed; p.state = 'walk';
@@ -1487,6 +1774,9 @@ function updatePlayer(p, dt){
     }
   }
   if (!inHot) p.radLabel = false;   // the field can expire under your feet; the next one must warn you again
+  if (G.buns && !G.over && p.state !== 'ko' && p.y <= 0){
+    for (var gb = G.bunsGround.length - 1; gb >= 0; gb--){ if (Math.abs(G.bunsGround[gb].x - p.x) < 30){ G.bunsGround.splice(gb, 1); G.bunStats.picked++; p.meter = Math.min(100, p.meter + 12); sfx('chime', {f: 1318}); crumbs(p.x, GROUND, 3); } }
+  }
 }
 function nearestRhino(x){ var rs = liveRhinos(), best = null, bd = 1e9; for (var i = 0; i < rs.length; i++){ var d = Math.abs(rs[i].x - x); if (d < bd){ bd = d; best = rs[i]; } } return best; }
 function specialUpdate(p, dt){
@@ -1582,6 +1872,11 @@ function updateRhino(r, dt){
     if (!G.square && (r.x < -300 || r.x > AW + 300)) r.state = 'gone';   // round the loop it never leaves; the result comes on its timer
     return;
   }
+  if (G.buns && !G.over && (r.jump || 0) < 20 && G.bunsGround.length){
+    var snx = r.x + r.facing * 2.35 * rs(r);
+    for (var eb = G.bunsGround.length - 1; eb >= 0; eb--){ if (Math.abs(G.bunsGround[eb].x - snx) < 34){ var eg = G.bunsGround.splice(eb, 1)[0]; r.hp = Math.min(r.maxhp, r.hp + 10); G.bunStats.eaten++;
+      fx.push({x: eg.x, y: GROUND - 60, t: 0, life: .5, r: 44, label: 'NOM! +10', big: false, red: true}); crumbs(eg.x, GROUND - 10, 6); sfx('chime', {f: 392}); } }
+  }
   if (r.state !== 'burst' && r.glow > 0) r.glow = Math.max(0, r.glow - dt * 3);
   var dist = p.x - r.x, adist = Math.abs(dist);
   r.angry = G.comp ? r.share < .2 : r.hp < r.maxhp * .45;
@@ -1591,13 +1886,20 @@ function updateRhino(r, dt){
     if (!(G.square && adist > SQ.P / 2 - 40)) r.facing = dist > 0 ? 1 : -1; r.run = 0; r.tilt *= Math.pow(.05, dt); r.head *= Math.pow(.05, dt);
     r.timer -= dt;
     if (r.timer <= 0){
-      if (r.mutant && adist < 280 && Math.random() < .5){ r.state = 'burst'; r.st = 0; r.chargeHit = false; }
+      if (G.buns && nearestGroundBun(r) && Math.random() < .7){ r.state = 'forage'; r.st = 0; }
+      else if (r.mutant && adist < 280 && Math.random() < .5){ r.state = 'burst'; r.st = 0; r.chargeHit = false; }
       else if (r.space && adist > 240 && Math.random() < .45){ r.state = 'laser'; r.st = 0; r.chargeHit = false; r.shots = 0; }
       else if (r.space && Math.random() < .35){ r.state = 'jetstomp'; r.st = 0; r.chargeHit = false; var rbj = rhinoBounds(r); r.targetX = clamp(p.x, rbj[0], rbj[1]); r.jx0 = r.x; sfx('jet'); }
       else if (adist > 300 || Math.random() < .3){ r.state = 'paw'; r.st = 0; r.willFeint = r.mutant && Math.random() < .55; }
       else if (Math.random() < .75){ r.state = 'horn'; r.st = 0; }
       else { r.state = 'paw'; r.st = 0; r.willFeint = r.mutant && Math.random() < .55; }
     }
+  } else if (r.state === 'forage'){
+    // trots over to a dropped bun with its head down (the eating happens above, for any state)
+    var fb = nearestGroundBun(r);
+    if (!fb || r.st > 2.6){ r.state = 'idle'; r.st = 0; r.timer = .35; r.run = 0; }
+    else { r.facing = fb.x > r.x ? 1 : -1; r.run = .6; r.phase += dt * 11; r.head = lerp(r.head, -.32, Math.min(1, dt * 4)); r.tilt = .02 * Math.sin(r.phase);
+      if (Math.abs(fb.x - (r.x + r.facing * 2.35 * rs(r))) > 20) r.x += r.facing * 175 * dt; }
   } else if (r.state === 'paw'){
     var pw = Math.max(0, Math.sin(r.st * 6.28 * 1.4)); r.tilt = .03 * pw; r.head = -.12 * pw;
     if (r.st > .15 && Math.floor(r.st * 10) % 3 === 0 && Math.random() < .5) puffs.push({x: r.x + r.facing * 95 + rnd(-20, 20), y: GROUND - rnd(0, 20), t: 0, r: rnd(5, 10)});
@@ -1690,13 +1992,14 @@ function update(dt){
     G.sides[0].inp.keys = keys; G.sides[0].inp.pressed = pressed;                       // side 1 is this keyboard / the touch pads
     if (!Net.on || !Net.peer){ G.sides[1].inp.keys = keys2; G.sides[1].inp.pressed = pressed2; }   // side 2 is the other half of the keyboard
   }
-  else { G.p.inp.keys = keys; G.p.inp.pressed = pressed; }   // player 1 is always the local keyboard / touch pads
-  G.players.forEach(function(q){ updatePlayer(q, dt * ts); }); G.rhinos.forEach(function(r){ updateRhino(r, dt * ts); });
+  else { G.p.inp.keys = keys; G.p.inp.pressed = pressed; G.p.inp.typed = typedQ; }   // player 1 is always the local keyboard / touch pads
+  G.players.forEach(function(q){ updatePlayer(q, dt * ts); }); G.rhinos.forEach(function(r){ if (!G.push || r.state === 'ko' || r.state === 'gone') updateRhino(r, dt * ts); });
+  if (G.push) updatePush(dt * ts);
   if (G.square && G.r) G.players.forEach(function(q){ q.x = G.r.x + wrapDelta(q.x - G.r.x); });
   updateCamera(dt);
   if (G.comp) G.players.concat(G.rhinos).forEach(function(c){ c.size = lerp(c.size || 1, sizeOf(c.share), Math.min(1, dt * 5)); });
   var hitsTotal = 0; G.players.forEach(function(q){ hitsTotal += q.hitsLanded; });
-  if (!G.vs && !G.over && hitsTotal === 0 && G.elapsed >= pacifistTime()) rhinoReveal();
+  if (!G.vs && !G.push && !G.over && hitsTotal === 0 && G.elapsed >= pacifistTime()) rhinoReveal();
   if (G.vs && !G.over && G.elapsed >= VS_TIME) vsTimeUp();
   // effects
   for (var i = fx.length - 1; i >= 0; i--){ fx[i].t += dt; if (fx[i].t > fx[i].life) fx.splice(i, 1); }
@@ -1711,6 +2014,7 @@ function update(dt){
     if (!G.over && !bo.hit){ G.players.forEach(function(q){ if (!bo.hit && Math.abs(bo.x - q.x) < 34 && q.y < 60 && !q.ducking && q.inv <= 0){ bo.hit = true; hitPlayer(q, 14, 'ZAPPED!', bo.dir * 300); } }); }
     if (bo.x < -60 || bo.x > AW + 60 || bo.hit) bolts.splice(bi, 1);
   }
+  if (G.buns) updateBuns(dt * ts);
   pressed = {}; pressed2 = {};
 }
 // the camera follows the fighters on a wide field (round 4); on the normal field it stays at 0
@@ -1726,7 +2030,11 @@ function tickAmbient(dt){
   for (var j = puffs.length - 1; j >= 0; j--){ puffs[j].t += dt; if (puffs[j].t > .55) puffs.splice(j, 1); }
   for (var k = 0; k < dna.length; k++){ var d = dna[k]; d.t += dt; d.x += d.vx * dt; d.y += d.vy * dt; d.vx *= Math.pow(.35, dt); d.vy = d.vy * Math.pow(.4, dt) - 25 * dt; d.rot += d.rv * dt; d.tw += d.tv * dt; }
   var th = LEVELS[LEVEL].theme;
-  if (th === 'museum'){
+  if (th === 'lab'){ /* sealed room: nothing drifts */ }
+  else if (th === 'cafe'){
+    for (var f5 = 0; f5 < flakes.length; f5++){ var fl5 = flakes[f5]; fl5.y += fl5.v * .9 * dt; fl5.x += (Math.sin(G.t * 1.1 + fl5.p) * 30 - 10) * dt; if (fl5.y > LH) { fl5.y = -8; fl5.x = Math.random() * (LW + 80); } }
+  }
+  else if (th === 'museum'){
     for (var f4 = 0; f4 < flakes.length; f4++){ var fl4 = flakes[f4]; fl4.y += fl4.v * .12 * dt; fl4.x += Math.sin(G.t * .5 + fl4.p) * 5 * dt; if (fl4.y > LH) { fl4.y = -5; fl4.x = Math.random() * LW; } }
   } else if (th === 'space'){
     for (var f3 = 0; f3 < flakes.length; f3++){ var fl3 = flakes[f3]; fl3.x -= (20 + fl3.v) * dt; if (fl3.x < -5) { fl3.x = LW + 5; fl3.y = Math.random() * LH; } }
@@ -1740,6 +2048,7 @@ function tickAmbient(dt){
 // ------------------------------------------------------------ draw
 function drawHUD(){
   if (G.vs){ drawVsHUD(); return; }
+  if (G.push){ drawPushHUD(); return; }
   var lv = LEVELS[LEVEL], compact = hudCompact();
   var chars = G.players.concat(G.rhinos), pcts = G.comp ? pct100(chars.map(function(c){ return c.share || 0; })) : null;
   ctx.font = '700 15px Nunito, sans-serif'; ctx.textBaseline = 'top';
@@ -1750,7 +2059,7 @@ function drawHUD(){
     var lab = q.def.name.toUpperCase() + (G.players.length > 1 && mine ? ' (YOU)' : '') + (pcts ? ' · ' + pcts[chars.indexOf(q)] + ' %' : '');
     var used = bar(24, yP, w, i ? 16 : 20, q.hp / q.maxhp, q.state === 'ko' ? '#8a8fa3' : '#6fe3a0', '#c8262c', lab, 'left', G.comp ? COMP_LIMIT : 0);
     var my = compact ? yP + used + 5 : yP + 44, mh = compact ? hudPx(6) : 10;
-    meterBar(24, my, 200, mh, q.meter, 'left', q.meter >= 100 ? 'SPECIAL READY — ' + q.def.special.name.toUpperCase() : 'SPECIAL ' + Math.floor(q.meter) + '%', compact);
+    meterBar(24, my, 200, mh, q.meter, 'left', G.buns ? (q.meter >= 100 ? 'TRAY READY — 5 BUNS (L)' : 'TRAY ' + Math.floor(q.meter) + '%') : (q.meter >= 100 ? 'SPECIAL READY — ' + q.def.special.name.toUpperCase() : 'SPECIAL ' + Math.floor(q.meter) + '%'), compact);
     yP = compact ? my + mh + hudPx(8) : yP + 72;
   });
   var yR = hudRightTop();   // below the MENU / FULLSCREEN buttons in the corner
@@ -1773,6 +2082,59 @@ function drawHUD(){
   if (Net.on && Net.lost){ ctx.font = '900 ' + (compact ? hudPx(10) : 13) + 'px Nunito, sans-serif'; ctx.fillStyle = '#ffd166'; ctx.textAlign = 'center'; ctx.fillText('FRIEND RECONNECTING…', LW / 2, compact ? Math.max(yP, yR) + 6 : 52); ctx.textAlign = 'left'; }
   hudTimer(Math.floor(G.elapsed));
 }
+// round 7: no health bars (nobody is hit, it is a shove) — a tug-of-war bar and the repeat to type
+function drawRepeat(u, cx, y, fs, small){
+  var q = pushSeq(u.stage), L = q.unit.length, n = q.seq.length, cw = fs * .74, gap = fs * .3;
+  var x0 = cx - (n * cw + (n / L - 1) * gap) / 2;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (var i = 0; i < n; i++){
+    var ch = q.seq.charAt(i), x = x0 + i * cw + Math.floor(i / L) * gap + cw / 2, done = i < u.pos, next = i === u.pos;
+    if (next && !small){ ctx.fillStyle = u.lock > 0 ? 'rgba(200,38,44,.6)' : 'rgba(26,20,30,.55)'; roundRect(x - cw / 2 + 1, y - fs * .6, cw - 2, fs * 1.95, 8); ctx.fill(); ctx.strokeStyle = u.lock > 0 ? '#ff6a4a' : '#f2c56b'; ctx.lineWidth = 3; ctx.stroke(); }
+    var lf = Math.round(fs * (next && !small ? 1.12 : 1));
+    ctx.globalAlpha = done ? .45 : 1;
+    ctx.font = '400 ' + lf + 'px Bangers, Impact, sans-serif'; ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(3, fs * .12); ctx.strokeStyle = '#1a141e';
+    ctx.fillStyle = done ? '#b8f0cc' : (next ? '#ffffff' : PUSH_COL[ch]);
+    ctx.strokeText(ch, x, y); ctx.fillText(ch, x, y);
+    if (!small){ ctx.font = '900 ' + Math.round(fs * .52) + 'px Nunito, sans-serif'; ctx.lineWidth = Math.max(2, fs * .08); ctx.strokeText(PUSH_ARROW[ch], x, y + fs * .9); ctx.fillStyle = done ? '#b8f0cc' : (next ? '#ffffff' : PUSH_COL[ch]); ctx.fillText(PUSH_ARROW[ch], x, y + fs * .9); }
+    ctx.globalAlpha = 1;
+  }
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+}
+function drawPushHUD(){
+  var pu = G.push, compact = hudCompact(), me = (Net.on && Net.peer) ? Net.me : 0, mine = G.players[me] || G.p;
+  var bx = 200, bw = LW - 400, by = compact ? hudRightTop() + 6 : 70, bh = compact ? hudPx(8) : 12;
+  var lo = pushLoseX(), f = clamp((pu.x - lo) / (PUSH.win - lo), 0, 1);
+  // who is pushing, top left
+  ctx.font = '900 ' + (compact ? hudPx(11) : 15) + 'px Nunito, sans-serif'; ctx.textBaseline = 'top'; ctx.lineJoin = 'round';
+  var names = G.players.map(function(q, i){ return q.def.name.toUpperCase() + (G.players.length > 1 && i === me ? ' (YOU)' : ''); }).join(' + ');
+  ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(10,14,30,.85)'; ctx.strokeText(names, 24, 22); ctx.fillStyle = '#ffffff'; ctx.fillText(names, 24, 22);
+  var tot = {slips: 0, units: 0}; G.players.forEach(function(q){ tot.slips += q.pu.slips; tot.units += q.pu.units; });
+  var sub = 'units ' + tot.units + ' · slips ' + tot.slips; ctx.font = '900 ' + (compact ? hudPx(9) : 12) + 'px Nunito, sans-serif';
+  ctx.strokeText(sub, 24, compact ? 22 + hudPx(15) : 42); ctx.fillStyle = '#ffd166'; ctx.fillText(sub, 24, compact ? 22 + hudPx(15) : 42);
+  hudTimer(Math.floor(G.elapsed));
+  // the tug of war: your edge on the left, the rhino's on the right
+  ctx.fillStyle = 'rgba(10,14,30,.7)'; roundRect(bx - 4, by - 4, bw + 8, bh + 8, 8); ctx.fill();
+  var tg = ctx.createLinearGradient(bx, 0, bx + bw, 0); tg.addColorStop(0, '#c8262c'); tg.addColorStop(.5, '#46506e'); tg.addColorStop(1, '#6fe3a0');
+  ctx.fillStyle = tg; roundRect(bx, by, bw, bh, bh / 2); ctx.fill();
+  var mx = bx + bw * f; ctx.fillStyle = '#f2c56b'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(mx, by + bh / 2, bh * .8 + 4, 0, 6.283); ctx.fill(); ctx.stroke();
+  ctx.font = '900 ' + (compact ? hudPx(9) : 11) + 'px Nunito, sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(10,14,30,.85)';
+  ctx.textAlign = 'left'; ctx.strokeText('◀ YOU OUT', bx, by + bh + 7); ctx.fillStyle = '#ffb0a0'; ctx.fillText('◀ YOU OUT', bx, by + bh + 7);
+  ctx.textAlign = 'right'; ctx.strokeText('RHINO OUT ▶', bx + bw, by + bh + 7); ctx.fillStyle = '#a8f5c8'; ctx.fillText('RHINO OUT ▶', bx + bw, by + bh + 7);
+  ctx.textAlign = 'left';
+  if (Net.on && Net.lost){ ctx.font = '900 ' + (compact ? hudPx(10) : 13) + 'px Nunito, sans-serif'; ctx.fillStyle = '#ffd166'; ctx.textAlign = 'center'; ctx.fillText('FRIEND RECONNECTING…', LW / 2, by + bh + (compact ? hudPx(24) : 26)); ctx.textAlign = 'left'; }
+  if (G.over || G.elapsed < 1.6) return;   // the banner owns the middle of the screen then
+  // your repeat, big, one arrow under each letter; a partner's progress small underneath
+  var mu = (Net.on && Net.peer && !Net.host && pu.pred) ? pu.pred : mine.pu, fs = compact ? hudPx(24) : 44, ly = by + bh + (compact ? hudPx(26) : 48);
+  var q = pushSeq(mu.stage);
+  ctx.font = '900 ' + (compact ? hudPx(9) : 12) + 'px Nunito, sans-serif'; ctx.textAlign = 'center'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(10,14,30,.85)';
+  var cap = 'REPEAT ' + (mu.stage + 1) + ' · (' + q.unit + ')×' + (q.seq.length / q.unit.length) + (mu.lock > 0 ? ' · SLIP!' : '');
+  ctx.strokeText(cap, LW / 2, ly - fs * .6 - (compact ? hudPx(12) : 16)); ctx.fillStyle = mu.lock > 0 ? '#ff8a6a' : '#eef2f8'; ctx.fillText(cap, LW / 2, ly - fs * .6 - (compact ? hudPx(12) : 16)); ctx.textAlign = 'left';
+  drawRepeat(mu, LW / 2, ly, fs, false);
+  G.players.forEach(function(q2, i){ if (i === me) return;
+    var sy = ly + fs * 1.75;
+    ctx.font = '900 ' + (compact ? hudPx(9) : 11) + 'px Nunito, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#c9d3e6'; ctx.strokeText(q2.def.name.toUpperCase(), LW / 2, sy - fs * .55); ctx.fillText(q2.def.name.toUpperCase(), LW / 2, sy - fs * .55); ctx.textAlign = 'left';
+    drawRepeat(q2.pu, LW / 2, sy, Math.round(fs * .45), true); });
+}
 function hudTimer(s){
   var fz = Math.round(30 * (hudCompact() ? Math.min(HUD_K, 1.5) : 1));
   ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.font = '400 ' + fz + 'px Bangers, Impact, sans-serif'; ctx.fillStyle = '#eef2f8'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 4;
@@ -1787,7 +2149,8 @@ function meterBar(x, y, w, h, m, align, caption, compact, capBelow){
   ctx.fillStyle = full ? '#6fe3a0' : '#c9d3e6';
   if (compact){
     ctx.font = '900 ' + hudPx(9) + 'px Nunito, sans-serif'; ctx.textBaseline = 'middle'; ctx.textAlign = align === 'right' ? 'right' : 'left';
-    ctx.fillText(full ? 'SPECIAL!' : 'SPC ' + Math.floor(m) + '%', align === 'right' ? x - 8 : x + w + 8, y + h / 2 + 1);
+    var mw = (G && G.buns) ? 'TRAY' : 'SPC';
+    ctx.fillText(full ? (mw === 'TRAY' ? 'TRAY!' : 'SPECIAL!') : mw + ' ' + Math.floor(m) + '%', align === 'right' ? x - 8 : x + w + 8, y + h / 2 + 1);
     ctx.textBaseline = 'top';
   } else {
     ctx.font = '900 11px Nunito, sans-serif'; ctx.textAlign = align === 'right' ? 'right' : 'left';
@@ -1877,7 +2240,8 @@ function drawFX(){
   ctx.globalAlpha = 1;
 }
 // letterbox colour and the colour of the ground below the arena on a tall phone, per theme
-var THEME_COL = {kiruna: ['#0c1434', '#c6d0e6'], wasteland: ['#2a1a14', '#6f5238'], space: ['#02030c', '#3c4048'], museum: ['#1b1612', '#211b17']};
+var LEAF_COL = ['#d9822b', '#c0392b', '#e6b422'];
+var THEME_COL = {kiruna: ['#0c1434', '#c6d0e6'], wasteland: ['#2a1a14', '#6f5238'], space: ['#02030c', '#3c4048'], museum: ['#1b1612', '#211b17'], lab: ['#1b2330', '#98a2ae'], cafe: ['#2a1c14', '#5d544c']};
 function draw(){
   var sc = Math.min(canvas.width / LW, canvas.height / LH), offx = (canvas.width - LW * sc) / 2, offy = (canvas.height - LH * sc) / 2;
   // a touch phone held upright has spare height: put the arena at the top and leave the band below it to the pads,
@@ -1906,6 +2270,7 @@ function draw(){
     ctx.fillStyle = mu ? 'rgba(10,6,2,.35)' : 'rgba(70,80,120,.28)';
     G.rhinos.forEach(function(r0){ if (r0.state !== 'gone') inFrame(r0, function(){ var rc = rhinoRect(r0); ctx.beginPath(); ctx.ellipse((rc.x0 + rc.x1) / 2, GROUND, (rc.x1 - rc.x0) / 2, 12 * (r0.size || 1), 0, 0, 6.283); ctx.fill(); }); });
     G.players.forEach(function(q){ inFrame(q, function(){ var js = 1 - Math.min(1, q.y / 220), pscl = ((q.state === 'special' && q.scale) ? q.scale : 1) * (q.size || 1); ctx.beginPath(); ctx.ellipse(q.x, GROUND, (40 * js + 8) * pscl, 8 * pscl, 0, 0, 6.283); ctx.fill(); }); });
+    if (G.buns) drawBuns(true);
     // radioactive hot spots
     for (var hh = 0; hh < hot.length; hh++){
       var hs = hot[hh], ha = Math.min(1, hs.t * 3) * (1 - smooth(hs.life - 1.5, hs.life, hs.t)) * (.75 + .25 * Math.sin(G.t * 6 + hh));
@@ -1947,6 +2312,7 @@ function draw(){
     for (var pi = G.players.length - 1; pi >= 0; pi--){ var q2 = G.players[pi];
       if (q2.inv > 0 && q2.state !== 'ko' && q2.state !== 'special' && Math.floor(G.t * 20) % 2 === 0) ctx.globalAlpha = .4;
       inFrame(q2, function(){ fighterDraw(q2, t); }); ctx.globalAlpha = 1; }
+    if (G.buns) drawBuns(false);
     // radiation burst rings
     for (var ri = 0; ri < rings.length; ri++){ var rn = rings[ri], ru = rn.t / .6; ctx.strokeStyle = (rn.grey ? 'rgba(200,205,215,' : 'rgba(160,255,110,') + (1 - ru) + ')'; ctx.lineWidth = 14 * (1 - ru) + 2; ctx.beginPath(); ctx.ellipse(rn.x, GROUND - 60, 40 + 420 * ru, 20 + 150 * ru, 0, 0, 6.283); ctx.stroke(); }
     if (G.square) ctx.restore();   // end of the room clip; the hit stars may reach over the walls
@@ -1963,7 +2329,8 @@ function draw(){
   }
   // snowflakes (round 1), rising embers (round 2) or space dust streaming past (round 3)
   ctx.fillStyle = mu ? 'rgba(255,236,196,.32)' : (sp ? 'rgba(200,220,255,.5)' : (wl ? 'rgba(255,170,80,.75)' : '#f6f9ff'));
-  for (var f = 0; f < flakes.length; f++){ var fl = flakes[f]; ctx.beginPath(); ctx.arc(fl.x, fl.y, mu ? fl.r * .55 : (wl ? fl.r * .8 : fl.r), 0, 6.283); ctx.fill(); }
+  if (th === 'cafe') for (var lf = 0; lf < flakes.length; lf++){ var fk = flakes[lf]; ctx.fillStyle = LEAF_COL[lf % 3]; ctx.beginPath(); ctx.ellipse(fk.x, fk.y, fk.r * 2.4, fk.r * 1.2, fk.p + t * (1 + fk.v / 30), 0, 6.283); ctx.fill(); }
+  else if (th !== 'lab') for (var f = 0; f < flakes.length; f++){ var fl = flakes[f]; ctx.beginPath(); ctx.arc(fl.x, fl.y, mu ? fl.r * .55 : (wl ? fl.r * .8 : fl.r), 0, 6.283); ctx.fill(); }
   ctx.restore();
   // vignette
   var vg = ctx.createRadialGradient(LW / 2, LH / 2, LH * .45, LW / 2, LH / 2, LH * .95); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.42)');
@@ -1983,10 +2350,10 @@ function draw(){
       else if (!allGone){ var just = 'JUST A ' + G.rhinos.filter(function(r0){ return r0.morph; }).map(function(r0){ return ANIMALS[r0.morph].name.toUpperCase(); }).join(' & A '); bigText(just, LW / 2, 200, Math.min(90, Math.floor(1500 / just.length))); }
       else bigText('FALSE POSITIVE', LW / 2, 190, 78);
     }
-    else if (G.over && G.won && !allGone){ bigText('K.O.!', LW / 2, 200, 120); }
+    else if (G.over && G.won && !allGone){ bigText(G.push ? 'PUSHED OFF!' : 'K.O.!', LW / 2, 200, G.push ? 96 : 120); }
     else if (G.over && G.won && allGone){ bigText('FALSE POSITIVE', LW / 2, 190, 78); }
     if (!G.vs && G.over && !G.won){ var lw = lossWord(G.players[(Net.on && Net.peer) ? Net.me : 0] || G.p); bigText(lw, LW / 2, 200, lw.length > 9 ? 84 : 100); }
-    if (!G.vs && !G.over && G.elapsed < 1.6){ var a = 1 - smooth(1.1, 1.6, G.elapsed); ctx.globalAlpha = a; bigText(G.elapsed < .8 ? LEVELS[LEVEL].name : 'FIGHT!', LW / 2, 220, 96); ctx.globalAlpha = 1; }
+    if (!G.vs && !G.over && G.elapsed < 1.6){ var a = 1 - smooth(1.1, 1.6, G.elapsed); ctx.globalAlpha = a; bigText(G.elapsed < .8 ? LEVELS[LEVEL].name : (LEVELS[LEVEL].start || 'FIGHT!'), LW / 2, 220, 96); ctx.globalAlpha = 1; }
     if (wl){
       // CRT look: green cast, scanlines, faint flicker
       ctx.fillStyle = 'rgba(80,255,120,' + (.05 + .015 * Math.sin(G.t * 37)) + ')'; ctx.fillRect(0, 0, LW, LH);
@@ -2042,7 +2409,9 @@ var Scores = (function(){
   }
   return {load: load, add: add, report: report, mode: function(){ return mode; }, savedRemote: function(){ return lastRemote; }};
 })();
-function scoreFor(g){ var hp = 0, hits = 0; g.players.forEach(function(q){ hp += q.hp; hits += q.hitsLanded; }); hp /= g.players.length; return Math.round(1000 + hp * 10 + Math.max(0, 120 - g.elapsed) * 20 + hits * 5 + LEVEL * 1500 + (g.pacifist ? 2500 : 0)); }
+function scoreFor(g){ var hp = 0, hits = 0; g.players.forEach(function(q){ hp += q.hp; hits += q.hitsLanded; }); hp /= g.players.length;
+  // the push: nobody loses health and letters are cheap, so accuracy stands in for health and repeat units for hits
+  if (g.push){ var L = 0, S = 0, U = 0; g.players.forEach(function(q){ L += q.pu.letters; S += q.pu.slips; U += q.pu.units; }); hp = 100 * L / Math.max(1, L + S); hits = U * 5; } return Math.round(1000 + hp * 10 + Math.max(0, 120 - g.elapsed) * 20 + hits * 5 + LEVEL * 1500 + (g.pacifist ? 2500 : 0)); }
 function teamName(g){ return g.players.map(function(q){ return q.def.name; }).join(' + '); }
 var lastEntry = null, board = [];   // board: the last leaderboard we saw, for the title screen and roster cards
 function isMine(e){ return !!lastEntry && ((lastEntry.id && e.id === lastEntry.id) || (e.name === lastEntry.name && e.score === lastEntry.score && e.t === lastEntry.t)); }
@@ -2249,7 +2618,11 @@ function netData(d, tid, via){
   else if (d.t === 'ready'){ Net.peerReady = d.f; updateCoopLine(); if (Net.host && Net.ready && scene === 'select') coopStart(clampLevel($('startLevel').value)); }
   else if (d.t === 'unready'){ Net.peerReady = null; updateCoopLine(); }
   else if (d.t === 'start'){ if (!Net.host){ LEVEL = d.vs ? clampVsLevel(d.level) : clampLevel(d.level); Net.f = d.f; Net.mode = d.vs ? 'vs' : 'coop'; beginCoopRound(); } }
-  else if (d.t === 'in'){ if (Net.host){ var ko = {}; (d.k || []).forEach(function(k){ ko[k] = true; }); Net.guestInp.keys = ko; (d.p || []).forEach(function(k){ Net.guestInp.pressed[k] = true; }); } }
+  else if (d.t === 'in'){ if (Net.host){ var ko = {}; (d.k || []).forEach(function(k){ ko[k] = true; }); Net.guestInp.keys = ko; (d.p || []).forEach(function(k){ Net.guestInp.pressed[k] = true; });
+    // round 7: letters keep their order and their index, so a late, doubled or lost message never scrambles the repeat
+    if (d.q && d.q.length && G && G.push && Net.gq){ var i0 = d.i | 0, from = Math.max(0, (Net.gNext || 0) - i0);
+      for (var qi = from; qi < d.q.length && Net.gq.length < 64; qi++){ var ql = String(d.q[qi]).charAt(0); if ('ACGT'.indexOf(ql) >= 0) Net.gq.push({l: ql, i: i0 + qi}); }
+      Net.gNext = Math.max(Net.gNext || 0, i0 + d.q.length); } } }
   else if (d.t === 's'){ if (!Net.host && scene === 'fight') applySnap(d); }
   else if (d.t === 'result'){ if (!Net.host) showResult(); }
   else if (d.t === 'bye'){ peerGone(); }
@@ -2290,12 +2663,12 @@ function beginCoopRound(){
   if (Net.mode === 'vs'){ vsLocal = false; newVsFight(Net.f[0], Net.f[1]); }
   else newFight(defById(Net.f[0]), defById(Net.f[1]));
   scene = 'fight'; show(null);
-  Net.guestInp = {keys:{}, pressed:{}}; Net.sfxQ = []; Net.frame = 0; Net.lastKeys = '';
+  Net.guestInp = {keys:{}, pressed:{}}; Net.sfxQ = []; Net.frame = 0; Net.lastKeys = ''; Net.gq = []; Net.gNext = 0; Net.sent = [];
   unlockAudio(); sfx('gong', {f: LEVEL ? 70 : 96, v: .6}); fightTimeout(function(){ sfx('drum'); }, 800);
 }
 function hostTick(dt){
   var guest = G ? (G.vs ? G.sides[1] : G.p2) : null;
-  if (guest && Net.peer){ guest.inp.keys = Net.guestInp.keys; guest.inp.pressed = Net.guestInp.pressed; }
+  if (guest && Net.peer){ guest.inp.keys = Net.guestInp.keys; guest.inp.pressed = Net.guestInp.pressed; guest.inp.typed = Net.gq; }
   update(dt);
   if (guest){ Net.guestInp.pressed = {}; Net.frame++; if (Net.peer && Net.frame % (Net.rtcUp ? 2 : 3) === 0) sendSnap(); }   // 30 Hz P2P, 20 Hz over the relay
 }
@@ -2308,7 +2681,13 @@ function guestTick(dt){
   for (k in keys) if (keys[k]) kl.push(k);
   for (k in pressed) if (pressed[k]) pl.push(k);
   var sig = kl.join(','); Net.frame++;
-  if (pl.length || sig !== Net.lastKeys || Net.frame % 6 === 0){ Net.lastKeys = sig; sendNet({t:'in', k: kl, p: pl}); }
+  var tq = typedQ.length ? typedQ.splice(0, typedQ.length) : null;
+  if (tq && G.push && G.push.pred) tq.forEach(function(l){ pushTry(G.push.pred, l); });   // show your own letters at once; the host's next snapshot confirms them
+  if (pl.length || tq || sig !== Net.lastKeys || Net.frame % 6 === 0){
+    Net.lastKeys = sig; var im = {t:'in', k: kl, p: pl};
+    if (tq){ im.q = tq; im.i = Net.sent.length; Net.sent = Net.sent.concat(tq); }
+    sendNet(im);
+  }
   pressed = {};
 }
 var POSE_KEYS = ['crouch', 'lean', 'lh', 'lk', 'rh', 'rk', 'la', 'le', 'ra', 're'];
@@ -2326,7 +2705,9 @@ function sendSnap(){
     hot: hot.map(function(h){ return [r1(h.x), r1(h.r), r2(h.t), h.life]; }),
     rg: rings.map(function(g){ return [r1(g.x), r2(g.t), g.grey ? 1 : 0]; }),
     bo: bolts.map(function(b){ return [r1(b.x), b.dir, r2(b.t)]; }),
-    sh: r1(shake), fl: r2(flashA), sm: r2(slowmo), imf: impactFrame, sx: Net.sfxQ, vw: G.vsWin, vt: G.vsTime ? 1 : 0};
+    sh: r1(shake), fl: r2(flashA), sm: r2(slowmo), imf: impactFrame, sx: Net.sfxQ, vw: G.vsWin, vt: G.vsTime ? 1 : 0,
+    bu: G.buns ? G.bunsFly.map(function(b){ return [r1(b.x), r1(b.h), r2(b.spin)]; }) : null, gb: G.buns ? G.bunsGround.map(function(g){ return r1(g.x); }) : null,
+    pu: G.push ? [r1(G.push.x), r2(G.push.pressure), G.players.map(function(q){ var u = q.pu; return [u.stage, u.pos, r2(u.lock), r2(u.slipT), r2(u.okT), u.slips, u.units, u.letters, u.ack | 0]; })] : null};
   Net.sfxQ = []; sendNet(snap);
 }
 function applySnap(d){
@@ -2341,6 +2722,14 @@ function applySnap(d){
   hot = d.hot.map(function(a){ return {x: a[0], r: a[1], t: a[2], life: a[3]}; });
   rings = d.rg.map(function(a){ return {x: a[0], t: a[1], grey: !!a[2]}; });
   bolts = d.bo.map(function(a){ return {x: a[0], dir: a[1], t: a[2]}; });
+  if (G.buns){ G.bunsFly = (d.bu || []).map(function(a){ return {x: a[0], h: a[1], spin: a[2]}; }); G.bunsGround = (d.gb || []).map(function(x){ return {x: x, t: 0}; }); }
+  if (d.pu && G.push){
+    G.push.x = d.pu[0]; G.push.pressure = d.pu[1];
+    (d.pu[2] || []).forEach(function(a, i){ var q = G.players[i]; if (!q || !q.pu) return; var u = q.pu; u.stage = a[0]; u.pos = a[1]; u.lock = a[2]; u.slipT = a[3]; u.okT = a[4]; u.slips = a[5]; u.units = a[6]; u.letters = a[7]; u.ack = a[8]; });
+    // your own row: the host's word, plus every letter you typed that it has not read yet
+    var mp = G.players[Net.me];
+    if (mp && mp.pu){ var pr = {stage: mp.pu.stage, pos: mp.pu.pos, lock: mp.pu.lock}; for (var k = mp.pu.ack; k < (Net.sent || []).length; k++) pushTry(pr, Net.sent[k]); G.push.pred = pr; }
+  }
   shake = d.sh; flashA = Math.max(flashA, d.fl); slowmo = d.sm; impactFrame = d.imf;
   (d.sx || []).forEach(function(k){ sfx(k); });
 }
@@ -2359,7 +2748,7 @@ function goMenu(){
   if (scene === 'title') return;
   if (termTimer){ clearInterval(termTimer); termTimer = null; }
   if (!$('videoBox').hidden) closeVideo();
-  G = null; vsLocal = false; clearKeys(); slowmo = 0; shake = 0; flashA = 0;
+  G = null; vsLocal = false; clearKeys(); slowmo = 0; shake = 0; flashA = 0; setPadLabels(null);
   netLeave();
   show('title'); scene = 'title'; refreshBoard();
 }
@@ -2367,6 +2756,8 @@ function buildRoster(){
   var host = $('roster'); host.innerHTML = '';
   var vsPick = Net.on && Net.mode === 'vs';
   if (!vsPick) pickRhino = false;
+  Array.prototype.forEach.call($('startLevel').options, function(o){ o.disabled = vsPick && +o.value >= VS_ARENAS; });
+  if (vsPick && +$('startLevel').value >= VS_ARENAS) $('startLevel').value = '0';
   setPickName();
   ROSTER.forEach(function(d, i){
     var el = document.createElement('button'); el.className = 'fighter' + (i === selected ? ' sel' : ''); el.type = 'button'; el.setAttribute('aria-label', d.name);
@@ -2474,7 +2865,7 @@ function showResult(){
       var wv = LEVELS[LEVEL].win;
       $('resBig').textContent = wv.big; $('resTitle').textContent = wv.title;
       $('resReadout').innerHTML = '> read: <b>' + LEVELS[LEVEL].read + '</b> — status: <b>' + wv.status + '</b><br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · ' + winStats(p) +
-        '<br>> hits landed: <b>' + p.hitsLanded + '</b> · round bonus: <b>+' + fmtScore(LEVEL * 1500) + '</b><br>> lesson: ' + wv.lesson +
+        '<br>> ' + (G.push ? 'letters typed: <b>' + pushTotals().letters : 'hits landed: <b>' + p.hitsLanded) + '</b> · round bonus: <b>+' + fmtScore(LEVEL * 1500) + '</b><br>> lesson: ' + wv.lesson +
         (LEVEL < LEVELS.length - 1 ? '<br>> next: ' + wv.next : '<br>> dataset clean. The crew can go home.');
     } else {
       $('resBig').textContent = 'CLEAN'; $('resTitle').textContent = 'REFERENCE DECONTAMINATED';
@@ -2482,15 +2873,23 @@ function showResult(){
     }
   } else {
     var rads = p.killedBy === 'rads';
-    $('resBig').textContent = lossWord(p); $('resTitle').textContent = G.comp ? 'THE FALSE POSITIVES DOMINATE THE SAMPLE' : rads ? 'THE CONTAMINATED GROUND GOT YOU' : 'THE RHINO STAYS IN THE DATASET';
-    $('resReadout').innerHTML = G.comp ? ('> reads: <b>Rhinoceros + Zebra (relative abundance)</b> — status: <b>' + G.rhinos.map(function(r0){ return Math.round((r0.share || 0) * 100) + ' %'; }).join(' + ') + '</b><br>> fighter: <b>' + teamName(G) + '</b> · survived <b>' + G.elapsed.toFixed(1) + ' s</b> · your share fell below the <b>detection limit</b><br>> tip: every hit you take makes both of them bigger. Land hits and keep the share coming your way.')
+    var lz = LEVELS[LEVEL].lose;
+    $('resBig').textContent = lossWord(p); $('resTitle').textContent = lz ? lz.title : G.comp ? 'THE FALSE POSITIVES DOMINATE THE SAMPLE' : rads ? 'THE CONTAMINATED GROUND GOT YOU' : 'THE RHINO STAYS IN THE DATASET';
+    var pt = G.push ? pushTotals() : null;
+    $('resReadout').innerHTML = G.push ? ('> read: <b>' + LEVELS[LEVEL].read + '</b> — status: <b>still there</b><br>> fighter: <b>' + teamName(G) + '</b> · held on <b>' + G.elapsed.toFixed(1) + ' s</b> · letters typed: <b>' + pt.letters + '</b> · slips: <b>' + pt.slips + '</b> · repeat units: <b>' + pt.units + '</b><br>> tip: ' + lz.tip)
+      : G.comp ? ('> reads: <b>Rhinoceros + Zebra (relative abundance)</b> — status: <b>' + G.rhinos.map(function(r0){ return Math.round((r0.share || 0) * 100) + ' %'; }).join(' + ') + '</b><br>> fighter: <b>' + teamName(G) + '</b> · survived <b>' + G.elapsed.toFixed(1) + ' s</b> · your share fell below the <b>detection limit</b><br>> tip: every hit you take makes both of them bigger. Land hits and keep the share coming your way.')
       : ('> read: <b>' + LEVELS[LEVEL].read + '</b> — status: <b>' + stillThere() + '</b><br>> fighter: <b>' + teamName(G) + '</b> · survived <b>' + G.elapsed.toFixed(1) + ' s</b> · rhino HP left: <b>' + G.rhinos.map(function(r0){ return r0.state === 'gone' || r0.state === 'ko' ? 'removed' : Math.round(r0.hp) + '/' + r0.maxhp; }).join(' + ') + '</b><br>> tip: ' + (rads ? 'the green patches keep burning while you stand in them — jump out, or stay off the ground the rhino skidded over.' : (LEVELS[LEVEL].tip || 'jump the charge when you see the <b>!</b>, duck the horn sweep, and hit it while it skids (or sleeps).')));
   }
   show('result'); scene = 'result';
 }
-function winStats(p){ return 'HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b>'; }
+function pushTotals(){ var t = {letters: 0, slips: 0, units: 0}; G.players.forEach(function(q){ if (q.pu){ t.letters += q.pu.letters; t.slips += q.pu.slips; t.units += q.pu.units; } }); return t; }
+function winStats(p){
+  if (G.buns){ var bs = G.bunStats; return 'HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b> · buns: <b>' + bs.thrown + '</b> thrown, <b>' + bs.hit + '</b> on target, <b>' + bs.eaten + '</b> eaten by the rhino'; }
+  if (G.push){ var t = pushTotals(); return 'repeat units: <b>' + t.units + '</b> · slips: <b>' + t.slips + '</b>'; }
+  return 'HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b>';
+}
 // the word for a lost round, shared by the canvas banner and the result panel so they can never disagree
-function lossWord(p){ return G.comp ? 'OUTCOMPETED' : (p && p.killedBy === 'rads') ? 'IRRADIATED' : 'TRAMPLED'; }
+function lossWord(p){ return G.push ? 'PUSHED OUT' : G.comp ? 'OUTCOMPETED' : (p && p.killedBy === 'rads') ? 'IRRADIATED' : 'TRAMPLED'; }
 function stillThere(){
   var n = G.rhinos.length, live = liveRhinos().length;
   return n > 1 ? (live + ' of ' + n + ' still there') : 'still there';
@@ -2588,7 +2987,7 @@ refreshBoard();
 var last = performance.now();
 function frame(now){
   var dt = Math.min(.05, (now - last) / 1000); last = now;
-  if (scene === 'fight'){ if (Net.on && Net.peer && !Net.host) guestTick(dt); else hostTick(dt); } else { pressed = {}; pressed2 = {}; }
+  if (scene === 'fight'){ if (Net.on && Net.peer && !Net.host) guestTick(dt); else hostTick(dt); } else { pressed = {}; pressed2 = {}; typedQ.length = 0; }
   draw();
   requestAnimationFrame(frame);
 }
