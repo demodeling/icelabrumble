@@ -1036,7 +1036,8 @@ async function startRound(page, lvl, nth) {
   await page.click('#btnFight');
   await expect(page.locator('#btnLevelGo')).toBeVisible();
   await page.click('#btnLevelGo');
-  await page.waitForTimeout(1750);                           // past the ROUND n / FIGHT! banner
+  // past the ROUND n / FIGHT! banner, in game time (a loaded machine runs the game slower than the wall clock)
+  await expect.poll(() => page.evaluate(() => window.__fight() ? window.__fight().elapsed : 0), { timeout: 8000 }).toBeGreaterThan(1.75);
 }
 
 test('round 6: the fight runs round the hall — up the wall, across the seam, and a charge ends once it is past you', async ({ page }) => {
@@ -1217,7 +1218,8 @@ test('co-op round 7: the guest\'s letters reach the host in the order they were 
   await A.click('.fighter:nth-child(5)'); await A.click('#btnFight');
   await B.click('.fighter:nth-child(2)'); await B.click('#btnFight');
   await expect(A.locator('#select')).toBeHidden(); await expect(B.locator('#select')).toBeHidden();
-  await B.waitForTimeout(1900);
+  // past the banner in game time (a loaded machine runs the game slower than the wall clock), as the guest sees it
+  await expect.poll(() => B.evaluate(() => window.__fight().elapsed), { timeout: 8000 }).toBeGreaterThan(1.8);
   // four letters inside one guest frame: a per-frame set would have kept two of them, in no particular order
   await B.evaluate(() => { ['ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight'].forEach(k => { window.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true })); window.dispatchEvent(new KeyboardEvent('keyup', { key: k, bubbles: true })); }); });
   await expect.poll(() => A.evaluate(() => { const u = window.__fight().players[1].pu; return [u.letters, u.slips, u.pos]; }), { timeout: 4000 }).toEqual([4, 0, 4]);
@@ -1225,4 +1227,143 @@ test('co-op round 7: the guest\'s letters reach the host in the order they were 
   expect(await A.evaluate(() => window.__fight().players[0].pu.letters)).toBe(0);   // and none of them went to the host's own row
   expect(errors).toEqual([]);
   await ctx.close();
+});
+
+async function coopPair(browser, level, picks) {
+  const ctx = await browser.newContext({ viewport: { width: 1100, height: 720 } });
+  const A = await ctx.newPage(), B = await ctx.newPage();
+  const errors = []; [A, B].forEach(p => p.on('pageerror', e => errors.push(e.message)));
+  await wireCoop(A, 'a', () => B, {}); await wireCoop(B, 'b', () => A, {});
+  for (const p of [A, B]) {
+    await p.route(/\/rest\/v1\//, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await p.goto(URL);
+    await p.click('#btnCoop'); await p.fill('#coopCode', 'pair'); await p.click('#btnCoopJoin');
+    await expect(p.locator('#select')).toBeVisible();
+  }
+  await A.evaluate(() => window.__coopPeer('b')); await B.evaluate(() => window.__coopPeer('a'));
+  await A.selectOption('#startLevel', String(level));
+  await A.click(`.fighter:nth-child(${picks[0]})`); await A.click('#btnFight');
+  await B.click(`.fighter:nth-child(${picks[1]})`); await B.click('#btnFight');
+  await expect(A.locator('#select')).toBeHidden(); await expect(B.locator('#select')).toBeHidden();
+  await expect.poll(() => B.evaluate(() => window.__fight().elapsed), { timeout: 8000 }).toBeGreaterThan(1.8);
+  return { ctx, A, B, errors };
+}
+
+test('co-op round 7: the guest keeps the slip lockout itself, so its row and the host agree after a mistake', async ({ browser }) => {
+  const { ctx, A, B, errors } = await coopPair(browser, 6, [5, 2]);
+  const key = (k) => B.evaluate((k) => { window.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true })); window.dispatchEvent(new KeyboardEvent('keyup', { key: k, bubbles: true })); }, k);
+  // a wrong letter with a right one straight after it in the same frame, then a right one while still reeling: all lost
+  await B.evaluate(() => { ['ArrowUp', 'ArrowLeft'].forEach(k => { window.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true })); window.dispatchEvent(new KeyboardEvent('keyup', { key: k, bubbles: true })); }); });
+  await B.waitForTimeout(60); await key('ArrowLeft');
+  await B.waitForTimeout(700); await key('ArrowLeft');            // the lockout is over: this one counts
+  await expect.poll(() => A.evaluate(() => { const u = window.__fight().players[1].pu; return [u.slips, u.letters, u.pos]; }), { timeout: 4000 }).toEqual([1, 1, 1]);
+  await expect.poll(() => B.evaluate(() => window.__fight().push.pred.pos), { timeout: 4000 }).toBe(1);
+  expect(errors).toEqual([]);
+  await ctx.close();
+});
+
+test('co-op: a flash fades on the guest too (it used to stay washed out white after a knockout)', async ({ browser }) => {
+  const { ctx, A, B, errors } = await coopPair(browser, 0, [5, 2]);
+  await A.evaluate(() => { const g = window.__fight(); g.r.state = 'idle'; g.r.timer = 1e9; g.r.hp = 1; g.r.x = g.p.x + 150; g.r.facing = -1; g.p.facing = 1; });
+  await A.keyboard.press('j');
+  await expect.poll(() => B.evaluate(() => window.__fight().r.state), { timeout: 6000 }).toBe('gone');   // the burst and its flash happen on the guest's page
+  await B.waitForTimeout(1200);
+  expect(await B.evaluate(() => window.__flash())).toBeLessThan(0.05);
+  expect(errors).toEqual([]);
+  await ctx.close();
+});
+
+test('Marco\'s tornado spins towards the rhino whichever side it is on', async ({ page }) => {
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  await page.click('#btnStart');
+  await page.click('.fighter:nth-child(6)');                    // Marco
+  await page.click('#btnFight');
+  await page.waitForTimeout(1700);
+  await page.evaluate(() => { const g = window.__fight(); g.r.state = 'idle'; g.r.timer = 1e9; g.p.x = 700; g.r.x = 300; g.p.meter = 100; g.p.inv = 99; });
+  await page.waitForTimeout(100);
+  await page.keyboard.press('l');
+  await page.waitForTimeout(60);
+  expect(await page.evaluate(() => { const g = window.__fight(); return [g.p.state, g.p.dashDir]; })).toEqual(['special', -1]);
+  expect(errors).toEqual([]);
+});
+
+test('round 8: a bun under its belly still gets eaten, and a tray interrupted in the wind-up keeps its meter', async ({ page }) => {
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  await startRound(page, 7, 5);
+  // forage used to steer the body onto the bun and flip round every frame without ever eating it
+  await page.evaluate(() => { const g = window.__fight(); g.p.inv = 99; g.p.x = 150; g.r.x = 640; g.r.facing = -1; g.r.hp = 200; g.bunsGround.length = 0; g.bunsGround.push({ x: 700, t: 0 }); g.r.state = 'forage'; g.r.st = 0; window.__flips = 0; window.__lastF = g.r.facing; });
+  for (let i = 0; i < 30; i++) {
+    const s = await page.evaluate(() => { const g = window.__fight(); if (g.r.facing !== window.__lastF){ window.__flips++; window.__lastF = g.r.facing; } return { eaten: g.bunStats.eaten, flips: window.__flips }; });
+    if (s.eaten) break;
+    await page.waitForTimeout(90);
+  }
+  const f = await page.evaluate(() => { const g = window.__fight(); return { eaten: g.bunStats.eaten, flips: window.__flips, hp: g.r.hp }; });
+  expect(f.eaten).toBe(1); expect(f.hp).toBe(210); expect(f.flips).toBeLessThan(3);
+  // a bun just behind it: it turns round for it rather than walking backwards across the field
+  await page.evaluate(() => { const g = window.__fight(); g.r.x = 500; g.r.facing = -1; g.bunsGround.push({ x: 650, t: 0 }); g.r.state = 'forage'; g.r.st = 0; window.__x0 = g.r.x; });
+  await expect.poll(() => page.evaluate(() => window.__fight().bunStats.eaten), { timeout: 4000 }).toBe(2);
+  expect(await page.evaluate(() => Math.abs(window.__fight().r.x - window.__x0))).toBeLessThan(120);
+  // pressing TRAY as the charge arrives: knocked out of the wind-up, the meter is still there to try again
+  await page.evaluate(() => { const g = window.__fight(); g.r.state = 'idle'; g.r.timer = 1e9; g.r.x = g.p.x + 400; g.p.meter = 100; g.p.state = 'idle'; });
+  await page.keyboard.press('l');
+  await page.evaluate(() => { const g = window.__fight(); g.p.state = 'hurt'; g.p.st = 0; });
+  await page.waitForTimeout(400);
+  expect(await page.evaluate(() => { const g = window.__fight(); return [g.p.meter, g.bunStats.thrown]; })).toEqual([100, 0]);
+  expect(errors).toEqual([]);
+});
+
+test('co-op round 8: the guest sees the buns and the same tally as the host', async ({ browser }) => {
+  const { ctx, A, B, errors } = await coopPair(browser, 7, [5, 2]);
+  await A.evaluate(() => { const g = window.__fight(); g.r.state = 'idle'; g.r.timer = 1e9; g.players.forEach(q => { q.inv = 99; }); g.r.x = g.p2.x + 350; });
+  for (let i = 0; i < 3; i++) {   // one throw at a time: wait out each one in game time (a loaded machine runs slower than the wall clock)
+    await B.keyboard.press('j');
+    await expect.poll(() => A.evaluate(() => window.__fight().bunStats.thrown), { timeout: 5000 }).toBe(i + 1);
+    await expect.poll(() => A.evaluate(() => window.__fight().p2.state), { timeout: 5000 }).not.toBe('throw');
+  }
+  await expect.poll(() => A.evaluate(() => window.__fight().bunStats.thrown), { timeout: 5000 }).toBe(3);
+  await expect.poll(() => B.evaluate(() => window.__fight().bunStats.thrown), { timeout: 5000 }).toBe(3);
+  expect(await A.evaluate(() => window.__fight().p2.hitsLanded)).toBeGreaterThan(0);   // the thrower is credited
+  expect(errors).toEqual([]);
+  await ctx.close();
+});
+
+test('nothing lands after the bell, and a grown fighter in round 5 can still punch a small rhino', async ({ page }) => {
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  // round 5: you at 80 %, the last false positive at 20 % and shrunk — the fist is far above it
+  await startRound(page, 4, 5);
+  await page.evaluate(() => { const g = window.__fight(); const r = g.rhinos[1]; g.rhinos[0].state = 'ko';
+    g.p.share = .8; r.share = .2; g.rhinos[0].share = 0; g.p.size = 1.96; r.size = .69; g.p.hp = 80; r.hp = 20;
+    r.state = 'idle'; r.timer = 1e9; g.p.inv = 99; g.p.x = r.x - 1.6 * 84 * .69 - 60; g.p.facing = 1; r.facing = -1; });
+  const s0 = await page.evaluate(() => window.__fight().rhinos[1].share);
+  for (let i = 0; i < 3; i++) { await page.keyboard.press('j'); await page.waitForTimeout(380); }
+  expect(await page.evaluate(() => window.__fight().rhinos[1].share)).toBeLessThan(s0);
+  // the fight is over (the bell, a knockout): a punch already on its way does nothing and counts nothing
+  await page.evaluate(() => { const g = window.__fight(); g.over = true; g.p.state = 'punch'; g.p.st = .05; g.p.attackHit = false; window.__h0 = [g.p.hitsLanded, g.rhinos[1].share]; });
+  await page.waitForTimeout(300);
+  expect(await page.evaluate(() => { const g = window.__fight(); return [g.p.hitsLanded, g.rhinos[1].share]; })).toEqual(await page.evaluate(() => window.__h0));
+  expect(errors).toEqual([]);
+});
+
+test('touch pads keep a held press when the thumb drifts, are big enough, and never overlap', async ({ browser }) => {
+  for (const vp of [{ width: 844, height: 390 }, { width: 667, height: 375 }, { width: 414, height: 896 }, { width: 390, height: 844 }, { width: 375, height: 667 }, { width: 360, height: 800 }, { width: 340, height: 720 }, { width: 320, height: 568 }]) {
+    const ctx = await browser.newContext({ viewport: vp, hasTouch: true, isMobile: true });
+    const page = await ctx.newPage();
+    await page.goto(URL);
+    await page.click('#btnStart'); await page.click('#btnFight');   // pads are laid out in a fight
+    const r = await page.evaluate(() => {
+      const bs = Array.from(document.querySelectorAll('.tb')), rs = bs.map(b => b.getBoundingClientRect());
+      let overlap = 0;
+      for (let i = 0; i < rs.length; i++) for (let j = i + 1; j < rs.length; j++) {
+        const a = rs[i], b = rs[j], dx = (a.left + a.width / 2) - (b.left + b.width / 2), dy = (a.top + a.height / 2) - (b.top + b.height / 2);
+        if (Math.hypot(dx, dy) < (a.width + b.width) / 2 - 0.5) overlap++;   // they are circles
+      }
+      return { none: bs.every(b => getComputedStyle(b).touchAction === 'none'), min: Math.min.apply(null, rs.map(q => q.width)), overlap };
+    });
+    expect(r, `${vp.width}x${vp.height}`).toEqual({ none: true, min: r.min, overlap: 0 });
+    expect(r.min, `${vp.width}x${vp.height}`).toBeGreaterThanOrEqual(48);
+    await ctx.close();
+  }
 });
