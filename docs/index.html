@@ -36,6 +36,7 @@
   .overlay{position:absolute;inset:0;display:flex;overflow-y:auto;-webkit-overflow-scrolling:touch;
            background:rgba(10,14,30,.8);text-align:center;padding:14px 16px;box-sizing:border-box;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);}
   .panel{margin:auto;display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;}
+  .panel:focus{outline:none;}
   @media (orientation:portrait){#stage{aspect-ratio:4/5;width:100%;}}   /* taller than square: room for the overlays and the pads */
   /* small stages (phones): tighter panels, the action buttons come before the long readout so nothing important needs a scroll,
      the corner buttons shrink to icons so they cannot sit on a heading or on the SPECIAL pad, and the scores table scrolls sideways */
@@ -70,13 +71,14 @@
   .btn:active{transform:translateY(4px);box-shadow:0 1px 0 #a9822f;}
   .btn.secondary{background:var(--snow2);box-shadow:0 5px 0 #8b97b3,0 10px 22px rgba(0,0,0,.4);}
   .btn:focus-visible{outline:3px solid var(--aurora);outline-offset:3px;}
-  .roster{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;width:min(100%,900px);}
+  .roster{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;width:min(100%,960px);}
   @media (max-width:640px){.roster{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}}
   .fighter{background:var(--night2);border:3px solid transparent;border-radius:12px;padding:6px 4px 5px;min-width:0;cursor:pointer;
            display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--snow);transition:transform .1s,border-color .1s;}
   .fighter:hover,.fighter:focus-visible{transform:translateY(-3px);border-color:var(--aurora);outline:none;}
   .fighter.sel{border-color:var(--gold);background:#2a2b48;}
-  .fighter img{height:clamp(40px,7vw,84px);width:auto;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5));}
+  .fighter img{height:clamp(40px,6vw,66px);width:auto;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5));}
+  .fighter .best:empty{display:none;}
   .fighter .name{font-family:var(--display);font-size:clamp(15px,2.2vw,22px);letter-spacing:.05em;}
   .fighter .move{font-size:clamp(9px,1.2vw,12px);color:var(--muted);line-height:1.15;}
   .fighter .best{font-size:clamp(9px,1.1vw,11px);color:var(--gold);font-variant-numeric:tabular-nums;margin-top:2px;min-height:1.2em;}
@@ -93,12 +95,19 @@
   #touch.on{display:block;}
   .pad{position:absolute;bottom:4%;display:flex;gap:10px;pointer-events:auto;}
   .pad.left{left:3%;} .pad.right{right:3%;flex-wrap:wrap;width:34%;justify-content:flex-end;}
-  .tb{width:clamp(46px,9vw,72px);height:clamp(46px,9vw,72px);border-radius:50%;border:3px solid rgba(255,255,255,.45);
+  .tb{box-sizing:border-box;width:clamp(48px,9vw,72px);height:clamp(48px,9vw,72px);border-radius:50%;border:3px solid rgba(255,255,255,.45);touch-action:none;
       background:rgba(20,26,52,.55);color:var(--snow);font-family:var(--display);font-size:clamp(14px,2.4vw,22px);
-      display:flex;align-items:center;justify-content:center;letter-spacing:.04em;-webkit-tap-highlight-color:transparent;}
+      display:flex;align-items:center;justify-content:center;letter-spacing:0;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;}
   .tb.act{background:rgba(242,197,107,.85);color:var(--ink);border-color:var(--gold);}
   .tb.big{width:clamp(56px,11vw,86px);height:clamp(56px,11vw,86px);}
+  #touch.thin .tb{background:rgba(20,26,52,.16);border-color:rgba(255,255,255,.28);color:rgba(238,242,248,.7);}   /* round 6: the right wall is a playing surface */
+  #touch.thin .tb.sp{border-color:rgba(111,227,160,.55);}
+  #touch.thin .tb.act{background:rgba(242,197,107,.6);border-color:var(--gold);color:var(--ink);}
   .tb.sp{border-color:var(--aurora);}
+  @media (orientation:portrait){ .pad.right{width:calc(2 * clamp(56px,11vw,86px) + 10px);} .pad{bottom:3%;} }
+  @media (orientation:portrait) and (max-width:380px){ .pad{gap:6px;} .pad.left{left:2%;} .pad.right{right:2%;width:calc(2 * clamp(56px,11vw,86px) + 6px);} }
+  /* the narrowest phones: the two groups cannot sit side by side, so DUCK goes on a row of its own above the arrows */
+  @media (orientation:portrait) and (max-width:350px){ .pad.left{display:grid;grid-template-columns:auto auto;justify-items:center;} .pad.left .tb[data-k="down"]{grid-column:1 / span 2;order:-1;} }
   .result-big{font-family:var(--display);font-size:clamp(48px,10vw,120px);color:var(--gold);text-shadow:5px 5px 0 var(--ember),10px 10px 0 rgba(0,0,0,.5);margin:0;line-height:1;}
   .readout{font-family:var(--mono);background:#0b1224;border:1px solid var(--aurora);color:var(--aurora);border-radius:8px;padding:8px 14px;font-size:clamp(11px,1.5vw,14px);text-align:left;overflow-y:auto;}
   .readout b{color:var(--gold);font-weight:400;}
@@ -134,6 +143,15 @@
   .btn.rad{background:#8dff5a;box-shadow:0 5px 0 #3f8a2a,0 10px 22px rgba(0,0,0,.4);}
   .term.blue{color:#7fe7ff;border-color:#2a5d7a;text-shadow:0 0 6px rgba(127,231,255,.6);background:#03080f;}
   .term.blue b{color:#dff7ff;}
+  .term.museum{color:#f2d492;border-color:#7a5a2a;background:#120d08;text-shadow:0 0 6px rgba(242,212,146,.4);}
+  .term.museum b{color:#fff3d6;}
+  .term.lab{color:#dff1ff;border-color:#5f7890;background:#060b12;text-shadow:0 0 6px rgba(160,210,255,.4);}
+  .term.lab b{color:#ffffff;}
+  .btn.lab{background:#dff1ff;box-shadow:0 5px 0 #5f7890,0 10px 22px rgba(0,0,0,.4);}
+  .term.cafe{color:#ffd9a0;border-color:#8a5a2a;background:#140b05;text-shadow:0 0 6px rgba(255,190,110,.4);}
+  .term.cafe b{color:#fff4e0;}
+  .btn.cafe{background:#ffc98a;box-shadow:0 5px 0 #8a5a2a,0 10px 22px rgba(0,0,0,.4);}
+  .btn.museum{background:#f2d492;box-shadow:0 5px 0 #8a6a2a,0 10px 22px rgba(0,0,0,.4);}
   .btn.blue{background:#7fe7ff;box-shadow:0 5px 0 #2a6d8a,0 10px 22px rgba(0,0,0,.4);}
   .check select{font-family:var(--body);font-weight:700;background:#0b1224;color:var(--snow);border:2px solid var(--snow2);border-radius:6px;padding:3px 6px;}
   .check{font-size:clamp(11px,1.3vw,13px);color:var(--muted);display:flex;gap:6px;align-items:center;}
@@ -174,7 +192,7 @@
       <p class="small" id="titleBest"></p>
       <p class="small">Sound on for the full kung-fu experience. Works on Safari, iPhone and iPad — tap ⛶ FULLSCREEN for a widescreen arena on your phone.</p>
       <p class="small" id="iosHint" hidden>iPhone: for a real full screen, tap Share → <b>Add to Home Screen</b> and open the game from there (no Safari bars at all).</p>
-      <p class="small ver" id="verLine">v1.4.0 · build 5663326</p>
+      <p class="small ver" id="verLine">v1.5.0 · build 79fd704</p>
     </div></div>
 
     <div id="select" class="overlay" hidden><div class="panel">
@@ -183,9 +201,10 @@
         <button class="btn" id="btnFight"><span id="fightVerb">FIGHT AS</span> <span id="selName">ALBERTAS</span>!</button>
         <button class="btn secondary" id="btnVideo">SHOW ME <span id="selName2">ALBERTAS</span>’S VIDEO</button>
       </div>
+      <p class="small" id="selMove"></p>
       <p class="small">Tap a fighter to select — tap again to fight.</p>
       <p class="small coop" id="selCoop" hidden></p>
-      <label class="check">Start at <select id="startLevel"><option value="0">Round 1 — Kiruna</option><option value="1">Round 2 — The Wasteland</option><option value="2">Round 3 — The Asteroid</option><option value="3">Round 4 — The Duplicates</option><option value="4">Round 5 — Compositional</option></select></label>
+      <label class="check">Start at <select id="startLevel"><option value="0">Round 1 — Kiruna</option><option value="1">Round 2 — The Wasteland</option><option value="2">Round 3 — The Asteroid</option><option value="3">Round 4 — The Duplicates</option><option value="4">Round 5 — Compositional</option><option value="5">Round 6 — The Square</option><option value="6">Round 7 — The Push</option><option value="7">Round 8 — Cinnamon Bun Day</option></select></label>
       <div class="roster" id="roster"></div>
       <div class="controls" id="ctrlHelp"><kbd>←</kbd><kbd>→</kbd> move · <kbd>↑</kbd>/<kbd>space</kbd> jump · <kbd>↓</kbd> duck · <kbd>J</kbd> punch · <kbd>K</kbd> kick · <kbd>L</kbd> special (when the meter is full) · <kbd>Esc</kbd> menu</div>
     </div></div>
@@ -381,7 +400,8 @@ window.addEventListener('resize', resize); window.addEventListener('orientationc
 
 // ---- fullscreen / widescreen mode (native Fullscreen API where it exists, CSS rotation fallback for iPhone)
 var stage = document.getElementById('stage'), fsOn = false;
-function nativeFS(){ return stage.requestFullscreen ? 'requestFullscreen' : (stage.webkitRequestFullscreen ? 'webkitRequestFullscreen' : null); }
+var FS_EL = document.documentElement;   // not #stage: the browser's own :fullscreen style would override the portrait rotation
+function nativeFS(){ return FS_EL.requestFullscreen ? 'requestFullscreen' : (FS_EL.webkitRequestFullscreen ? 'webkitRequestFullscreen' : null); }
 function applyFS(){
   stage.classList.remove('fs-fill', 'fs-rot');
   if (!fsOn) return;
@@ -391,7 +411,7 @@ function applyFS(){
 function toggleFS(){
   fsOn = !fsOn;
   var m = nativeFS();
-  if (fsOn && m){ try { var pr = stage[m](); if (pr && pr.catch) pr.catch(function(){}); } catch (e) {}
+  if (fsOn && m){ try { var pr = FS_EL[m](); if (pr && pr.catch) pr.catch(function(){}); } catch (e) {}
     try { if (screen.orientation && screen.orientation.lock){ var lk = screen.orientation.lock('landscape'); if (lk && lk.catch) lk.catch(function(){}); } } catch (e2) {} }
   if (!fsOn){ var ex = document.exitFullscreen || document.webkitExitFullscreen; if (ex && (document.fullscreenElement || document.webkitFullscreenElement)) { try { ex.call(document); } catch (e) {} } try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e3) {} }
   applyFS(); setTimeout(resize, 50); setTimeout(resize, 400);
@@ -402,7 +422,7 @@ function toggleFS(){
   if (!inFS && fsOn && nativeFS()){ fsOn = false; applyFS(); document.getElementById('fsBtn').innerHTML = '⛶<span> FULLSCREEN</span>'; }
   setTimeout(resize, 50);
 }); });
-document.getElementById('fsBtn').addEventListener('click', function(){ unlockAudio(); toggleFS(); });
+document.getElementById('fsBtn').addEventListener('click', function(){ unlockAudio(); toggleFS(); if (scene === 'fight') blurFocus(); });
 document.getElementById('menuBtn').addEventListener('click', function(){ unlockAudio(); goMenu(); });
 var isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 if (isTouch) { document.getElementById('touch').classList.add('on'); document.getElementById('ctrlHelp').textContent = 'Use the on-screen buttons. Fill the meter with hits to unlock your special.'; }
@@ -425,7 +445,7 @@ function noiseBuf(a, dur){
   return b;
 }
 function sfx(kind, opt){
-  if (Net.on && Net.host && Net.peer && Net.sfxQ.length < 12) Net.sfxQ.push(kind);
+  if (Net.on && Net.host && Net.peer && Net.sfxQ.length < 12) Net.sfxQ.push(opt && opt.f ? [kind, opt.f] : kind);   // the pitch travels too
   var a = audio(); if (!a || a.state !== 'running') return;
   opt = opt || {};
   var t = a.currentTime, g = a.createGain(); g.connect(a.destination);
@@ -512,6 +532,10 @@ function sfx(kind, opt){
     var sg = a.createBufferSource(); sg.buffer = noiseBuf(a, 0.03);
     var fg = a.createBiquadFilter(); fg.type = 'highpass'; fg.frequency.value = 2500; sg.connect(fg); fg.connect(g);
     g.gain.setValueAtTime(0.5, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.03); sg.start(t); sg.stop(t + 0.035);
+  } else if (kind === 'tick'){
+    var sk = a.createBufferSource(); sk.buffer = noiseBuf(a, 0.02);
+    var fk = a.createBiquadFilter(); fk.type = 'bandpass'; fk.frequency.value = opt.f || 1600; fk.Q.value = 1.2; sk.connect(fk); fk.connect(g);
+    g.gain.setValueAtTime(0.28, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.02); sk.start(t); sk.stop(t + 0.025);
   } else if (kind === 'burst'){
     var ob = a.createOscillator(); ob.type = 'sawtooth'; ob.frequency.setValueAtTime(90, t); ob.frequency.exponentialRampToValueAtTime(900, t + .55);
     var fb = a.createBiquadFilter(); fb.type = 'lowpass'; fb.frequency.setValueAtTime(400, t); fb.frequency.exponentialRampToValueAtTime(4000, t + .55);
@@ -546,6 +570,9 @@ var keys = {};
 var KEYMAP = {ArrowLeft:'left', a:'left', A:'left', ArrowRight:'right', d:'right', D:'right', ArrowUp:'jump', w:'jump', W:'jump', ' ':'jump',
               ArrowDown:'down', s:'down', S:'down', j:'punch', J:'punch', z:'punch', Z:'punch', k:'kick', K:'kick', x:'kick', X:'kick', l:'special', L:'special', c:'special', C:'special'};
 var pressed = {};   // edge-triggered
+var typedQ = [];    // round 7: letters in the order they were typed (A C G T)
+var PUSH_LETTER = {ArrowLeft:'A', a:'A', A:'A', ArrowRight:'T', d:'T', D:'T', t:'T', T:'T', ArrowUp:'C', w:'C', W:'C', c:'C', C:'C', ArrowDown:'G', s:'G', S:'G', g:'G', G:'G'};
+var PUSH_PAD = {left: 'A', right: 'T', jump: 'C', down: 'G'};
 // a local versus fight splits the keyboard: player 1 keeps the arrows + J/K/L, player 2 gets W/A/S/D + F/G/H
 var keys2 = {}, pressed2 = {};
 var KEYMAP1 = {ArrowLeft:'left', ArrowRight:'right', ArrowUp:'jump', ' ':'jump', ArrowDown:'down', j:'punch', J:'punch', k:'kick', K:'kick', l:'special', L:'special'};
@@ -557,11 +584,12 @@ function typingIn(e){ var t = e.target, n = (t && t.tagName) || ''; return n ===
 function ownsKeys(e){ var n = (e.target && e.target.tagName) || ''; return n === 'BUTTON' || n === 'SELECT' || n === 'A' || n === 'OPTION'; }
 window.addEventListener('keydown', function(e){
   if (typingIn(e)) return;
-  if (e.key === 'Escape' || e.key === 'Esc'){ goMenu(); return; }
+  if (e.key === 'Escape' || e.key === 'Esc'){ if (!$('videoBox').hidden){ closeVideo(); return; } goMenu(); return; }
   if (ownsKeys(e)) return;
   var hit;
   if (vsLocal) hit = keyDown(KEYMAP2, keys2, pressed2, e.key) || keyDown(KEYMAP1, keys, pressed, e.key);
   else hit = keyDown(KEYMAP, keys, pressed, e.key);
+  if (G && G.push && scene === 'fight'){ var lt = PUSH_LETTER[e.key]; if (lt){ if (!e.repeat && typedQ.length < 32) typedQ.push(lt); hit = true; } }
   if (hit) e.preventDefault();
 });
 // a release always releases, whatever has focus — a keyup that lands in the name box used to leave the
@@ -575,11 +603,23 @@ window.addEventListener('keyup', function(e){
 });
 window.addEventListener('blur', function(){ clearKeys(); });   // alt-tab away mid-stride and the fighter stops
 function blurFocus(){ var a = document.activeElement; if (a && a !== document.body && a.blur) a.blur(); }
-function clearKeys(){ var k; for (k in keys) keys[k] = false; for (k in keys2) keys2[k] = false; pressed = {}; pressed2 = {}; }
+function clearKeys(){ var k; for (k in keys) keys[k] = false; for (k in keys2) keys2[k] = false; pressed = {}; pressed2 = {}; typedQ.length = 0; }
+var PAD_LABELS = {push: {left: '◀ A', right: '▶ T', jump: '▲ C', down: '▼ G', punch: '', kick: '', special: ''}, buns: {punch: 'THROW', kick: 'LOB', special: 'TRAY'}};
+function setPadLabels(mode){
+  var m = mode ? PAD_LABELS[mode] : null;
+  document.getElementById('touch').classList.toggle('thin', mode === 'square');
+  Array.prototype.forEach.call(document.querySelectorAll('.tb'), function(b){
+    var k = b.getAttribute('data-k'); if (!b.hasAttribute('data-l0')) b.setAttribute('data-l0', b.textContent);
+    var v = (m && m[k] != null) ? m[k] : b.getAttribute('data-l0');
+    b.textContent = v; b.style.visibility = v === '' ? 'hidden' : '';
+  });
+}
 Array.prototype.forEach.call(document.querySelectorAll('.tb'), function(b){
   var k = b.getAttribute('data-k');
-  function down(e){ e.preventDefault(); unlockAudio(); if (!keys[k]) pressed[k] = true; keys[k] = true; b.classList.add('act'); }
-  function up(e){ e.preventDefault(); keys[k] = false; b.classList.remove('act'); }
+  var fingers = {};
+  function down(e){ e.preventDefault(); unlockAudio(); fingers[e.pointerId] = 1; if (!keys[k]) pressed[k] = true; keys[k] = true; b.classList.add('act');
+    if (G && G.push && scene === 'fight' && PUSH_PAD[k] && typedQ.length < 32) typedQ.push(PUSH_PAD[k]); }   // every tap is a letter, even a second finger on the same pad
+  function up(e){ e.preventDefault(); delete fingers[e.pointerId]; if (Object.keys(fingers).length) return; keys[k] = false; b.classList.remove('act'); }
   b.addEventListener('pointerdown', down); b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up); b.addEventListener('pointerleave', up);
 });
 
@@ -674,6 +714,9 @@ function drawSpace(t){
   for (var m = 0; m < 4; m++){ var mx = ((m * 260 - t * (18 + m * 6)) % (LW + 80) + LW + 80) % (LW + 80) - 40, my = 380 + 30 * Math.sin(t * .6 + m); ctx.fillStyle = '#7a7e86'; ctx.beginPath(); ctx.moveTo(mx, my); ctx.lineTo(mx + 14, my - 6); ctx.lineTo(mx + 22, my + 4); ctx.lineTo(mx + 10, my + 10); ctx.closePath(); ctx.fill(); }
 }
 function drawBackground(t){
+  if (LEVELS[LEVEL].theme === 'museum'){ drawMuseum(t); return; }
+  if (LEVELS[LEVEL].theme === 'lab'){ drawLab(t); return; }
+  if (LEVELS[LEVEL].theme === 'cafe'){ drawCafe(t); return; }
   if (LEVELS[LEVEL].theme === 'space'){ drawSpace(t); return; }
   if (LEVELS[LEVEL].theme === 'wasteland'){ drawWasteland(t); return; }
   if (!skyGrad){ skyGrad = ctx.createLinearGradient(0, 0, 0, 360); skyGrad.addColorStop(0, '#0c1434'); skyGrad.addColorStop(.6, '#425a96'); skyGrad.addColorStop(1, '#f0b282'); }
@@ -712,6 +755,207 @@ function drawBackground(t){
   for (var k = 0; k < 14; k++){ var yy = 430 + k * 12 + (k % 3) * 3; ctx.beginPath(); ctx.moveTo((k * 173) % LW, yy); ctx.lineTo((k * 173) % LW + 90 + k * 9, yy); ctx.stroke(); }
   // bare trees
   drawTree(70, 452, 22, 4, 11); drawTree(880, 448, 20, 4, 5); drawTree(930, 590, 68, 5, 3);
+}
+// round 6: a Swedish museum hall drawn in section. The four sides of the room (floor, walls, ceiling) are where the
+// fight happens; the back wall is the exhibition. Static art only: this also runs on the menus, where there is no G.
+var DURER = {x: 0, facing: 1, jump: 0, tilt: 0, squash: 0, run: 0, phase: 0, head: -.05, tail: .1, flash: 0, size: 1};
+function museumPlaque(x, y, sv, en, hot){
+  ctx.fillStyle = 'rgba(0,0,0,.35)'; roundRect(x - 62, y - 17, 128, 38, 4); ctx.fill();
+  var pg = ctx.createLinearGradient(0, y - 19, 0, y + 19); pg.addColorStop(0, '#e9cf8a'); pg.addColorStop(1, '#a8843e');
+  ctx.fillStyle = pg; roundRect(x - 64, y - 19, 128, 38, 4); ctx.fill();
+  ctx.strokeStyle = '#5a4318'; ctx.lineWidth = 1.5; roundRect(x - 60, y - 15, 120, 30, 3); ctx.stroke();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = hot ? '#9a1d1a' : '#2a1e0c'; ctx.font = '700 12px Georgia, "Times New Roman", serif'; ctx.fillText(sv, x, y - 4);
+  ctx.fillStyle = '#4a3814'; ctx.font = 'italic 400 9px Georgia, "Times New Roman", serif'; ctx.fillText(en, x, y + 8);
+  if (hot){ ctx.fillStyle = '#c8262c'; ctx.beginPath(); ctx.arc(x + 52, y - 10, 4, 0, 6.283); ctx.fill(); }
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+}
+function museumFrame(x, y, w, h){
+  ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(x - 6, y - 4, w + 16, h + 16);
+  var fg = ctx.createLinearGradient(x, y, x + w, y + h); fg.addColorStop(0, '#e2c06a'); fg.addColorStop(.5, '#a37a2c'); fg.addColorStop(1, '#d9b45e');
+  ctx.fillStyle = fg; ctx.fillRect(x - 10, y - 10, w + 20, h + 20);
+  ctx.strokeStyle = '#5a4318'; ctx.lineWidth = 2; ctx.strokeRect(x - 10, y - 10, w + 20, h + 20); ctx.strokeRect(x - 3, y - 3, w + 6, h + 6);
+}
+function drawMuseum(t){
+  var X0 = SQ.x0, X1 = SQ.x1, Y0 = SQ.y0, Y1 = SQ.y1, R = SQ.R, W = X1 - X0, H = Y1 - Y0;
+  // the building around the hall, cut open: dark stone courses
+  ctx.fillStyle = '#211b17'; ctx.fillRect(-20, -20, LW + 40, LH + 40);
+  ctx.strokeStyle = 'rgba(255,236,214,.06)'; ctx.lineWidth = 1; ctx.beginPath();
+  for (var by = 6, row = 0; by < LH + 20; by += 24, row++){ ctx.moveTo(-20, by); ctx.lineTo(LW + 20, by); for (var bx = (row % 2) * 34 - 20; bx < LW + 20; bx += 68){ ctx.moveTo(bx, by); ctx.lineTo(bx, by + 24); } }
+  ctx.stroke();
+  // plaster lining with coved corners, oak parquet along the floor
+  ctx.fillStyle = '#e4d9c3'; roundRect(X0 - 16, Y0 - 16, W + 32, H + 32, R + 16); ctx.fill();
+  ctx.save(); roundRect(X0 - 16, Y0 - 16, W + 32, H + 32, R + 16); ctx.clip();
+  var og = ctx.createLinearGradient(0, Y1, 0, Y1 + 18); og.addColorStop(0, '#caa066'); og.addColorStop(1, '#8a6238');
+  ctx.fillStyle = og; ctx.fillRect(0, Y1, LW, 18);
+  ctx.strokeStyle = 'rgba(70,40,15,.45)'; ctx.lineWidth = 1; ctx.beginPath();
+  for (var pk = 0; pk < 44; pk++){ var px = X0 - 40 + pk * 24; ctx.moveTo(px, Y1 + (pk % 2 ? 0 : 9)); ctx.lineTo(px, Y1 + (pk % 2 ? 9 : 18)); }
+  ctx.moveTo(0, Y1 + 9); ctx.lineTo(LW, Y1 + 9); ctx.stroke();
+  ctx.restore();
+  // the back wall
+  ctx.save(); roundRect(X0, Y0, W, H, R); ctx.clip();
+  var wg = ctx.createLinearGradient(0, Y0, 0, Y1); wg.addColorStop(0, '#4a665e'); wg.addColorStop(1, '#2d433e');
+  ctx.fillStyle = wg; ctx.fillRect(X0, Y0, W, H);
+  // wainscot and a brass dado rail
+  ctx.fillStyle = '#23352f'; ctx.fillRect(X0, 392, W, Y1 - 392);
+  ctx.fillStyle = '#c9b27a'; ctx.fillRect(X0, 387, W, 5); ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(X0, 392, W, 2);
+  ctx.strokeStyle = 'rgba(0,0,0,.28)'; ctx.lineWidth = 2; for (var wp = X0 + 44; wp < X1 - 90; wp += 112) ctx.strokeRect(wp, 406, 92, 48);
+  ctx.strokeStyle = 'rgba(255,255,255,.05)'; for (var wp2 = X0 + 44; wp2 < X1 - 90; wp2 += 112) ctx.strokeRect(wp2 + 2, 408, 92, 48);
+  // warm picture lights
+  [[250, .85], [480, 1], [710, .85]].forEach(function(l){ var sg = ctx.createRadialGradient(l[0], Y0 + 6, 8, l[0], Y0 + 110, 250); sg.addColorStop(0, 'rgba(255,228,176,' + (.3 * l[1]) + ')'); sg.addColorStop(1, 'rgba(255,228,176,0)'); ctx.fillStyle = sg; ctx.fillRect(l[0] - 260, Y0, 520, 330); });
+  // hall sign
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#e8cf8e'; ctx.font = '700 17px Georgia, "Times New Roman", serif'; ctx.fillText('SAL 6  ·  ARTBESTÄMNING', 480, Y0 + 30);
+  ctx.fillStyle = 'rgba(232,207,142,.7)'; ctx.font = 'italic 400 11px Georgia, "Times New Roman", serif'; ctx.fillText('where every species name starts: the voucher specimen', 480, Y0 + 48);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  // the rhinoceros of 1515, drawn from a letter by someone who never saw one: a false positive in oils
+  museumFrame(186, 238, 150, 92);
+  ctx.fillStyle = '#e8dcc0'; ctx.fillRect(186, 238, 150, 92);
+  ctx.save(); ctx.beginPath(); ctx.rect(186, 238, 150, 92); ctx.clip();
+  ctx.translate(262, 318); ctx.scale(.2, .2); ctx.translate(0, -GROUND);
+  ctx.globalAlpha = .9; drawRhino(DURER); ctx.globalAlpha = 1;
+  ctx.fillStyle = '#4e4a50'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 6;   // the little horn on its back that no rhino has
+  ctx.beginPath(); ctx.moveTo(-40, GROUND - 176); ctx.lineTo(-18, GROUND - 236); ctx.lineTo(-2, GROUND - 178); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = 'rgba(60,40,20,.18)'; for (var hl = 0; hl < 10; hl++) ctx.fillRect(186, 242 + hl * 9, 150, 1);
+  ctx.fillStyle = '#d9c9a0'; ctx.font = 'italic 400 10px Georgia, "Times New Roman", serif'; ctx.textAlign = 'center';
+  ctx.fillText('Rhinocerus, 1515 — drawn from hearsay', 261, 348); ctx.textAlign = 'left';
+  // Kiruna under the aurora, in a gilt frame
+  museumFrame(624, 238, 150, 92);
+  var ag = ctx.createLinearGradient(0, 238, 0, 330); ag.addColorStop(0, '#0c1434'); ag.addColorStop(1, '#46609a'); ctx.fillStyle = ag; ctx.fillRect(624, 238, 150, 92);
+  ctx.strokeStyle = 'rgba(95,235,155,.5)'; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(630, 262); ctx.quadraticCurveTo(690, 244, 768, 266); ctx.stroke(); ctx.lineCap = 'butt';
+  ctx.fillStyle = '#9298c4'; ctx.beginPath(); ctx.moveTo(624, 318); ctx.lineTo(660, 290); ctx.lineTo(690, 306); ctx.lineTo(728, 282); ctx.lineTo(774, 312); ctx.lineTo(774, 330); ctx.lineTo(624, 330); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#eef1f8'; ctx.fillRect(624, 322, 150, 8);
+  ctx.fillStyle = '#d9c9a0'; ctx.font = 'italic 400 10px Georgia, "Times New Roman", serif'; ctx.textAlign = 'center';
+  ctx.fillText('Kiruna, the sampling site', 699, 348); ctx.textAlign = 'left';
+  // the vitrine: one jar, one label, the wrong name
+  ctx.fillStyle = '#3a2718'; ctx.fillRect(432, 392, 96, Y1 - 392); ctx.fillStyle = '#4e3522'; ctx.fillRect(426, 388, 108, 8);
+  ctx.fillStyle = '#f2ead8'; ctx.fillRect(446, 412, 68, 28); ctx.strokeStyle = '#6a5a3a'; ctx.lineWidth = 1; ctx.strokeRect(446, 412, 68, 28);
+  ctx.fillStyle = '#2a1e0c'; ctx.font = 'italic 700 9px Georgia, "Times New Roman", serif'; ctx.textAlign = 'center'; ctx.fillText('Rhinoceros sp.', 480, 423);
+  ctx.save(); ctx.translate(480, 433); ctx.rotate(-.12); ctx.fillStyle = '#c8262c'; ctx.font = '900 8px Nunito, sans-serif'; ctx.fillText('FELBESTÄMD', 0, 0); ctx.restore();
+  ctx.fillStyle = 'rgba(160,210,200,.16)'; ctx.fillRect(430, 296, 100, 92);
+  ctx.strokeStyle = 'rgba(220,245,240,.55)'; ctx.lineWidth = 2; ctx.strokeRect(430, 296, 100, 92);
+  ctx.fillStyle = 'rgba(200,190,120,.5)'; roundRect(456, 322, 48, 62, 8); ctx.fill(); ctx.strokeStyle = 'rgba(240,240,230,.7)'; ctx.stroke();
+  ctx.fillStyle = '#6c686c'; ctx.beginPath(); ctx.ellipse(480, 358, 15, 11, 0, 0, 6.283); ctx.fill(); ctx.beginPath(); ctx.moveTo(468, 352); ctx.lineTo(462, 336); ctx.lineTo(474, 348); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#8a6a3a'; ctx.fillRect(452, 316, 56, 8);
+  ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(438, 304); ctx.lineTo(452, 304); ctx.moveTo(438, 304); ctx.lineTo(438, 332); ctx.stroke();
+  ctx.textAlign = 'left';
+  // velvet rope between two brass posts
+  [392, 568].forEach(function(sx){ ctx.fillStyle = '#c9b27a'; ctx.fillRect(sx - 3, 420, 6, 50); ctx.beginPath(); ctx.arc(sx, 418, 6, 0, 6.283); ctx.fill(); ctx.fillRect(sx - 9, 466, 18, 4); });
+  ctx.strokeStyle = '#8a1d2a'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(392, 424); ctx.quadraticCurveTo(480, 460, 568, 424); ctx.stroke();
+  // the confusion matrix, one cell per corner of the room
+  museumPlaque(196, 198, 'SANT POSITIV', 'true positive', false);
+  museumPlaque(764, 198, 'FALSKT POSITIV', 'false positive — you are here', true);
+  museumPlaque(196, 426, 'FALSKT NEGATIV', 'false negative', false);
+  museumPlaque(764, 426, 'SANT NEGATIV', 'true negative', false);
+  ctx.restore();
+  // coving shadow along the inside of the room
+  ctx.strokeStyle = 'rgba(0,0,0,.28)'; ctx.lineWidth = 6; roundRect(X0 + 3, Y0 + 3, W - 6, H - 6, R - 3); ctx.stroke();
+  ctx.strokeStyle = '#b8ab92'; ctx.lineWidth = 2; roundRect(X0 - 8, Y0 - 8, W + 16, H + 16, R + 8); ctx.stroke();
+}
+// round 7: a sequencing lab. Static art (it also draws on the menus, where there is no G)
+var LAB_TRACE = {A: '#2bb24c', C: '#2a7de1', G: '#e0c020', T: '#e0302a'};
+function drawLab(t){
+  var wg = ctx.createLinearGradient(0, 0, 0, 412); wg.addColorStop(0, '#e3e9f0'); wg.addColorStop(1, '#b7c2d0');
+  ctx.fillStyle = wg; ctx.fillRect(0, 0, LW, 412);
+  ctx.fillStyle = 'rgba(80,100,130,.12)'; for (var tx = 0; tx < LW; tx += 80) ctx.fillRect(tx, 0, 1, 364);
+  // ceiling lights
+  [[250], [710]].forEach(function(l){ var lg = ctx.createRadialGradient(l[0], 10, 10, l[0], 60, 260); lg.addColorStop(0, 'rgba(255,255,255,.75)'); lg.addColorStop(1, 'rgba(255,255,255,0)'); ctx.fillStyle = lg; ctx.fillRect(l[0] - 270, 0, 540, 300); ctx.fillStyle = '#fbfdff'; ctx.fillRect(l[0] - 130, 4, 260, 9); ctx.fillStyle = '#9aa8b8'; ctx.fillRect(l[0] - 130, 13, 260, 2); });
+  // the wall screen: a capillary trace with stutter peaks in front of every real one
+  var mx = 548, my = 188, mw = 360, mh = 150;
+  ctx.fillStyle = '#26303c'; roundRect(mx - 10, my - 10, mw + 20, mh + 34, 8); ctx.fill();
+  ctx.fillStyle = '#0b1320'; ctx.fillRect(mx, my, mw, mh);
+  ctx.strokeStyle = 'rgba(140,170,210,.14)'; ctx.lineWidth = 1; ctx.beginPath(); for (var gx = mx; gx <= mx + mw; gx += 30){ ctx.moveTo(gx, my); ctx.lineTo(gx, my + mh); } for (var gy = my; gy <= my + mh; gy += 30){ ctx.moveTo(mx, gy); ctx.lineTo(mx + mw, gy); } ctx.stroke();
+  var peaks = [['A', 40, .35], ['T', 62, .9], ['A', 104, .3], ['T', 126, .95], ['A', 168, .28], ['T', 190, .85], ['C', 236, .5], ['G', 262, .7], ['A', 300, .4], ['T', 330, .6]];
+  ['A', 'C', 'G', 'T'].forEach(function(b){
+    ctx.strokeStyle = LAB_TRACE[b]; ctx.lineWidth = 2; ctx.beginPath();
+    for (var x = 0; x <= mw; x += 3){
+      var y = 0; peaks.forEach(function(pk){ if (pk[0] === b){ var d = (x - pk[1]) / 7; y += pk[2] * Math.exp(-d * d); } });
+      var yy = my + mh - 8 - y * (mh - 24); if (x === 0) ctx.moveTo(mx + x, yy); else ctx.lineTo(mx + x, yy);
+    }
+    ctx.stroke();
+  });
+  ctx.fillStyle = '#ffd166'; ctx.font = '900 10px Nunito, sans-serif'; ctx.textAlign = 'center';
+  [40, 104, 168].forEach(function(px){ ctx.fillText('stutter', mx + px, my + mh - 8 - .42 * (mh - 24) - 6); });
+  ctx.fillStyle = '#c9d3e6'; ctx.font = '900 11px Nunito, sans-serif'; ctx.fillText('READ 7 · (AT)n · REPEAT COUNT: ?', mx + mw / 2, my + mh + 14);
+  // blinking cursor on the screen
+  if (Math.floor(t * 2) % 2 === 0){ ctx.fillStyle = '#6fe3a0'; ctx.fillRect(mx + mw - 18, my + 8, 8, 12); }
+  ctx.textAlign = 'left';
+  // a poster by the door
+  ctx.fillStyle = '#fbfcfe'; ctx.fillRect(62, 150, 150, 104); ctx.strokeStyle = '#8a98aa'; ctx.lineWidth = 2; ctx.strokeRect(62, 150, 150, 104);
+  ctx.fillStyle = '#c8262c'; ctx.font = '900 14px Nunito, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('MIND THE REPEAT', 137, 172);
+  ctx.font = '900 13px "Courier New", monospace'; var rep7 = 'ATATATATAT'; for (var ri = 0; ri < rep7.length; ri++){ ctx.fillStyle = LAB_TRACE[rep7[ri]]; ctx.fillText(rep7[ri], 88 + ri * 11, 196); }
+  ctx.fillStyle = '#3a4a5e'; ctx.font = '700 10px Nunito, sans-serif'; ctx.fillText('the polymerase loses count', 137, 218); ctx.fillText('one unit more, one unit less', 137, 232); ctx.fillText('= a variant that is not there', 137, 246);
+  ctx.textAlign = 'left';
+  // the bench along the back wall
+  ctx.fillStyle = '#eef2f7'; ctx.fillRect(0, 356, LW, 12); ctx.fillStyle = '#7d8a9a'; ctx.fillRect(0, 368, LW, 6);
+  ctx.fillStyle = '#c5ced9'; ctx.fillRect(0, 374, LW, 38); ctx.strokeStyle = 'rgba(60,80,100,.35)'; ctx.lineWidth = 2; for (var cb = 0; cb < LW; cb += 120){ ctx.strokeRect(cb + 6, 378, 108, 30); ctx.fillStyle = '#8a98aa'; ctx.fillRect(cb + 52, 384, 16, 3); }
+  // the sequencer
+  ctx.fillStyle = '#f7f9fc'; roundRect(250, 262, 170, 94, 10); ctx.fill(); ctx.strokeStyle = '#8a98aa'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = '#1c2a3a'; ctx.fillRect(266, 276, 70, 44); ctx.fillStyle = '#6ed2ff'; ctx.fillRect(272, 282, 58 * (.5 + .5 * Math.sin(t * .7)), 5);
+  ctx.fillStyle = '#9fb0c4'; ctx.fillRect(350, 280, 56, 8); ctx.fillStyle = Math.floor(t * 1.5) % 2 ? '#6fe3a0' : '#2e5a3a'; ctx.beginPath(); ctx.arc(398, 334, 4, 0, 6.283); ctx.fill();
+  ctx.fillStyle = '#3a4a5e'; ctx.font = '900 9px Nunito, sans-serif'; ctx.fillText('SEQ-7', 352, 304);
+  // tubes and a pipette
+  for (var tb = 0; tb < 8; tb++){ ctx.fillStyle = 'rgba(220,235,250,.9)'; ctx.fillRect(452 + tb * 11, 330, 7, 26); ctx.fillStyle = ['#2bb24c', '#2a7de1', '#e0c020', '#e0302a'][tb % 4]; ctx.fillRect(451 + tb * 11, 326, 9, 5); }
+  ctx.fillStyle = '#8a98aa'; ctx.fillRect(446, 354, 96, 4);
+  ctx.save(); ctx.translate(180, 356); ctx.rotate(-.35); ctx.fillStyle = '#e8edf3'; ctx.fillRect(-6, -70, 12, 58); ctx.fillStyle = '#2a7de1'; ctx.fillRect(-7, -82, 14, 12); ctx.fillStyle = '#b7c2d0'; ctx.beginPath(); ctx.moveTo(-4, -12); ctx.lineTo(4, -12); ctx.lineTo(0, 6); ctx.closePath(); ctx.fill(); ctx.restore();
+  // the floor: grey vinyl, and hazard tape at both edges — the lines you get pushed over
+  var fg = ctx.createLinearGradient(0, 412, 0, LH); fg.addColorStop(0, '#cfd6de'); fg.addColorStop(1, '#98a2ae'); ctx.fillStyle = fg; ctx.fillRect(0, 412, LW, LH - 412);
+  ctx.strokeStyle = 'rgba(80,95,115,.25)'; ctx.lineWidth = 1; ctx.beginPath(); for (var fl = 0; fl < 12; fl++){ var fy = 430 + fl * 16; ctx.moveTo(0, fy); ctx.lineTo(LW, fy); } for (var fx0 = -200; fx0 < LW + 200; fx0 += 90){ ctx.moveTo(fx0, 412); ctx.lineTo(fx0 + (fx0 - LW / 2) * .5, LH); } ctx.stroke();
+  [[0, 28], [LW - 28, 28]].forEach(function(h){ for (var hy = 412; hy < LH; hy += 16){ ctx.fillStyle = ((hy - 412) / 16) % 2 ? '#1a141e' : '#f2c21b'; ctx.fillRect(h[0], hy, h[1], 16); } });
+}
+// round 8: a cinnamon bun, drawn once into a sprite (no per-bun gradients at 30 buns a second)
+function drawBun(g, cx, cy, R){
+  g.fillStyle = '#1a141e'; g.beginPath(); g.arc(cx, cy, R + 2.5, 0, 6.283); g.fill();
+  var bg = g.createRadialGradient(cx - R * .3, cy - R * .35, R * .15, cx, cy, R); bg.addColorStop(0, '#f0b765'); bg.addColorStop(1, '#a8621f');
+  g.fillStyle = bg; g.beginPath(); g.arc(cx, cy, R, 0, 6.283); g.fill();
+  g.strokeStyle = '#6e3610'; g.lineWidth = Math.max(1.5, R * .17); g.lineCap = 'round'; g.beginPath();
+  for (var a = 0; a <= 13.5; a += .2){ var rr = R * (.08 + .74 * a / 13.5), x = cx + rr * Math.cos(a), y = cy + rr * Math.sin(a); if (a === 0) g.moveTo(x, y); else g.lineTo(x, y); }
+  g.stroke(); g.lineCap = 'butt';
+  g.fillStyle = '#fbf7ee'; [[.3, -.42], [-.45, .1], [.08, .46], [.52, .18], [-.18, -.58], [-.52, -.3], [.36, .56], [-.3, .5]].forEach(function(q){ g.beginPath(); g.arc(cx + q[0] * R, cy + q[1] * R, Math.max(1, R * .09), 0, 6.283); g.fill(); });
+}
+var BUN_IMG = (function(){ var c = document.createElement('canvas'); c.width = c.height = 64; drawBun(c.getContext('2d'), 32, 32, 27); return c; })();
+function drawCafe(t){
+  // autumn afternoon over Gamla stan-ish facades
+  var sg = ctx.createLinearGradient(0, 0, 0, 300); sg.addColorStop(0, '#7fa7d6'); sg.addColorStop(1, '#f3c79a');
+  ctx.fillStyle = sg; ctx.fillRect(0, 0, LW, 300);
+  var fac = [[-20, 150, '#c9793e'], [150, 110, '#e2b457'], [330, 80, '#b8513a'], [700, 120, '#d99a4e'], [860, 140, '#9c5b3c']];
+  fac.forEach(function(f, i){ var w = i === 2 ? 370 : 180; ctx.fillStyle = f[2]; ctx.fillRect(f[0], f[1], w, 330 - f[1] + 90);
+    ctx.fillStyle = 'rgba(0,0,0,.12)'; ctx.fillRect(f[0], f[1], w, 8);
+    ctx.fillStyle = '#2a2230'; ctx.beginPath(); ctx.moveTo(f[0] - 6, f[1]); ctx.lineTo(f[0] + w / 2, f[1] - 34); ctx.lineTo(f[0] + w + 6, f[1]); ctx.closePath(); ctx.fill();
+    if (i !== 2) for (var wy = f[1] + 26; wy < 300; wy += 58) for (var wx = f[0] + 26; wx < f[0] + w - 40; wx += 60){ ctx.fillStyle = '#f7ecd0'; ctx.fillRect(wx, wy, 30, 38); ctx.fillStyle = '#5a7a9a'; ctx.fillRect(wx + 3, wy + 3, 24, 32); ctx.fillStyle = '#f7ecd0'; ctx.fillRect(wx + 14, wy + 3, 2, 32); ctx.fillRect(wx + 3, wy + 17, 24, 2); } });
+  // the konditori: striped awning, gold letters, buns in the window
+  ctx.fillStyle = '#3a2418'; ctx.fillRect(372, 118, 286, 36); ctx.strokeStyle = '#c9a36a'; ctx.lineWidth = 2; ctx.strokeRect(376, 122, 278, 28);
+  ctx.fillStyle = '#e8c070'; ctx.font = '700 24px Georgia, "Times New Roman", serif'; ctx.textAlign = 'center'; ctx.fillText('KONDITORI', 515, 145);
+  ctx.fillStyle = '#3a2418'; ctx.fillRect(360, 180, 310, 232);
+  for (var aw = 0; aw < 10; aw++){ ctx.fillStyle = aw % 2 ? '#fdfaf2' : '#2f6fb0'; ctx.beginPath(); ctx.moveTo(350 + aw * 33, 158); ctx.lineTo(383 + aw * 33, 158); ctx.lineTo(383 + aw * 33, 190); ctx.quadraticCurveTo(366 + aw * 33, 202, 350 + aw * 33, 190); ctx.closePath(); ctx.fill(); }
+  ctx.fillStyle = '#b98a56'; ctx.fillRect(380, 214, 190, 130); ctx.fillStyle = '#fdf1d8'; ctx.fillRect(386, 220, 178, 118);
+  var wgl = ctx.createLinearGradient(386, 220, 564, 338); wgl.addColorStop(0, 'rgba(255,255,255,.35)'); wgl.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = '#c9a36a'; ctx.fillRect(392, 292, 166, 6); ctx.fillRect(392, 330, 166, 5);
+  for (var b1 = 0; b1 < 6; b1++){ ctx.drawImage(BUN_IMG, 398 + b1 * 26, 270, 24, 24); ctx.drawImage(BUN_IMG, 404 + b1 * 25, 308, 22, 22); }
+  ctx.fillStyle = wgl; ctx.fillRect(386, 220, 178, 118);
+  ctx.fillStyle = '#6e3a1c'; ctx.fillRect(588, 214, 64, 198); ctx.fillStyle = '#8a5028'; ctx.fillRect(594, 220, 52, 186); ctx.fillStyle = '#e8c070'; ctx.beginPath(); ctx.arc(636, 318, 4, 0, 6.283); ctx.fill();
+  ctx.fillStyle = '#6e3a1c'; ctx.font = 'italic 700 14px Georgia, "Times New Roman", serif'; ctx.fillText('Bageri & Café', 475, 250);
+  // bunting in the flag's colours
+  ctx.strokeStyle = '#3a2a1e'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0, 60); ctx.quadraticCurveTo(LW / 2, 100, LW, 56); ctx.stroke();
+  for (var bn = 0; bn < 24; bn++){ var bx = 20 + bn * 40, by = 60 + 40 * (1 - Math.pow((bx - LW / 2) / (LW / 2), 2)) * .95 - (bx / LW) * 4;
+    ctx.fillStyle = bn % 2 ? '#fecc02' : '#006aa7'; ctx.beginPath(); ctx.moveTo(bx - 11, by); ctx.lineTo(bx + 11, by); ctx.lineTo(bx, by + 20 + 2 * Math.sin(t * 2 + bn)); ctx.closePath(); ctx.fill(); }
+  // a street lamp and a tree turning
+  ctx.fillStyle = '#2a2632'; ctx.fillRect(116, 190, 7, 222); ctx.fillRect(104, 186, 32, 8); ctx.fillStyle = '#ffe9b0'; ctx.beginPath(); ctx.arc(120, 180, 10, 0, 6.283); ctx.fill();
+  ctx.fillStyle = '#4a3226'; ctx.fillRect(820, 250, 12, 162);
+  [['#d9822b', 826, 210, 62], ['#c0392b', 792, 236, 40], ['#e6b422', 862, 232, 44], ['#b8612a', 830, 250, 46]].forEach(function(c){ ctx.fillStyle = c[0]; ctx.beginPath(); ctx.arc(c[1], c[2], c[3], 0, 6.283); ctx.fill(); });
+  // the chalkboard on the pavement
+  ctx.fillStyle = '#6e4a2a'; ctx.beginPath(); ctx.moveTo(686, 412); ctx.lineTo(704, 300); ctx.lineTo(774, 300); ctx.lineTo(792, 412); ctx.lineTo(782, 412); ctx.lineTo(766, 312); ctx.lineTo(712, 312); ctx.lineTo(696, 412); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#1f2a24'; ctx.fillRect(708, 312, 62, 78);
+  ctx.fillStyle = '#f2f2ea'; ctx.font = '700 11px "Comic Sans MS", "Chalkboard SE", cursive'; ctx.fillText('4 OKT', 739, 330); ctx.font = '700 8px "Comic Sans MS", "Chalkboard SE", cursive'; ctx.fillText('KANELBULLENS', 739, 346); ctx.fillText('DAG', 739, 357); ctx.fillStyle = '#ffd166'; ctx.fillText('2 för 30 kr', 739, 377);
+  ctx.textAlign = 'left';
+  // a bicycle against the wall
+  ctx.strokeStyle = '#2a2632'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(236, 390, 20, 0, 6.283); ctx.moveTo(310, 390); ctx.arc(290, 390, 20, 0, 6.283); ctx.moveTo(236, 390); ctx.lineTo(262, 358); ctx.lineTo(290, 390); ctx.moveTo(262, 358); ctx.lineTo(284, 358); ctx.lineTo(290, 390); ctx.moveTo(256, 350); ctx.lineTo(268, 350); ctx.moveTo(284, 358); ctx.lineTo(288, 346); ctx.stroke();
+  // cobbles
+  var cg = ctx.createLinearGradient(0, 412, 0, LH); cg.addColorStop(0, '#8d8278'); cg.addColorStop(1, '#5d544c'); ctx.fillStyle = cg; ctx.fillRect(0, 412, LW, LH - 412);
+  ctx.fillStyle = '#a79a8c'; ctx.fillRect(0, 406, LW, 8);
+  for (var cy = 0; cy < 12; cy++){ var yy = 424 + cy * 15; for (var cx = (cy % 2) * 18; cx < LW + 30; cx += 36){ ctx.fillStyle = (cx + cy * 7) % 5 === 0 ? '#9a8e82' : '#7d7268'; ctx.beginPath(); ctx.ellipse(cx, yy, 15, 6 + cy * .3, 0, 0, 6.283); ctx.fill(); } }
+  ctx.fillStyle = 'rgba(0,0,0,.16)'; ctx.fillRect(0, 412, LW, 10);
 }
 function drawTree(x, y, size, depth, seed){
   var r = seed;
@@ -832,7 +1076,8 @@ var POSE = {
   hurt:   {crouch:.15, lean:-.35, lh:-20, lk:20, rh:20, rk:20, la:-60, le:40, ra:-50, re:30},
   ko:     {crouch:.9, lean:1.3, lh:80, lk:20, rh:60, rk:10, la:120, le:20, ra:100, re:30},
   win:    {crouch:0, lean:-.08, lh:14, lk:0, rh:-14, rk:0, la:172, le:8, ra:168, re:8},
-  grab:   {crouch:.3, lean:.35, lh:40, lk:40, rh:-30, rk:30, la:80, le:20, ra:80, re:20}
+  grab:   {crouch:.3, lean:.35, lh:40, lk:40, rh:-30, rk:30, la:80, le:20, ra:80, re:20},
+  push:   {crouch:.35, lean:.6, lh:55, lk:55, rh:-38, rk:18, la:88, le:12, ra:82, re:22}
 };
 function mixPose(a, b, u){ var o = {}; for (var k in a) o[k] = lerp(a[k], b[k], u); return o; }
 function fighterDraw(f, t){
@@ -843,7 +1088,7 @@ function fighterDraw(f, t){
   ctx.restore();
   if (scl !== 1){
     var oy0 = GROUND - f.y;
-    [ 'handPt', 'farHandPt', 'footPt', 'headPt' ].forEach(function(k){ var q = f[k]; f[k] = [f.x + (q[0] - f.x) * scl, oy0 + (q[1] - oy0) * scl]; });
+    [ 'handPt', 'farHandPt', 'footPt', 'headPt', 'stickPt' ].forEach(function(k){ var q = f[k]; if (q) f[k] = [f.x + (q[0] - f.x) * scl, oy0 + (q[1] - oy0) * scl]; });
   }
 }
 function fighterDrawInner(f, t){
@@ -880,7 +1125,7 @@ function fighterDrawInner(f, t){
   seg(legNear, legw, pants); foot(legNear[2], fac, '#1c1a1c');
   // neck + head
   ctx.strokeStyle = '#e8bea5'; ctx.lineWidth = hr * .8; ctx.beginPath(); ctx.moveTo(neck[0], neck[1]); ctx.lineTo(hc[0], hc[1] + hr * .5); ctx.stroke();
-  var mouthNow = f.state === 'hurt' ? 'open' : (f.state === 'special' || f.state === 'punch' || f.state === 'kick') ? 'grr' : (f.state === 'win' ? 'open' : null);
+  var mouthNow = f.state === 'hurt' ? 'open' : (f.state === 'special' || f.state === 'punch' || f.state === 'kick' || f.state === 'push') ? 'grr' : (f.state === 'win' ? 'open' : null);
   if (f.flash > 0) ctx.globalAlpha = .5;
   drawCutoutFace(ctx, hc[0], hc[1] - hr * .1, hr * 2.9, LOOK[f.def.face], fac, {mouth: mouthNow, angry: f.state === 'special'});
   ctx.globalAlpha = 1;
@@ -929,17 +1174,196 @@ function shade(hex, d){
 
 // ------------------------------------------------------------ game state
 var LEVELS = [
-  {name: 'ROUND 1', theme: 'kiruna', rhino: {hp: 380, mutant: false}, hud: 'THE RHINO · false positive'},
-  {name: 'ROUND 2', theme: 'wasteland', rhino: {hp: 460, mutant: true}, hud: 'THE MUTANT RHINO · contaminated reference',
+  {name: 'ROUND 1', theme: 'kiruna', rhino: {hp: 380, mutant: false}, hud: 'THE RHINO · false positive', read: 'Rhinoceros (98.7%)'},
+  {name: 'ROUND 2', theme: 'wasteland', rhino: {hp: 460, mutant: true}, hud: 'THE MUTANT RHINO · contaminated reference', read: 'Rhinoceros (contaminant match)',
    next: 'NEXT ROUND: THE WASTELAND', card: "> ROUND 2 — THE WASTELAND\n> reference genome: <b>CONTAMINATED</b>\n\nSome reference genomes carry bits of other organisms. A read can match the contaminant, not the rhino — and the rhino gets the credit.\n\nThe mutant rhino <b>feints</b> before it charges, leaves <b>hot spots</b> where it skids, and <b>vents radiation</b> up close.\n\n> jump the real charge, not the feint\n> stay out of the green\n> jump the burst"},
-  {name: 'ROUND 3', theme: 'space', rhino: {hp: 520, mutant: false, space: true}, hud: 'THE SPACE RHINO · index hopping', gravity: .5, next: 'NEXT ROUND: THE ASTEROID', blue: true,
+  {name: 'ROUND 3', theme: 'space', rhino: {hp: 520, mutant: false, space: true}, hud: 'THE SPACE RHINO · index hopping', read: 'Rhinoceros (wrong sample)', gravity: .5, next: 'NEXT ROUND: THE ASTEROID', blue: true,
    card: "> ROUND 3 — THE ASTEROID\n> sample barcode: <b>WRONG</b>\n\nDuring sequencing a single read can <b>hop</b> onto another sample's barcode and turn up somewhere it never was. The rhino hitched a ride on an asteroid and is drifting into the next sample.\n\n> gravity is low: jumps go high and land late\n> jump or duck the horn laser\n> the red ring is where it lands — be in the air\n> knock it off the rock before it reaches the next sample"},
-  {name: 'ROUND 4', theme: 'kiruna', rhino: {hp: 400, mutant: false}, rhinos: 2, width: 1920, hud: 'THE DUPLICATES · PCR duplicate', next: 'NEXT ROUND: THE DUPLICATES',
+  {name: 'ROUND 4', theme: 'kiruna', rhino: {hp: 400, mutant: false}, rhinos: 2, width: 1920, hud: 'THE DUPLICATES · PCR duplicate', read: 'Rhinoceros ×2 (PCR duplicate)', next: 'NEXT ROUND: THE DUPLICATES',
    card: "> ROUND 4 — THE DUPLICATES\n> read: <b>PCR DUPLICATE</b>\n\nDuring library prep one molecule can be copied and sequenced twice. One wrong read shows up as two, and both get counted.\n\nTwo rhinos on a field <b>twice as wide</b>. The camera follows you.\n\n> split them up: hit one while the other skids\n> the <b>!</b> marks the one about to charge\n> both have to go"},
-  {name: 'ROUND 5', theme: 'wasteland', rhino: {hp: 100, mutant: false}, rhinos: 2, width: 1440, comp: true, skins: [null, 'zebra'], hud: 'THE RHINO · false positive', huds: ['THE RHINO · false positive', 'THE ZEBRA · false positive'],
+  {name: 'ROUND 5', theme: 'wasteland', rhino: {hp: 100, mutant: false}, rhinos: 2, width: 1440, comp: true, skins: [null, 'zebra'], hud: 'THE RHINO · false positive', huds: ['THE RHINO · false positive', 'THE ZEBRA · false positive'], read: 'Rhinoceros + Zebra (relative abundance)',
    pacifist: 60, reveal: {rhino: 'bear', zebra: 'moose'}, next: 'NEXT ROUND: COMPOSITIONAL',
-   card: "> ROUND 5 — COMPOSITIONAL\n> counts: <b>RELATIVE</b>\n\nSequencing never tells you how much of anything there is — only what fraction of the reads each species got. The shares always <b>add up to one</b>.\n\nA rhino, a zebra and you share one ring. Whoever takes damage shrinks, and the size they lose goes to everyone else — the rhino, the zebra, <b>and you</b>.\n\n> hit them and you grow; get hit and they grow\n> a false positive is gone once its share drops below the <b>detection limit</b> (6 %)\n> be the dominant species"}
+   card: "> ROUND 5 — COMPOSITIONAL\n> counts: <b>RELATIVE</b>\n\nSequencing never tells you how much of anything there is — only what fraction of the reads each species got. The shares always <b>add up to one</b>.\n\nA rhino, a zebra and you share one ring. Whoever takes damage shrinks, and the size they lose goes to everyone else — the rhino, the zebra, <b>and you</b>.\n\n> hit them and you grow; get hit and they grow\n> a false positive is gone once its share drops below the <b>detection limit</b> (6 %)\n> be the dominant species"},
+  {name: 'ROUND 6', theme: 'museum', square: true, calm: true, rhino: {hp: 440, mutant: false}, hud: 'THE SPECIMEN · mislabelled voucher', read: 'Rhinoceros (museum voucher, mislabelled)',
+   pacifist: 90, next: 'NEXT ROUND: THE SQUARE', cardStyle: 'museum', puff: '#e6d8bc', rules: ['THE FIGHT RUNS ROUND THE WALLS · → WALKS YOU ANTICLOCKWISE', 'THE FIGHT RUNS ROUND THE WALLS · ▶ WALKS YOU ANTICLOCKWISE'],
+   tip: 'it follows you round every corner — jump the charge when you see the <b>!</b>, duck the horn, and hit it while it skids.',
+   win: {big: 'RELABELLED', title: 'VOUCHER SPECIMEN CORRECTED', status: 'RELABELLED',
+         lesson: 'every species name in a reference database traces back to a museum specimen. Label one jar wrong and every read that matches it inherits the wrong name — a false positive that looks like a true positive from every corner of the matrix.',
+         next: 'the sequencer starts to <b>stutter</b>. Round 7.'},
+   card: "> ROUND 6 — THE SQUARE\n> reference specimen: <b>MISLABELLED</b>\n\nEvery species name in a reference database goes back to a museum specimen. Give one jar the wrong label and every read that matches it gets the wrong name.\n\nThis fight runs round the walls of the exhibition hall: floor, wall, ceiling, wall. You stand on whichever side your feet are on.\n\n> → always walks you anticlockwise, ← clockwise\n> the rhino follows you round the corners\n> each corner is one cell of the confusion matrix"},
+  {name: 'ROUND 7', theme: 'lab', push: true, calm: true, rhino: {hp: 500, mutant: false}, hud: 'THE STUTTER · tandem-repeat slippage', read: 'Rhinoceros (tandem-repeat stutter)',
+   next: 'NEXT ROUND: THE PUSH', cardStyle: 'lab', puff: '#e8edf3', start: 'PUSH!', rules: ['NO PUNCHING · TYPE THE REPEAT: A = ←  T = →  C = ↑  G = ↓', 'NO PUNCHING · TAP THE REPEAT: A ◀  T ▶  C ▲  G ▼'],
+   lose: {title: 'THE STUTTER WINS — THE RHINO STAYS IN THE DATASET', tip: 'A = ←, T = →, C = ↑, G = ↓. A slip shoves you back and starts the unit over — slow and right beats fast and wrong.'},
+   win: {big: 'PUSHED OFF', title: 'REPEAT COUNTED RIGHT', status: 'STUTTER RESOLVED',
+         lesson: 'tandem repeats are where the polymerase stutters: it loses count and adds or drops a unit, and a stutter read can pass for a real variant — or for a different species. Count the repeat right and the false match falls apart.',
+         next: 'it is <b>Kanelbullens dag</b>, and the bakery next door is in the sample. Round 8.'},
+   card: "> ROUND 7 — THE PUSH\n> read: <b>TANDEM REPEAT</b>\n\nWhere DNA repeats itself — ATATAT, CAGCAGCAG — the polymerase slips. It loses count, adds or drops a unit, and the stutter reads like a real variant: a match to something that is not there.\n\nNo punching this round. You and the rhino are locked horn to hands. Type the repeat, one arrow per letter, and every right letter shoves it back.\n\n> A = ←   T = →   C = ↑   G = ↓   (the letter keys work too)\n> a wrong letter is a slip: it shoves you back and the unit starts over\n> push it off the right edge before it pushes you off the left"},
+  {name: 'ROUND 8', theme: 'cafe', buns: true, calm: true, rhino: {hp: 480, mutant: false}, hud: 'THE BAKERY RHINO · food contaminant', read: 'Rhinoceros (bakery contaminant)',
+   pacifist: 90, next: 'NEXT ROUND: CINNAMON BUN DAY', cardStyle: 'cafe', puff: '#f3e3c8', start: 'FIKA!', rules: ['ONLY BUNS HURT IT · J THROW · K LOB · L TRAY', 'ONLY BUNS HURT IT · THROW · LOB · TRAY'],
+   tip: 'only buns hurt it: <b>J</b> (THROW) throws, <b>K</b> (LOB) lobs one high, <b>L</b> (TRAY) sends the whole tray. A bun that misses lands on the cobbles and it eats it — walk over it first and it fills your tray.',
+   win: {big: 'FIKA!', title: 'BAKERY CONTAMINANT REMOVED', status: 'EXCLUDED',
+         lesson: 'food is a classic eDNA contaminant. Wheat, yeast, cinnamon and cardamom from the bakery next door drift into the sampler, and a loose database match calls the crumbs wildlife. Know what is in the air around your sampler before you believe the rhino.',
+         next: ''},
+   card: "> ROUND 8 — CINNAMON BUN DAY\n> 4 October: <b>KANELBULLENS DAG</b>\n\nThe sampler stands next to a konditori. Wheat, yeast, cinnamon, cardamom — everything the bakery breathes out ends up in the sample, and a loose database match turns the crumbs into wildlife.\n\nToday fists, kicks and specials do nothing. Only cinnamon buns hurt the rhino.\n\n> J (THROW) throws a bun, K (LOB) lobs one high, L (TRAY, full meter) sends the whole tray\n> a bun that misses lands on the cobbles — the rhino eats it and heals\n> walk over a dropped bun first and it fills your tray instead"}
 ];
+// ------------------------------------------------------------ round 6: the square
+// The four sides of the room are one flat track, unrolled. Every entity keeps its logical x (distance along the track)
+// and its y / jump (height off the side it stands on), and all movement and hit code runs unchanged in that flat frame.
+// Only drawing wraps it round the room: sqPt() for points, sqEnterFighter() / sqEnterRhino() for rigid per-entity frames.
+var SQ = {x0: 40, x1: 920, y0: 156, y1: GROUND, R: 100, size: .66, mid: 480};
+(function(){
+  var R = SQ.R, W = SQ.x1 - SQ.x0 - 2 * R, H = SQ.y1 - SQ.y0 - 2 * R, A = Math.PI / 2 * R, Q = Math.PI / 2;
+  // s = 0 is the middle of the floor and grows anticlockwise on screen: right along the floor, up the right wall,
+  // left along the ceiling, down the left wall. c = the corner a stretch belongs to (0 BR, 1 TR, 2 TL, 3 BL).
+  SQ.segs = [
+    {len: W / 2, x: SQ.mid, y: SQ.y1, dx: 1, dy: 0, c: 0}, {len: A, cx: SQ.x1 - R, cy: SQ.y1 - R, a0: Q, c: 0},
+    {len: H / 2, x: SQ.x1, y: SQ.y1 - R, dx: 0, dy: -1, c: 0}, {len: H / 2, x: SQ.x1, y: SQ.y1 - R - H / 2, dx: 0, dy: -1, c: 1},
+    {len: A, cx: SQ.x1 - R, cy: SQ.y0 + R, a0: 0, c: 1}, {len: W / 2, x: SQ.x1 - R, y: SQ.y0, dx: -1, dy: 0, c: 1},
+    {len: W / 2, x: SQ.mid, y: SQ.y0, dx: -1, dy: 0, c: 2}, {len: A, cx: SQ.x0 + R, cy: SQ.y0 + R, a0: -Q, c: 2},
+    {len: H / 2, x: SQ.x0, y: SQ.y0 + R, dx: 0, dy: 1, c: 2}, {len: H / 2, x: SQ.x0, y: SQ.y0 + R + H / 2, dx: 0, dy: 1, c: 3},
+    {len: A, cx: SQ.x0 + R, cy: SQ.y1 - R, a0: -Math.PI, c: 3}, {len: W / 2, x: SQ.x0 + R, y: SQ.y1, dx: 1, dy: 0, c: 3}
+  ];
+  SQ.P = 0; SQ.segs.forEach(function(g){ g.s0 = SQ.P; SQ.P += g.len; });
+  SQ.half = (SQ.y1 - SQ.y0) / 2 - 3;   // the highest a drawn point goes: the middle of the room
+})();
+// the shortest way round the loop from one logical x to another, in [-P/2, P/2)
+function wrapDelta(d){ return d - SQ.P * Math.floor(d / SQ.P + .5); }
+// the point on the wall under logical x, the angle of the wall there, and its inward normal
+function sqBase(lx){
+  var s = ((lx - SQ.mid) % SQ.P + SQ.P) % SQ.P, g = SQ.segs[0];
+  for (var i = 0; i < SQ.segs.length; i++){ g = SQ.segs[i]; if (s < g.s0 + g.len) break; }
+  var u = s - g.s0;
+  if (g.cx == null) return {x: g.x + g.dx * u, y: g.y + g.dy * u, a: Math.atan2(g.dy, g.dx), nx: g.dy, ny: -g.dx, c: g.c};
+  var an = g.a0 - u / SQ.R, ca = Math.cos(an), sa = Math.sin(an);   // anticlockwise on screen = a falling canvas angle
+  return {x: g.cx + SQ.R * ca, y: g.cy + SQ.R * sa, a: an - Math.PI / 2, nx: -ca, ny: -sa, c: g.c};
+}
+// a logical point h above the wall at x. Higher than the corner radius, the plain offset would fold back past the arc
+// centre and run backwards, so it is pinned to the corner's inner point instead (continuous, never folded)
+function sqPt(lx, h){
+  h = Math.min(h || 0, SQ.half);
+  var b = sqBase(lx), x = b.x + b.nx * h, y = b.y + b.ny * h;
+  if (h > 0){
+    x = (b.c === 0 || b.c === 1) ? Math.min(x, SQ.x1 - h) : Math.max(x, SQ.x0 + h);
+    y = (b.c === 0 || b.c === 3) ? Math.min(y, SQ.y1 - h) : Math.max(y, SQ.y0 + h);
+  }
+  return [x, y];
+}
+// rigid frames: the logical point (lx, GROUND - h) lands on the room, turned to the side it stands on
+function sqFrameAt(lx, h, px, py, ang){ ctx.translate(px, py); ctx.rotate(ang); ctx.translate(-lx, -(GROUND - h)); }
+// an entity's frame: its logical point (lx, GROUND - h) sits at (px, py) on screen, turned by ang
+function sqFrameOf(e){
+  if (e.isRhino){
+    // the chord between the feet gives the angle and its midpoint the pivot, so on a curved corner both feet stay down
+    var d = .9 * rs(e), a = sqBase(e.x - d), b = sqBase(e.x + d), ang = Math.atan2(b.y - a.y, b.x - a.x), j = e.jump || 0;
+    return {lx: e.x, h: j, px: (a.x + b.x) / 2 + Math.sin(ang) * j, py: (a.y + b.y) / 2 - Math.cos(ang) * j, ang: ang};
+  }
+  var q = sqPt(e.x, e.y); return {lx: e.x, h: e.y, px: q[0], py: q[1], ang: sqBase(e.x).a};
+}
+function sqEnter(e){ var f = sqFrameOf(e); sqFrameAt(f.lx, f.h, f.px, f.py, f.ang); }
+function sqEnterFighter(f){ sqEnter(f); }
+function sqEnterRhino(r){ sqEnter(r); }
+function sqToScreen(f, pt){ var c = Math.cos(f.ang), s = Math.sin(f.ang), dx = pt[0] - f.lx, dy = pt[1] - (GROUND - f.h); return [f.px + dx * c - dy * s, f.py + dx * s + dy * c]; }
+function sqFromScreen(f, sp){ var c = Math.cos(f.ang), s = Math.sin(f.ang), ex = sp[0] - f.px, ey = sp[1] - f.py; return [f.lx + ex * c + ey * s, GROUND - f.h - ex * s + ey * c]; }
+// a strike the player can see land counts: the attack point through the attacker's frame, into each rhino's frame
+function sqRoomHit(p, pt, pad){
+  var sp = sqToScreen(sqFrameOf(p), pt), rs0 = liveRhinos();
+  for (var i = 0; i < rs0.length; i++){
+    var r = rs0[i]; if (Math.abs(wrapDelta(r.x - p.x)) > 700) continue;   // never across the hall
+    if (inRect(sqFromScreen(sqFrameOf(r), sp), rhinoRect(r), pad)) return r;
+  }
+  return null;
+}
+function inFrame(e, fn){ if (!G || !G.square){ fn(); return; } ctx.save(); if (e.isRhino) sqEnterRhino(e); else sqEnterFighter(e); fn(); ctx.restore(); }
+function sqRoomPath(pad){ roundRect(SQ.x0 - pad, SQ.y0 - pad, SQ.x1 - SQ.x0 + 2 * pad, SQ.y1 - SQ.y0 + 2 * pad, SQ.R + pad); }
+// the charge warning, upright on whichever wall the rhino is on
+function sqPawMark(r){
+  var q = sqPt(r.x, 2.4 * rs(r) + 10 - 6 * Math.sin(r.st * 30));
+  ctx.font = '400 40px Bangers, Impact, sans-serif'; ctx.fillStyle = '#ff5a3c'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 5; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.strokeText('!', q[0], q[1]); ctx.fillText('!', q[0], q[1]); ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+}
+// ------------------------------------------------------------ round 7: the push
+// A shoving match, horn to hands, at one contact point (G.push.x). Every player types the current repeat; each right
+// letter shoves the rhino back, a finished unit and a finished repeat shove harder, and a slip (a wrong letter) shoves
+// you back, restarts the unit and locks you out for a moment. The rhino leans in harder over time. All geometry is here
+// so updatePush, the tug-of-war bar and the tests agree.
+var PUSH = {start: 400, step: 5.5, unitB: 2, stageB: 12, slip: 16, lock: .3, stand: 52, gap: 40, cap: 6};
+PUSH.win = LW - 40 - 2.55 * RS;   // the rhino's body centre reaches the right edge: over it goes
+var PUSH_STAGES = [['AT', 3], ['AAT', 3], ['ACG', 2], ['CAG', 3], ['GATA', 2], ['ACGT', 2]];   // CAG: the Huntington repeat; GATA: a forensic STR
+var PUSH_COL = {A: '#78ffa0', C: '#6ed2ff', G: '#ffdc6e', T: '#ff82be'}, PUSH_ARROW = {A: '←', T: '→', C: '↑', G: '↓'};
+function pushSeq(stage){ var st = PUSH_STAGES[stage % PUSH_STAGES.length], seq = ''; for (var i = 0; i < st[1]; i++) seq += st[0]; return {unit: st[0], seq: seq}; }
+function pushLoseX(){ return 40 + PUSH.stand + PUSH.gap * (Math.max(1, pushers().length) - 1); }   // the rearmost fighter reaches the left edge
+function mkPushState(){ return {stage: 0, pos: 0, lock: 0, slipT: 0, okT: 0, slips: 0, units: 0, letters: 0, lastT: -9, ack: 0, hist: []}; }
+// one typed letter against a player's place in the repeat: 'ok', 'unit' (a unit finished), 'stage' (the repeat finished) or 'slip'
+function pushTry(u, letter){
+  var q = pushSeq(u.stage), L = q.unit.length;
+  if (u.pos >= q.seq.length) u.pos = 0;
+  if (letter !== q.seq.charAt(u.pos)){ u.pos -= u.pos % L; return 'slip'; }
+  u.pos++;
+  if (u.pos >= q.seq.length){ u.stage++; u.pos = 0; return 'stage'; }
+  return u.pos % L === 0 ? 'unit' : 'ok';
+}
+function pushPose(p){
+  var u = p.pu, o = mixPose(POSE.push, POSE.grab, .25 * (.5 + .5 * Math.sin(G.t * 9 + (p === G.p ? 0 : 1.7))));   // straining
+  if (u && u.okT > 0) o = mixPose(o, POSE.punch, .4 * u.okT / .12);                                             // a shove
+  if (u && u.slipT > 0) o = mixPose(o, POSE.hurt, .7 * Math.min(1, u.slipT / .35));                             // a slip
+  return o;
+}
+function updatePush(dt){
+  var pu = G.push, r = G.r;
+  if (!G.over && G.elapsed >= 1.6){
+    // The rhino digs in a little near its own edge and leans a little harder over time, both capped low enough that
+    // steady, correct typing always gets there (about a letter and a quarter a second is enough), and after 90 s it
+    // tires, so every round ends. In co-op each partner adds weight in proportion to what they actually push.
+    var near = clamp((pu.x - pushLoseX()) / (PUSH.win - pushLoseX()), 0, 1), t = G.elapsed - 1.6, load = 0;
+    pushers().forEach(function(q){ var h = q.pu.hist; while (h.length && G.elapsed - h[0] > 2.5) h.shift(); if (q.state !== 'ko') load += Math.min(1, h.length / 5); });
+    pu.load = Math.max(1, load);
+    pu.pressure = (7 + 2 * near + Math.min(2, .02 * t)) * (t > 90 ? Math.max(.5, 1 - (t - 90) / 120) : 1) * pu.load;
+    pu.x -= pu.pressure * dt;
+    pushers().forEach(function(q){
+      var u = q.pu, typed = q.inp.typed, used = 0;
+      if (u.lock > 0) u.lock -= dt; if (u.slipT > 0) u.slipT -= dt; if (u.okT > 0) u.okT -= dt;
+      if (q.state === 'ko' || !typed) return;
+      while (typed.length && used < PUSH.cap){
+        // a co-op guest's letters come with an index and were already filtered on its page (its own lockout, the rest of
+        // a chord after a slip), so the host applies them as they are: both pages then agree letter for letter
+        var e = typed.shift(), idx = typeof e === 'object', L = idx ? e.l : e; used++;
+        if (idx) u.ack = e.i + 1;
+        if (!idx && u.lock > 0) continue;   // still reeling from a slip: the letter is lost
+        var res = pushTry(u, L); u.lastT = G.elapsed;
+        if (res === 'slip'){
+          u.slips++; u.lock = PUSH.lock; u.slipT = .35; pu.x -= PUSH.slip; r.squash = .06; shake = Math.max(shake, 6); sfx('hurt');
+          fx.push({x: pu.x - 20, y: GROUND - 150, t: 0, life: .45, r: 38, label: 'SLIP!', big: false, red: true});
+          if (!idx){ typed.length = 0; break; }   // a chord costs one slip, not four
+          continue;
+        }
+        u.hist.push(G.elapsed);
+        q.hitsLanded++; u.letters++; u.okT = .12; pu.x += PUSH.step; sfx('pluck', {f: {A: 440, C: 523, G: 587, T: 659}[L]});
+        if (res !== 'ok'){ u.units++; pu.x += PUSH.unitB * pushSeq(u.stage - (res === 'stage' ? 1 : 0)).unit.length; }
+        if (res === 'stage'){ pu.x += PUSH.stageB; sfx('chime', {f: 1568}); fx.push({x: pu.x + 30, y: GROUND - 230, t: 0, life: .8, r: 70, label: 'REPEAT CLEARED!', big: true}); }
+      }
+    });
+    if (pu.x >= PUSH.win){ pu.x = PUSH.win; rhinoKO(r); }
+    else if (pu.x <= pushLoseX()){ pu.x = pushLoseX(); G.players.forEach(function(q){ if (q.state !== 'ko'){ q.killedBy = 'pushed'; playerKO(q); } }); }
+  }
+  else G.players.forEach(function(q){   // during the banner and after the end, letters are read and dropped (never saved up for later)
+    var typed = q.inp.typed; while (typed && typed.length){ var e3 = typed.shift(); if (typeof e3 === 'object') q.pu.ack = e3.i + 1; } });
+  if (G.over){ pu.endT = (pu.endT || 0) + dt;
+    if (!G.won && pu.endT < 1.4) pu.x -= 230 * dt;                                      // shoved off together
+    if (G.won && pu.endT < .9){ pu.x += 220 * dt; if (r.state === 'ko') r.x = pu.x + 2.55 * rs(r); } }   // and over it goes
+  // everything stands where the contact point says, set last and outside every clamp
+  if (r.state === 'shove'){
+    r.facing = -1; r.x = pu.x + 2.55 * rs(r); r.st += dt; if (r.flash > 0) r.flash -= dt; r.squash = Math.max(0, (r.squash || 0) - dt * .4);
+    r.run = .55; r.phase += dt * (6 + (pu.pressure || 11) * .25); r.head = lerp(r.head || 0, -.18 + .05 * Math.sin(G.t * 7), Math.min(1, dt * 6)); r.tilt = .05; r.tail = .12 * Math.sin(G.t * 1.4);
+    r.angry = (pu.pressure || 0) > 9.5 * (pu.load || 1);
+  }
+  pushers().forEach(function(q, i){ q.x = pu.x - PUSH.stand - PUSH.gap * i; q.y = 0; q.vy = 0; q.facing = 1; });
+  G.players.forEach(function(q){ if (q.gone) q.x = -400; });   // a partner who left the room is out of the picture
+}
+// who is still in the shove: a co-op partner who has left the room no longer counts, for the lose line or the weight
+function pushers(){ return G.players.filter(function(q){ return !q.gone; }); }
+// in the square everything is smaller (a rhino has to fit on a wall), and jumps shrink with the rig: same airtime,
+// lower arc, so the dodge windows (which already scale with size) still work
+function jumpK(e){ return (G && G.square) ? (e.size || 1) : 1; }
 // round 5: everyone's share of the ring sums to one; damage moves share to the others; below the limit you are not detected
 var COMP_K = 360, COMP_LIMIT = .06;
 function sizeOf(share){ return Math.min(2.4, .35 + .65 * share * (G ? G.compN : 3)); }
@@ -981,7 +1405,7 @@ function mkVsRhino(x, facing){
           cx0: 0, vx: 0, trampled: {}, skin: null, size: 1, inp: {keys: {}, pressed: {}}};
 }
 function newVsFight(idA, idB){
-  vsPicks = [idA, idB];
+  vsPicks = [idA, idB]; setPadLabels(null);
   var lv = LEVELS[LEVEL];
   AW = lv.width || LW;                                   // a duel arena can be wider than the screen; the camera follows both sides
   var players = [], rhinos = [], sides = [];
@@ -1002,7 +1426,7 @@ function newVsFight(idA, idB){
 function beginVsLocal(){
   vsLocal = true; LEVEL = clampLevel($('vsArena').value);
   newVsFight($('vsP1').value, $('vsP2').value); scene = 'fight'; show(null);
-  unlockAudio(); sfx('gong', {f: 96, v: .6}); setTimeout(function(){ sfx('drum'); }, 800);
+  unlockAudio(); sfx('gong', {f: 96, v: .6}); fightTimeout(function(){ sfx('drum'); }, 800);
 }
 // a fighter's body box, so two fighters can hit each other (rounds only ever hit the rhino)
 function fighterRect(p){
@@ -1011,12 +1435,16 @@ function fighterRect(p){
 }
 // what an attack can connect with: any live rhino, plus the opposing fighter in a duel
 function foeAt(p, pt, pad){
-  var r = rhinoAt(pt, pad); if (r) return r;
-  if (G.vs){ var q = vsFoeOf(p); if (q && !q.isRhino && vsAlive(q) && inRect(pt, fighterRect(q), pad)) return q; }
+  var r = rhinoAt(pt, pad, p ? (p.size || 1) * ((p.state === 'special' && p.scale) ? p.scale : 1) : 1); if (r) return r;
+  if (G.square && p && !p.isRhino){ r = sqRoomHit(p, pt, pad); if (r) return r; }
+  if (G.vs){ var q = vsFoeOf(p); if (q && !q.isRhino && vsAlive(q)){
+    var fr = fighterRect(q), fk = Math.max(1, p ? (p.size || 1) * ((p.state === 'special' && p.scale) ? p.scale : 1) : 1);
+    fr.y0 -= Math.max(0, 150 * fk - (fr.y1 - fr.y0));   // a short target counts further down from a tall attacker's fist
+    if (inRect(pt, fr, pad)) return q; } }
   return null;
 }
 function hitFoe(t, p, pt, dmg, big, label){
-  if (!t) return;
+  if (!t || G.over) return;   // after the bell (or the knockout) nothing lands, and nothing is counted
   if (t.isRhino){ hitRhino(t, p, pt, dmg, big, label); return; }
   p.hitsLanded++;
   if (p.state !== 'special') p.meter = Math.min(100, p.meter + (big ? 26 : 14));
@@ -1031,7 +1459,7 @@ function rhinoFoes(r){
   return vsAlive(f) ? [f] : [];
 }
 function hitEnt(t, atk, dmg, label, knock){
-  if (!t) return;
+  if (!t || G.over) return;
   if (t.isRhino) hitRhino(t, atk, [t.x, GROUND - 120 * (t.size || 1) - t.jump], dmg, dmg >= 18, label);
   else { if (atk && atk.isRhino){ atk.hitsLanded++; atk.meter = Math.min(100, atk.meter + 16); } hitPlayer(t, dmg, label, knock); }
 }
@@ -1039,9 +1467,10 @@ function hitEnt(t, atk, dmg, label, knock){
 function vsRhinoIdle(r, dt){
   var keys = r.inp.keys, pressed = r.inp.pressed, foe = vsFoeOf(r), moving = false;
   r.tilt *= Math.pow(.05, dt); r.head *= Math.pow(.05, dt);
-  if (!G.over && r.jump <= 0){
-    if (keys.left){ r.x -= 250 * dt; moving = true; r.facing = -1; }
-    if (keys.right){ r.x += 250 * dt; moving = true; r.facing = 1; }
+  if (!G.over){
+    var rsp = r.jump > 0 ? 150 : 250;   // some air control, less than on the ground
+    if (keys.left && !keys.right){ r.x -= rsp * dt; moving = r.jump <= 0; r.facing = -1; }
+    if (keys.right && !keys.left){ r.x += rsp * dt; moving = r.jump <= 0; r.facing = 1; }
   }
   if (!moving && foe) r.facing = foe.x > r.x ? 1 : -1;
   r.run = moving ? .8 : 0; if (moving){ r.phase += dt * 12; if (Math.random() < .2) puffs.push({x: r.x - r.facing * rnd(40, 110), y: GROUND - rnd(0, 18), t: 0, r: rnd(4, 9)}); }
@@ -1050,7 +1479,7 @@ function vsRhinoIdle(r, dt){
   if (r.jump > 0) return;                                   // attacks are ground moves
   if (pressed.punch){ r.state = 'horn'; r.st = 0; r.chargeHit = false; sfx('whoosh'); }
   else if (pressed.kick){ r.state = 'paw'; r.st = 0; r.willFeint = false; }
-  else if (pressed.special && r.meter >= 100){ r.meter = 0; r.state = 'jetstomp'; r.st = 0; r.chargeHit = false; r.targetX = foe ? foe.x : r.x; r.jx0 = r.x; sfx('jet'); sfx('roar'); }
+  else if (pressed.special && r.meter >= 100){ r.meter = 0; r.state = 'jetstomp'; r.st = 0; r.chargeHit = false; var rbk = rhinoBounds(r); r.targetX = clamp(foe ? foe.x : r.x, rbk[0], rbk[1]); r.jx0 = r.x; sfx('jet'); sfx('roar'); }
 }
 function vsRhinoJump(r, dt){
   if (r.state === 'jetstomp'){ r.vj = 0; return; }
@@ -1075,30 +1504,29 @@ function vsTimeUp(){
   if (Math.abs(fa - fb) < .005){ G.over = true; G.won = true; G.vsWin = -1; G.koT = 0; sfx('gong', {f: 90, v: .6}); fightTimeout(showResult, 2600); return; }
   vsEnd(fa > fb ? 0 : 1);
 }
-function vsPct(e){ return Math.round(Math.max(0, e.hp) / e.maxhp * 100); }
+function vsPct(e){
+  if (G.comp){ var pp = pct100(G.sides.map(function(c){ return c.share || 0; })); return pp[G.sides.indexOf(e)]; }
+  return Math.round(Math.max(0, e.hp) / e.maxhp * 100);
+}
 function drawVsHUD(){
   ctx.font = '700 15px Nunito, sans-serif'; ctx.textBaseline = 'top';
-  var cols = ['#6fe3a0', '#ffb44d'];
+  var cols = ['#6fe3a0', '#ffb44d'], compact = hudCompact(), y = hudRightTop(), yEnd = y;   // below the MENU / FULLSCREEN buttons
+  var pcts = G.comp ? pct100(G.sides.map(function(e){ return e.share || 0; })) : null;
   G.sides.forEach(function(e, i){
-    var w = 330, x = i ? LW - 24 - w : 24, al = i ? 'right' : 'left', y = 72;   // below the MENU / FULLSCREEN buttons
+    var w = 330, x = i ? LW - 24 - w : 24, al = i ? 'right' : 'left';
     var mine = (!Net.on || !Net.peer) ? (vsLocal ? false : i === 0) : i === Net.me;
-    bar(x, y, w, 20, Math.max(0, e.hp) / e.maxhp, e.state === 'ko' ? '#8a8fa3' : cols[i], '#c8262c',
-        (vsLocal ? 'P' + (i + 1) + ' · ' : (mine ? 'YOU · ' : '')) + vsName(e) + (G.comp ? ' · ' + Math.round((e.share || 0) * 100) + ' %' : ''), al, G.comp ? COMP_LIMIT : 0);
-    var mx = i ? LW - 24 - 200 : 24;
-    ctx.fillStyle = 'rgba(10,14,30,.55)'; roundRect(mx, y + 44, 200, 10, 5); ctx.fill();
-    ctx.fillStyle = e.meter >= 100 ? '#6fe3a0' : '#93a0bf'; roundRect(i ? mx + 200 - 200 * e.meter / 100 : mx, y + 44, 200 * e.meter / 100, 10, 5); ctx.fill();
-    ctx.fillStyle = e.meter >= 100 ? '#6fe3a0' : '#c9d3e6'; ctx.font = '900 11px Nunito, sans-serif'; ctx.textAlign = al;
-    ctx.fillText(e.meter >= 100 ? 'SPECIAL READY — ' + e.def.special.name : 'SPECIAL ' + Math.floor(e.meter) + '%', i ? LW - 24 : 24, y + 58);
-    ctx.textAlign = 'left'; ctx.font = '700 15px Nunito, sans-serif';
+    var used = bar(x, y, w, 20, Math.max(0, e.hp) / e.maxhp, e.state === 'ko' ? '#8a8fa3' : cols[i], '#c8262c',
+        (vsLocal ? 'P' + (i + 1) + ' · ' : (mine ? 'YOU · ' : '')) + vsName(e) + (pcts ? ' · ' + pcts[i] + ' %' : ''), al, G.comp ? COMP_LIMIT : 0);
+    var mx = i ? LW - 24 - 200 : 24, my = compact ? y + used + 5 : y + 44, mh = compact ? hudPx(6) : 10;
+    meterBar(mx, my, 200, mh, e.meter, al, e.meter >= 100 ? 'SPECIAL READY — ' + e.def.special.name : 'SPECIAL ' + Math.floor(e.meter) + '%', compact, true);
+    yEnd = Math.max(yEnd, my + mh);
   });
-  if (Net.on && Net.lost){ ctx.font = '900 13px Nunito, sans-serif'; ctx.fillStyle = '#ffd166'; ctx.textAlign = 'center'; ctx.fillText('OPPONENT RECONNECTING…', LW / 2, 140); ctx.textAlign = 'left'; }
+  if (Net.on && Net.lost){ ctx.font = '900 ' + (compact ? hudPx(10) : 13) + 'px Nunito, sans-serif'; ctx.fillStyle = '#ffd166'; ctx.textAlign = 'center'; ctx.fillText('OPPONENT RECONNECTING…', LW / 2, compact ? yEnd + hudPx(22) : 140); ctx.textAlign = 'left'; }
   if (G.comp){
-    ctx.fillStyle = '#c9d3e6'; ctx.font = '900 11px Nunito, sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText('ONE RING · SUMS TO 1 · LIMIT ' + Math.round(COMP_LIMIT * 100) + ' %', LW / 2, 130); ctx.textAlign = 'left';
+    ctx.fillStyle = '#c9d3e6'; ctx.font = '900 ' + (compact ? hudPx(9) : 11) + 'px Nunito, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(compact ? 'SUM = 1 · LIMIT ' + Math.round(COMP_LIMIT * 100) + ' %' : 'ONE RING · SUMS TO 1 · LIMIT ' + Math.round(COMP_LIMIT * 100) + ' %', LW / 2, compact ? yEnd + hudPx(8) : 130); ctx.textAlign = 'left';
   }
-  ctx.textAlign = 'center'; ctx.font = '400 30px Bangers, Impact, sans-serif'; ctx.fillStyle = '#eef2f8'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 4;
-  var left = Math.max(0, Math.ceil(VS_TIME - G.elapsed)), tt = (left < 10 ? '0' : '') + left;
-  ctx.strokeText(tt, LW / 2, 16); ctx.fillText(tt, LW / 2, 16); ctx.textAlign = 'left';
+  hudTimer(Math.max(0, Math.ceil(VS_TIME - G.elapsed)));
 }
 
 var G = null;   // current fight
@@ -1118,7 +1546,13 @@ function newFight(def, def2){
   AW = lv.width || LW;
   var rhinos = [], n = lv.rhinos || 1;
   for (var ri = 0; ri < n; ri++) rhinos.push({x: 720 + ri * (AW - 1140) / Math.max(1, n - 1), facing:-1, hp:lv.rhino.hp, maxhp:lv.rhino.hp, mutant:lv.rhino.mutant, space:!!lv.rhino.space, glow:0, willFeint:false, targetX:0, state:'idle', st:0, timer:1.4 + ri * .9, run:0, phase:0, tilt:0, head:0, jump:0, squash:0, tail:0, flash:0, angry:false, rage:0, dir:-1, chargeHit:false, cx0:0, vx:0, trampled:{}, skin: lv.skins ? lv.skins[ri] : null, size: 1, isRhino: true});
-  G = {fid: ++fightSeq, p:p, p2:p2, players: p2 ? [p, p2] : [p], r:rhinos[0], rhinos:rhinos, t:0, over:false, won:false, elapsed:0, koT:0, pacifist:false, comp: !!lv.comp, compN: 0};
+  G = {fid: ++fightSeq, p:p, p2:p2, players: p2 ? [p, p2] : [p], r:rhinos[0], rhinos:rhinos, t:0, over:false, won:false, elapsed:0, koT:0, pacifist:false, comp: !!lv.comp, compN: 0,
+       square: !!lv.square};
+  // both co-op pages run this, so both draw the room and the smaller rigs; nothing else may switch the square on
+  if (G.square) G.players.concat(rhinos).forEach(function(c){ c.size = SQ.size; });
+  if (lv.buns){ G.buns = true; G.bunsFly = []; G.bunsGround = []; G.bunStats = {thrown: 0, hit: 0, eaten: 0, picked: 0}; }
+  if (lv.push){ G.push = {x: PUSH.start, pressure: 0, endT: 0, pred: null}; G.players.forEach(function(q){ q.pu = mkPushState(); q.state = 'push'; }); rhinos[0].state = 'shove'; }
+  setPadLabels(G.push ? 'push' : (G.buns ? 'buns' : (G.square ? 'square' : null)));
   if (G.comp){ var chars = G.players.concat(rhinos); G.compN = chars.length; chars.forEach(function(c){ c.share = 1 / chars.length; c.size = 1; }); compSync(); }
   camX = clamp(p.x - LW / 2, 0, AW - LW);
   clearKeys(); blurFocus();
@@ -1130,7 +1564,61 @@ function startAttack(p, kind){
   p.state = kind; p.st = 0; p.attackHit = false; p.specialHits = 0;
   if (kind === 'punch'){ p.alt = !p.alt; sfx('whoosh'); }
   if (kind === 'kick') sfx('whoosh');
-  if (kind === 'special'){ if (p.def.special.kind === 'godzilla'){ sfx('roar'); sfx('drum'); } else if (p.def.special.kind === 'babysit'){ sfx('lullaby'); } else { sfx('shout'); sfx('whoosh'); } p.meter = 0; p.scale = 1; var sk = p.def.special.kind; if (sk === 'fly' || sk === 'upper'){ p.vy = sk === 'upper' ? 620 : 470; p.y = Math.max(p.y, 1); } if (sk === 'fly' || sk === 'dash' || sk === 'grab'){ p.dashDir = p.facing; } if (sk === 'fly') slowmo = 0.9; }
+  if (kind === 'special'){ if (p.def.special.kind === 'godzilla'){ sfx('roar'); sfx('drum'); } else if (p.def.special.kind === 'babysit'){ sfx('lullaby'); } else { sfx('shout'); sfx('whoosh'); } p.meter = 0; p.scale = 1; var sk = p.def.special.kind; if (sk === 'fly' || sk === 'upper'){ p.vy = (sk === 'upper' ? 620 : 470) * jumpK(p); p.y = Math.max(p.y, 1); } if (sk === 'fly' || sk === 'dash' || sk === 'grab' || sk === 'spin'){ p.dashDir = p.facing; } if (sk === 'fly') slowmo = 0.9; }
+}
+// round 8: the only damage is a cinnamon bun. A throw is its own state (never startAttack, so no fist, foot or special
+// test can run), spends the tray's meter itself, and releases one bun (or five) at a fixed point in the swing.
+// flat: ~570 px, chest high; lob: over a close rhino's head, lands ~490 px out; tray: a fan of five
+var BUN = {flat: {vx: 680, vh: 130, g: 900, dmg: 8, cd: .24, label: 'BULLE!'}, lob: {vx: 380, vh: 640, g: 1100, dmg: 12, cd: .42, label: 'KANELBULLE!'},
+           tray: {dmg: 9, cd: .5, label: 'HELA PLÅTEN!'}, fly: 24, ground: 8, r: 14};
+function startThrow(p, kind){
+  p.state = 'throw'; p.st = 0; p.attackHit = false; p.throwKind = kind; p.alt = !p.alt; sfx('whoosh');
+  if (kind === 'tray') sfx('shout');   // the meter goes when the buns leave the hand (a hit in the wind-up must not cost the tray)
+}
+function releaseBun(p, kind){
+  var x = p.x + p.facing * 30 * (p.size || 1), h = p.y + 104 * (p.size || 1), fly = G.bunsFly;
+  function add(vx, vh, g, dmg, big, quiet){ if (fly.length >= BUN.fly) fly.shift(); fly.push({x: x, h: h, vx: p.facing * vx, vh: vh, g: g, dmg: dmg, big: big, kind: kind, owner: p, quiet: quiet, spin: 0}); G.bunStats.thrown++; }
+  if (kind === 'tray'){ p.meter = 0; [[900, 80], [820, 180], [720, 280], [600, 380], [480, 480]].forEach(function(v, i){ add(v[0], v[1], 700, BUN.tray.dmg, true, i > 0); }); }
+  else { var b = BUN[kind]; add(b.vx, b.vh, b.g, b.dmg, kind === 'lob', false); }
+}
+function throwPose(p){
+  var k = p.throwKind, rel = k === 'tray' ? .16 : .1, end = BUN[k].cd, st = p.st;
+  var fling = k === 'lob' ? POSE.upper : (k === 'tray' ? POSE.grab : (p.alt ? POSE.punch : POSE.punch2));
+  var pose = st < rel ? mixPose(POSE.guard, k === 'lob' ? POSE.kickWind : POSE.grab, st / rel) : mixPose(fling, POSE.guard, smooth(rel + .06, end, st));
+  if (!p.attackHit && st >= rel){ p.attackHit = true; releaseBun(p, k); }
+  if (st > end) p.state = 'idle';
+  return pose;
+}
+function nearestGroundBun(r, reach){ var best = null, bd = reach || 520; G.bunsGround.forEach(function(g){ var d = Math.abs(g.x - r.x); if (d < bd){ bd = d; best = g; } }); return best; }
+function crumbs(x, y, n){ if (Net.on && Net.host && Net.peer && Net.crumbQ.length < 24) Net.crumbQ.push([Math.round(x), Math.round(y), n]);
+  for (var i = 0; i < n; i++) puffs.push({x: x + rnd(-24, 24), y: y - rnd(0, 18), t: rnd(0, .2), r: rnd(3, 7), col: i % 2 ? '#c98a44' : '#f3e3c8'}); }
+function updateBuns(dt){
+  var fly = G.bunsFly;
+  for (var i = fly.length - 1; i >= 0; i--){
+    var b = fly[i]; b.x += b.vx * dt; b.vh -= b.g * dt; b.h += b.vh * dt; b.spin += dt * 13 * (b.vx > 0 ? 1 : -1);
+    // only a live, still-hostile rhino takes a bun, and only while the fight is on (a bun in flight at the knockout, or at
+    // the reveal, must not flip the result)
+    var r = G.over ? null : rhinoAt([b.x, GROUND - b.h], BUN.r);
+    if (r && (r.state === 'morph' || r.state === 'graze' || r.state === 'trot')) r = null;
+    if (r){ fly.splice(i, 1); G.bunStats.hit++; crumbs(b.x, GROUND - b.h, 5);
+      hitRhino(r, b.owner, [b.x, GROUND - b.h], b.dmg, b.big, b.quiet ? '' : BUN[b.kind].label, {bun: true, noMeter: b.kind === 'tray', flinch: b.kind === 'flat', quiet: b.quiet, move: b.kind === 'tray' ? 'the whole tray' : (b.kind === 'lob' ? 'a lobbed bun' : 'a cinnamon bun')}); continue; }
+    if (b.h <= 0){ fly.splice(i, 1); crumbs(b.x, GROUND, 4);
+      // a missed bun is food; a tray bun that misses breaks up on the cobbles (a tray is five chances to feed it otherwise)
+      if (!G.over && b.kind !== 'tray' && b.x > 20 && b.x < AW - 20){ G.bunsGround.push({x: b.x + rnd(-18, 18), t: 0}); if (G.bunsGround.length > BUN.ground) G.bunsGround.shift(); }
+      continue; }
+    if (b.x < -80 || b.x > AW + 80) fly.splice(i, 1);
+  }
+  G.bunsGround.forEach(function(g){ g.t += dt; });
+}
+function drawBuns(ground){
+  if (ground){
+    G.bunsGround.forEach(function(g){ ctx.fillStyle = 'rgba(40,24,10,.3)'; ctx.beginPath(); ctx.ellipse(g.x, GROUND + 2, 16, 4, 0, 0, 6.283); ctx.fill();
+      ctx.save(); ctx.translate(g.x, GROUND - 7); ctx.scale(1, .62); ctx.drawImage(BUN_IMG, -14, -14, 28, 28); ctx.restore(); });
+    return;
+  }
+  G.bunsFly.forEach(function(b){
+    ctx.fillStyle = 'rgba(40,24,10,' + (.28 * Math.max(0, 1 - b.h / 300)) + ')'; ctx.beginPath(); ctx.ellipse(b.x, GROUND + 2, 12, 3, 0, 0, 6.283); ctx.fill();
+    ctx.save(); ctx.translate(b.x, GROUND - b.h); ctx.rotate(b.spin); ctx.drawImage(BUN_IMG, -BUN.r, -BUN.r, BUN.r * 2, BUN.r * 2); ctx.restore(); });
 }
 function rhinoRect(r){
   var S = rs(r), front = r.x + r.facing * 2.55 * S, back = r.x - r.facing * 1.6 * S;
@@ -1138,14 +1626,14 @@ function rhinoRect(r){
 }
 function inRect(pt, rc, pad){ pad = pad || 0; return pt[0] > rc.x0 - pad && pt[0] < rc.x1 + pad && pt[1] > rc.y0 - pad && pt[1] < rc.y1 + pad; }
 function liveRhinos(){ return G.rhinos.filter(function(r){ return r.state !== 'ko' && r.state !== 'gone'; }); }
-function rhinoAt(pt, pad){
-  pad = pad || 0;
+function rhinoAt(pt, pad, k){
+  pad = pad || 0; k = Math.max(1, k || 1);
   var rs = liveRhinos(), best = null, bd = 1e9;
   for (var i = 0; i < rs.length; i++){
     var rc = rhinoRect(rs[i]);
     // round 5 shrinks a rhino below fist height; then a punch reaches over it instead of into it, so the
     // shorter the target the further down from the hand it still counts (a full-size rhino is unaffected)
-    var vpad = Math.max(pad, 165 - (rc.y1 - rc.y0));
+    var vpad = Math.max(pad, 165 * k - (rc.y1 - rc.y0));
     if (pt[0] > rc.x0 - pad && pt[0] < rc.x1 + pad && pt[1] > rc.y0 - vpad && pt[1] < rc.y1 + pad){
       var d = Math.abs(rs[i].x - pt[0]); if (d < bd){ bd = d; best = rs[i]; }
     }
@@ -1154,20 +1642,34 @@ function rhinoAt(pt, pad){
 }
 // every rhino gets the whole arena: lanes used to fence each one into a slice, which left a strip of the field
 // no rhino could reach (stand there and it paws and sweeps at its wall forever) and stopped them running past each other
-function rhinoBounds(r){ return [100, AW - 100]; }
+function rhinoBounds(r){ return (G && G.square) ? [-1e9, 1e9] : [100, AW - 100]; }
 function passesThrough(r){ return r.state === 'charge' || r.state === 'jetstomp'; }
-function hitRhino(r, p, pt, dmg, big, label){
+function hitRhino(r, p, pt, dmg, big, label, o){
+  if (G.over) return;
+  if (G.buns && !(o && o.bun)) return;   // round 8: a fist, a kick, a special, a stomp — none of it reaches the rhino
   var vuln = (r.state === 'skid' || r.state === 'sleep') ? 1.6 : 1;
   dmg = Math.round(dmg * p.def.power * vuln);
   if (G.comp) compHit(r, dmg); else r.hp = Math.max(0, r.hp - dmg);
   r.flash = 0.12; r.rage += 1;
   p.hitsLanded++;
-  if (p.state !== 'special') p.meter = Math.min(100, p.meter + (big ? 26 : 14));   // a special costs the whole meter; its own hits must not refund it
-  p.lastMove = p.state === 'special' ? p.def.special.name : (p.state === 'kick' ? 'a kick' : 'a punch');
-  fx.push({x: pt[0], y: pt[1], t: 0, life: big ? .6 : .38, r: big ? 95 : 55, label: label || (big ? 'WHAM!' : (Math.random() < .5 ? 'POW!' : 'BAM!')), big: big});
-  shake = Math.max(shake, big ? 16 : 7); impactFrame = big ? 3 : 1;
-  sfx(big ? 'bighit' : 'hit');
-  if (r.state === 'idle' || r.state === 'paw' || r.state === 'stagger'){ r.state = 'stagger'; r.st = 0; r.x -= r.facing * (big ? 26 : 10); }
+  // a special costs the whole meter; its own hits must not refund it (nor may a tray's five buns)
+  if (p.state !== 'special' && !(o && o.noMeter)) p.meter = Math.min(100, p.meter + (big ? 26 : 14));
+  p.lastMove = (o && o.move) || (p.state === 'special' ? p.def.special.name : (p.state === 'kick' ? 'a kick' : 'a punch'));
+  if (!(o && o.quiet)){
+    fx.push({x: pt[0], y: pt[1], t: 0, life: big ? .6 : .38, r: big ? 95 : 55, label: label || (big ? 'WHAM!' : (Math.random() < .5 ? 'POW!' : 'BAM!')), big: big});
+    sfx(big ? 'bighit' : 'hit');
+  }
+  shake = Math.max(shake, big ? 16 : 7);
+  // the full-screen flash: every melee hit, but buns come too fast for that — a lob or a tray at most every 0.3 s
+  if (!(o && o.bun)) impactFrame = big ? 3 : 1;
+  else if (big && G.t - (G.lastFlash || -9) > .36){ impactFrame = 1; G.lastFlash = G.t; }   // never more than three a second
+  if (o && o.bun){
+    // a flat bun only makes it flinch; a lob or a tray staggers it, but never out of the charge wind-up, and not again
+    // straight away (two throwers could otherwise keep it from ever attacking)
+    if (G.t !== r.kbT){ r.kbT = G.t; r.x -= r.facing * (big ? 14 : 4); }
+    if (!o.flinch && (r.state === 'idle' || r.state === 'stagger' || r.state === 'forage') && G.t > (r.stagImm || 0)){ r.state = 'stagger'; r.st = 0; r.stagImm = G.t + 1.2; }
+  }
+  else if (r.state === 'idle' || r.state === 'paw' || r.state === 'stagger'){ r.state = 'stagger'; r.st = 0; r.x -= r.facing * (big ? 26 : 10); }
   if (r.state === 'sleep'){ r.x -= r.facing * 6; }
   if (G.comp ? r.share < COMP_LIMIT : r.hp <= 0) rhinoKO(r);
 }
@@ -1183,7 +1685,7 @@ function hitPlayer(p, dmg, label, knock){
   if (p.inv > 0 || G.over || p.state === 'ko') return;
   if (G.comp) compHit(p, dmg); else p.hp = Math.max(0, p.hp - dmg);
   if (p.hp <= 0 || (G.comp && p.share < COMP_LIMIT)) p.killedBy = label;
-  p.inv = 1.0; p.flash = 0.15; p.state = 'hurt'; p.st = 0; p.vy = 260; p.y = Math.max(p.y, 1); p.kx = knock;
+  p.inv = 1.0; p.flash = 0.15; p.state = 'hurt'; p.st = 0; p.vy = 260 * jumpK(p); p.y = Math.max(p.y, 1); p.kx = knock;
   fx.push({x: p.headPt[0], y: p.headPt[1] - 20, t: 0, life: .5, r: 60, label: label, big: false, red: true});
   shake = Math.max(shake, 12); sfx('hurt'); sfx('hit');
   if (G.comp ? p.share < COMP_LIMIT : p.hp <= 0) playerKO(p);
@@ -1196,6 +1698,7 @@ function playerKO(p){
   if (!alivePlayers().length){ G.over = true; G.won = false; fightTimeout(showResult, 1800); }
 }
 function rhinoKO(r){
+  if (r.state === 'ko' || r.state === 'gone') return;
   r.state = 'ko'; r.st = 0; sfx('bighit');
   if (G.vs){ vsEnd(r.vsSide === 0 ? 1 : 0); return; }
   if (G.comp){ compDrop(r); fx.push({x: r.x, y: GROUND - 120 * (r.size || 1), t: 0, life: .9, r: 70, label: 'BELOW DETECTION LIMIT', big: false}); }
@@ -1208,8 +1711,8 @@ function rhinoKO(r){
 }
 // pacifist ending: never land a hit and outlast the rhino (60 s in round 1, +30 s per round) and the read turns out to be something else
 var LOCAL_BUILD = /^(localhost|127\.0\.0\.1|)$/.test(location.hostname);   // file:// or a dev server: debug hooks allowed
-var PACIFIST_DEBUG = LOCAL_BUILD ? parseFloat((location.hash.match(/pacifist=(\d+(?:\.\d+)?)/) || [])[1]) : NaN;
-if (LOCAL_BUILD) window.__fight = function(){ return G; };   // tests peek at the fight state
+var PACIFIST_DEBUG = LOCAL_BUILD ? parseFloat((location.hash.match(/pacifist=([0-9]*\.?[0-9]+(?:e[+-]?[0-9]+)?)/i) || [])[1]) : NaN;
+if (LOCAL_BUILD){ window.__fight = function(){ return G; }; window.__pct100 = function(v){ return pct100(v); }; window.__sq = function(){ return {P: SQ.P, base: sqBase, pt: sqPt, wrap: wrapDelta}; }; window.__level = function(){ return LEVEL; }; window.__flash = function(){ return flashA; }; window.__push = function(){ return {win: PUSH.win, lose: pushLoseX()}; }; }   // tests peek at the fight state
 function pacifistTime(){ return PACIFIST_DEBUG > 0 ? PACIFIST_DEBUG : (LEVELS[LEVEL].pacifist || 60 + 30 * LEVEL); }
 function rhinoReveal(){
   if (G.over) return;
@@ -1218,7 +1721,7 @@ function rhinoReveal(){
     r.morph = reveal ? reveal[r.skin || 'rhino'] : kinds[i % kinds.length]; r.revealed = false;
     r.state = 'morph'; r.st = 0; r.run = 0; r.jump = 0; r.glow = 0; r.angry = false; r.chargeHit = true;
   });
-  bolts = [];
+  bolts = []; hot = []; if (G.buns) G.bunsFly = [];
   G.over = true; G.won = true; G.pacifist = true; G.koT = 0;
   alivePlayers().forEach(function(q){ q.state = 'win'; q.st = 0; });
   sfx('gong', {f: 96, v: .5}); sfx('drum');
@@ -1228,11 +1731,17 @@ function explodeRhino(r){
   if (!G || scene !== 'fight') return;
   r.state = 'gone'; flashA = 1; shake = 30; sfx('boom');
   var rc = rhinoRect(r), cx = (rc.x0 + rc.x1) / 2, cy = (rc.y0 + rc.y1) / 2;
+  // the push: the rhino has just gone over the right edge, so the burst starts where you can still see it
+  var shiftX = G.push ? Math.min(0, LW - 90 - cx) : 0;
+  var sqc = G.square ? sqPt(r.x, 1.1 * rs(r)) : null;   // the square: burst in room space, from the rhino's middle, wherever it hangs
   for (var i = 0; i < 230; i++){
+    if (sqc){ var an = rnd(0, 6.283), sv = rnd(80, 300);
+      dna.push({x: sqc[0] + rnd(-50, 50), y: sqc[1] + rnd(-35, 35), vx: Math.cos(an) * sv, vy: Math.sin(an) * sv, scr: true, rot: rnd(0, 3.14), rv: rnd(-3, 3), tw: rnd(0, 6.28), tv: rnd(4, 9), L: rnd(14, 28), t: 0, letter: i % 3 === 0 ? 'ACGT'[i % 4] : null});
+      continue; }
     var x = rnd(rc.x0, rc.x1), y = rnd(rc.y0 + 10, rc.y1 - 5);
     var dx = x - cx, dy = y - cy - 60, d = Math.hypot(dx, dy) + 1;
-    var v = rnd(180, 520);
-    dna.push({x: x, y: y, vx: dx / d * v + rnd(-60, 60), vy: dy / d * v - 120, rot: rnd(0, 3.14), rv: rnd(-3, 3), tw: rnd(0, 6.28), tv: rnd(4, 9), L: rnd(16, 34), t: 0, letter: i % 3 === 0 ? 'ACGT'[i % 4] : null});
+    var v = rnd(180, 520) * (G.square ? .5 : 1);
+    dna.push({x: x + shiftX, y: y, vx: dx / d * v + rnd(-60, 60), vy: dy / d * v - (G.square ? 60 : 120), rot: rnd(0, 3.14), rv: rnd(-3, 3), tw: rnd(0, 6.28), tv: rnd(4, 9), L: rnd(16, 34), t: 0, letter: i % 3 === 0 ? 'ACGT'[i % 4] : null});
   }
   [1568, 2093, 2637, 3136].forEach(function(f, k){ setTimeout(function(){ sfx('chime', {f: f}); }, 100 + k * 90); });
   outroMelody();
@@ -1243,24 +1752,28 @@ function updatePlayer(p, dt){
   var def = p.def, keys = p.inp.keys, pressed = p.inp.pressed;
   var r = nearestRhino(p.x) || G.r || vsFoeOf(p) || p;
   p.st += dt; if (p.inv > 0) p.inv -= dt; if (p.flash > 0) p.flash -= dt;
-  var busy = p.state === 'punch' || p.state === 'kick' || p.state === 'special' || p.state === 'hurt' || p.state === 'ko' || p.state === 'win';
+  if (G.push){ p.ducking = false; p.pose = p.state === 'ko' ? POSE.ko : (p.state === 'win' ? mixPose(POSE.stand, POSE.win, smooth(0, .4, p.st)) : pushPose(p)); return; }
+  var busy = p.state === 'punch' || p.state === 'kick' || p.state === 'special' || p.state === 'throw' || p.state === 'hurt' || p.state === 'ko' || p.state === 'win';
   var speed = 300 * def.speed;
   var onGround = p.y <= 0 && p.vy <= 0;
   // face the rhino when not mid-attack
-  if (!busy || p.state === 'hurt') p.facing = r.x > p.x ? 1 : -1;
+  if ((!busy || p.state === 'hurt') && !(G.square && Math.abs(r.x - p.x) > SQ.P / 2 - 40)) p.facing = r.x > p.x ? 1 : -1;
   var moving = false;
   if (!busy && !G.over){
-    if (keys.left){ p.x -= speed * dt; moving = true; }
-    if (keys.right){ p.x += speed * dt; moving = true; }
-    if (pressed.jump && onGround){ p.vy = 690 * def.jump * (LEVELS[LEVEL].gravity ? .82 : 1); p.y = 1; sfx('jump'); }
-    if (pressed.punch && onGround) startAttack(p, 'punch');
+    if (keys.left && !keys.right){ p.x -= speed * dt; moving = true; }
+    if (keys.right && !keys.left){ p.x += speed * dt; moving = true; }
+    if (pressed.jump && onGround){ p.vy = 690 * def.jump * (LEVELS[LEVEL].gravity ? .82 : 1) * jumpK(p); p.y = 1; sfx('jump'); }
+    if (G.buns){   // round 8: buns only, thrown standing or in the air
+      if (pressed.punch) startThrow(p, 'flat'); else if (pressed.kick) startThrow(p, 'lob'); else if (pressed.special && p.meter >= 100) startThrow(p, 'tray');
+    }
+    else if (pressed.punch && onGround) startAttack(p, 'punch');
     else if (pressed.kick && onGround) startAttack(p, 'kick');
     else if (pressed.special && p.meter >= 100 && onGround) startAttack(p, 'special');
   }
   // gravity
-  if (p.y > 0 || p.vy > 0){ p.vy -= 1500 * (LEVELS[LEVEL].gravity || 1) * dt; p.y += p.vy * dt; if (p.y <= 0){ p.y = 0; p.vy = 0; if (p.state === 'hurt' && p.st > .3){ p.state = 'idle'; } } }
+  if (p.y > 0 || p.vy > 0){ p.vy -= 1500 * (LEVELS[LEVEL].gravity || 1) * jumpK(p) * dt; p.y += p.vy * dt; if (p.y <= 0){ p.y = 0; p.vy = 0; if (p.state === 'hurt' && p.st > .3){ p.state = 'idle'; } } }
   if (p.state === 'hurt' && p.kx){ p.x += p.kx * dt; p.kx *= Math.pow(0.02, dt); }
-  p.x = clamp(p.x, 40, AW - 40);
+  if (!G.square) p.x = clamp(p.x, 40, AW - 40);
   if (AW > LW) p.x = clamp(p.x, camX + 24, camX + LW - 24);   // stay inside the camera's view on the wide field
   // pose selection
   var pose;
@@ -1284,6 +1797,8 @@ function updatePlayer(p, dt){
     if (p.st > .5) p.state = 'idle';
   } else if (p.state === 'special'){
     pose = specialUpdate(p, dt);
+  } else if (p.state === 'throw'){
+    pose = throwPose(p);
   } else {
     if (moving && onGround){
       var ph = G.t * 11 * def.speed; p.state = 'walk';
@@ -1306,6 +1821,9 @@ function updatePlayer(p, dt){
     }
   }
   if (!inHot) p.radLabel = false;   // the field can expire under your feet; the next one must warn you again
+  if (G.buns && !G.over && p.state !== 'ko' && p.y <= 0){
+    for (var gb = G.bunsGround.length - 1; gb >= 0; gb--){ if (Math.abs(G.bunsGround[gb].x - p.x) < 30){ G.bunsGround.splice(gb, 1); G.bunStats.picked++; p.meter = Math.min(100, p.meter + 12); sfx('chime', {f: 1318}); crumbs(p.x, GROUND, 3); } }
+  }
 }
 function nearestRhino(x){ var rs = liveRhinos(), best = null, bd = 1e9; for (var i = 0; i < rs.length; i++){ var d = Math.abs(rs[i].x - x); if (d < bd){ bd = d; best = rs[i]; } } return best; }
 function specialUpdate(p, dt){
@@ -1333,7 +1851,7 @@ function specialUpdate(p, dt){
   } else if (kind === 'godzilla'){
     p.inv = Math.max(p.inv, .1); slowmo = 0;
     var grow = smooth(0, .7, st) * (1 - smooth(1.9, 2.5, st));
-    p.scale = 1 + 1.9 * grow;
+    p.scale = 1 + (G.square ? .7 : 1.9) * grow;   // the hall is only so tall
     if (st < .7){ pose = mixPose(POSE.guard, POSE.upper, st / .7); shake = Math.max(shake, 4 + 6 * st); }
     else if (st < 1.05){ pose = POSE.upper; }
     else if (st < 1.2){ pose = mixPose(POSE.upper, POSE.slam, (st - 1.05) / .15); }
@@ -1341,9 +1859,10 @@ function specialUpdate(p, dt){
       pose = POSE.slam;
       if (!p.attackHit){
         p.attackHit = true; shake = 48; impactFrame = 4; flashA = .55; sfx('bighit'); sfx('boom'); sfx('drum');
-        for (var gi = 0; gi < 30; gi++) puffs.push({x: p.x + rnd(-460, 460), y: GROUND - rnd(0, 30), t: 0, r: rnd(12, 30)});
+        var ak = G.square ? SQ.size : 1;   // in the square the rig is smaller, and so is the reach of anything that hits an area
+        for (var gi = 0; gi < 30; gi++) puffs.push({x: p.x + rnd(-460, 460) * ak, y: GROUND - rnd(0, 30), t: 0, r: rnd(12, 30)});
         liveRhinos().forEach(function(r){ var rc2 = rhinoRect(r), rcx = (rc2.x0 + rc2.x1) / 2;
-          if (Math.abs(p.x - rcx) < 620){ hitRhino(r, p, [rcx, GROUND - 90], sp.dmg, true, 'PER-ZILLA!'); r.jump = 110; r.tilt = -.5; if (r.state === 'charge' || r.state === 'paw' || r.state === 'horn'){ r.state = 'stagger'; r.st = 0; } } });
+          if (Math.abs(p.x - rcx) < 620 * ak){ hitRhino(r, p, [rcx, GROUND - 90], sp.dmg, true, 'PER-ZILLA!'); r.jump = G.square ? 70 : 110; r.tilt = -.5; if (r.state === 'charge' || r.state === 'paw' || r.state === 'horn'){ r.state = 'stagger'; r.st = 0; } } });
         var gz = G.vs ? vsFoeOf(p) : null; if (gz && !gz.isRhino && vsAlive(gz) && Math.abs(p.x - gz.x) < 620) hitFoe(gz, p, [gz.x, GROUND - 90], sp.dmg, true, 'PER-ZILLA!');
       }
     }
@@ -1357,7 +1876,7 @@ function specialUpdate(p, dt){
       if (!p.attackHit && st > .6){
         p.attackHit = true;
         var r = nearestRhino(p.x), rc3 = r ? rhinoRect(r) : null, rcx3 = r ? (rc3.x0 + rc3.x1) / 2 : 1e9;
-        if (r && Math.abs(p.x - rcx3) < 420){
+        if (r && Math.abs(p.x - rcx3) < 420 * (G.square ? SQ.size : 1)){
           hitRhino(r, p, [rcx3, GROUND - 120], sp.dmg, true, 'NAP TIME!');
           if (r.state !== 'ko' && r.state !== 'gone'){ r.state = 'sleep'; r.st = 0; r.run = 0; r.facing = p.x > r.x ? 1 : -1; }
         } else if (G.vs && vsFoeOf(p) && !vsFoeOf(p).isRhino && vsAlive(vsFoeOf(p)) && Math.abs(p.x - vsFoeOf(p).x) < 200){ var bz = vsFoeOf(p); hitFoe(bz, p, [bz.x, GROUND - 120], sp.dmg, true, 'NAP TIME!'); }
@@ -1368,7 +1887,7 @@ function specialUpdate(p, dt){
     if (st > 2.3) p.state = 'idle';
   } else if (kind === 'slam'){
     if (st < .25){ pose = mixPose(POSE.guard, POSE.upper, st / .25); p.y = 40 * Math.sin(st / .25 * 3.14); }
-    else if (st < .4){ pose = POSE.slam; if (!p.attackHit){ p.attackHit = true; shake = 22; sfx('drum'); sfx('bighit'); for (var i = 0; i < 12; i++) puffs.push({x: p.x + rnd(-120, 120), y: GROUND - rnd(0, 20), t: 0, r: rnd(8, 18)}); liveRhinos().forEach(function(r){ var rc = rhinoRect(r); if (Math.abs(p.x - (rc.x0 + rc.x1) / 2) < 320){ hitRhino(r, p, [ (rc.x0 + rc.x1) / 2, GROUND - 60 ], sp.dmg, true, 'SLAM!'); r.jump = 40; } }); } }
+    else if (st < .4){ pose = POSE.slam; if (!p.attackHit){ p.attackHit = true; shake = 22; sfx('drum'); sfx('bighit'); for (var i = 0; i < 12; i++) puffs.push({x: p.x + rnd(-120, 120), y: GROUND - rnd(0, 20), t: 0, r: rnd(8, 18)}); liveRhinos().forEach(function(r){ var rc = rhinoRect(r); if (Math.abs(p.x - (rc.x0 + rc.x1) / 2) < 320 * (G.square ? SQ.size : 1)){ hitRhino(r, p, [ (rc.x0 + rc.x1) / 2, GROUND - 60 ], sp.dmg, true, 'SLAM!'); r.jump = 40; } }); } }
     else pose = mixPose(POSE.slam, POSE.guard, smooth(.4, .7, st));
     if (st > .7) p.state = 'idle';
   }
@@ -1398,8 +1917,18 @@ function updateRhino(r, dt){
   if (r.state === 'trot'){
     r.head = lerp(r.head, 0, Math.min(1, dt * 3)); r.run = .7; r.phase += dt * 11; r.tilt = .02 * Math.sin(r.phase); r.x += r.dir * 210 * dt;
     if (Math.random() < .25) puffs.push({x: r.x - r.dir * rnd(60, 130), y: GROUND - rnd(0, 20), t: 0, r: rnd(5, 10)});
-    if (r.x < -300 || r.x > AW + 300) r.state = 'gone';
+    if (!G.square && (r.x < -300 || r.x > AW + 300)) r.state = 'gone';   // round the loop it never leaves; the result comes on its timer
     return;
+  }
+  if (G.buns && !G.over && (r.jump || 0) < 20 && G.bunsGround.length){
+    var snx = r.x + r.facing * 2.35 * rs(r);
+    var ate = 0, ex = 0;
+    for (var eb = G.bunsGround.length - 1; eb >= 0; eb--){ if (Math.abs(G.bunsGround[eb].x - snx) < 34){ ex = G.bunsGround.splice(eb, 1)[0].x; ate++; } }
+    if (ate){ var hp0 = r.hp; r.hp = Math.min(r.maxhp, r.hp + 10 * ate); G.bunStats.eaten += ate;
+      var gain = Math.round(r.hp - hp0), nf = r.nomFx;
+      if (nf && fx.indexOf(nf) >= 0 && nf.t < .35){ r.nomN += gain; nf.label = 'NOM! +' + r.nomN; nf.t = 0; nf.big = r.nomN >= 30; }   // one label for a streak of bites
+      else { r.nomN = gain; r.nomFx = {x: ex, y: GROUND - 60, t: 0, life: .55, r: 50, label: 'NOM! +' + gain, big: false, red: true}; fx.push(r.nomFx); sfx('chime', {f: 392}); }
+      crumbs(ex, GROUND - 10, 4 + 2 * ate); }
   }
   if (r.state !== 'burst' && r.glow > 0) r.glow = Math.max(0, r.glow - dt * 3);
   var dist = p.x - r.x, adist = Math.abs(dist);
@@ -1407,16 +1936,32 @@ function updateRhino(r, dt){
   var spdMul = r.angry ? 1.25 : 1;
   if (r.state === 'idle' && r.human){ vsRhinoIdle(r, dt); }
   else if (r.state === 'idle'){
-    r.facing = dist > 0 ? 1 : -1; r.run = 0; r.tilt *= Math.pow(.05, dt); r.head *= Math.pow(.05, dt);
+    if (!(G.square && adist > SQ.P / 2 - 40)) r.facing = dist > 0 ? 1 : -1; r.run = 0; r.tilt *= Math.pow(.05, dt); r.head *= Math.pow(.05, dt);
     r.timer -= dt;
     if (r.timer <= 0){
-      if (r.mutant && adist < 280 && Math.random() < .5){ r.state = 'burst'; r.st = 0; r.chargeHit = false; }
+      if (G.buns && nearestGroundBun(r) && Math.random() < .7){ r.state = 'forage'; r.st = 0; }
+      else if (r.mutant && adist < 280 && Math.random() < .5){ r.state = 'burst'; r.st = 0; r.chargeHit = false; }
       else if (r.space && adist > 240 && Math.random() < .45){ r.state = 'laser'; r.st = 0; r.chargeHit = false; r.shots = 0; }
-      else if (r.space && Math.random() < .35){ r.state = 'jetstomp'; r.st = 0; r.chargeHit = false; r.targetX = p.x; r.jx0 = r.x; sfx('jet'); }
+      else if (r.space && Math.random() < .35){ r.state = 'jetstomp'; r.st = 0; r.chargeHit = false; var rbj = rhinoBounds(r); r.targetX = clamp(p.x, rbj[0], rbj[1]); r.jx0 = r.x; sfx('jet'); }
       else if (adist > 300 || Math.random() < .3){ r.state = 'paw'; r.st = 0; r.willFeint = r.mutant && Math.random() < .55; }
       else if (Math.random() < .75){ r.state = 'horn'; r.st = 0; }
       else { r.state = 'paw'; r.st = 0; r.willFeint = r.mutant && Math.random() < .55; }
     }
+  } else if (r.state === 'forage'){
+    // trots over to a dropped bun with its head down (the eating happens above, for any state)
+    var fb = nearestGroundBun(r);
+    if (!fb || r.st > 2.6){ r.state = 'idle'; r.st = 0; r.timer = .35; r.run = 0; }
+    else {
+      // steer the snout, not the body: only turn when the bun is beyond snout reach, and back up off one under the belly
+      var sn = 2.35 * rs(r), fd = fb.x - r.x, lim5 = rhinoBounds(r);
+      if (Math.abs(fd) > sn) r.facing = fd > 0 ? 1 : -1;
+      else {   // within snout reach either way round: face whichever way needs the shorter walk (and stays in the arena)
+        var tA = fb.x - sn, tB = fb.x + sn, okA = tA >= lim5[0] && tA <= lim5[1], okB = tB >= lim5[0] && tB <= lim5[1];
+        if (okA && (!okB || Math.abs(tA - r.x) <= Math.abs(tB - r.x))) r.facing = 1; else if (okB) r.facing = -1;
+      }
+      var tx = fb.x - r.facing * sn; if (tx < lim5[0] || tx > lim5[1]){ r.facing = -r.facing; tx = fb.x - r.facing * sn; }
+      r.run = .6; r.phase += dt * 11; r.head = lerp(r.head, -.32, Math.min(1, dt * 4)); r.tilt = .02 * Math.sin(r.phase);
+      if (Math.abs(tx - r.x) > 12) r.x += (tx > r.x ? 1 : -1) * 175 * dt; }
   } else if (r.state === 'paw'){
     var pw = Math.max(0, Math.sin(r.st * 6.28 * 1.4)); r.tilt = .03 * pw; r.head = -.12 * pw;
     if (r.st > .15 && Math.floor(r.st * 10) % 3 === 0 && Math.random() < .5) puffs.push({x: r.x + r.facing * 95 + rnd(-20, 20), y: GROUND - rnd(0, 20), t: 0, r: rnd(5, 10)});
@@ -1466,7 +2011,8 @@ function updateRhino(r, dt){
     // hit the player?
     var ts = Math.min(1.4, r.size || 1), ran = Math.abs(r.x - (r.cx0 == null ? r.x : r.cx0)) > 40; rhinoFoes(r).forEach(function(q, qi){ if (ran && !r.trampled[qi] && Math.abs(q.x - (r.x + r.dir * 120 * ts)) < 110 * ts && (q.isRhino ? q.jump < 60 : (q.y < 84 * ts && q.inv <= 0 && !(q.state === 'special' && (q.def.special.kind === 'dash'))))){ r.trampled[qi] = true; hitEnt(q, r, r.angry ? 26 : 20, 'TRAMPLED!', r.dir * 520); } });
     var rb = rhinoBounds(r);
-    if (r.human && r.st > 1.05){ r.state = 'skid'; r.st = 0; sfx('whoosh'); for (var hk2 = 0; hk2 < 8; hk2++) puffs.push({x: r.x + r.dir * rnd(-40, 90), y: GROUND - rnd(0, 26), t: 0, r: rnd(8, 18)}); }
+    if (G.square && !r.human && ((r.st > .4 && dist * r.dir < -200) || r.st > 2.5)){ r.state = 'skid'; r.st = 0; sfx('whoosh'); for (var sq2 = 0; sq2 < 8; sq2++) puffs.push({x: r.x + r.dir * rnd(-40, 90), y: GROUND - rnd(0, 26), t: 0, r: rnd(8, 18)}); }
+    else if (r.human && r.st > 1.05){ r.state = 'skid'; r.st = 0; sfx('whoosh'); for (var hk2 = 0; hk2 < 8; hk2++) puffs.push({x: r.x + r.dir * rnd(-40, 90), y: GROUND - rnd(0, 26), t: 0, r: rnd(8, 18)}); }
     else if ((r.dir > 0 && r.x > rb[1] - 20) || (r.dir < 0 && r.x < rb[0] + 20)){ r.state = 'skid'; r.st = 0; r.x = clamp(r.x, rb[0] + 20, rb[1] - 20); sfx('whoosh'); for (var i = 0; i < 10; i++) puffs.push({x: r.x + r.dir * rnd(-40, 100), y: GROUND - rnd(0, 30), t: 0, r: rnd(10, 22)});
       if (r.mutant){ for (var hk = 0; hk < 3; hk++) hot.push({x: clamp(r.x - r.dir * (90 + hk * 120), 60, AW - 60), r: rnd(48, 70), t: 0, life: 9}); if (hot.length > 6) hot.splice(0, hot.length - 6); } }
   } else if (r.state === 'skid'){
@@ -1508,19 +2054,18 @@ function update(dt){
     G.sides[0].inp.keys = keys; G.sides[0].inp.pressed = pressed;                       // side 1 is this keyboard / the touch pads
     if (!Net.on || !Net.peer){ G.sides[1].inp.keys = keys2; G.sides[1].inp.pressed = pressed2; }   // side 2 is the other half of the keyboard
   }
-  else { G.p.inp.keys = keys; G.p.inp.pressed = pressed; }   // player 1 is always the local keyboard / touch pads
-  G.players.forEach(function(q){ updatePlayer(q, dt * ts); }); G.rhinos.forEach(function(r){ updateRhino(r, dt * ts); });
+  else { G.p.inp.keys = keys; G.p.inp.pressed = pressed; G.p.inp.typed = typedQ; }   // player 1 is always the local keyboard / touch pads
+  G.players.forEach(function(q){ updatePlayer(q, dt * ts); }); G.rhinos.forEach(function(r){ if (!G.push || r.state === 'ko' || r.state === 'gone') updateRhino(r, dt * ts); });
+  if (G.push) updatePush(dt * ts);
+  if (G.square && G.r) G.players.forEach(function(q){ q.x = G.r.x + wrapDelta(q.x - G.r.x); });
   updateCamera(dt);
   if (G.comp) G.players.concat(G.rhinos).forEach(function(c){ c.size = lerp(c.size || 1, sizeOf(c.share), Math.min(1, dt * 5)); });
   var hitsTotal = 0; G.players.forEach(function(q){ hitsTotal += q.hitsLanded; });
-  if (!G.vs && !G.over && hitsTotal === 0 && G.elapsed >= pacifistTime()) rhinoReveal();
+  if (!G.vs && !G.push && !G.over && hitsTotal === 0 && G.elapsed >= pacifistTime()) rhinoReveal();
   if (G.vs && !G.over && G.elapsed >= VS_TIME) vsTimeUp();
   // effects
   for (var i = fx.length - 1; i >= 0; i--){ fx[i].t += dt; if (fx[i].t > fx[i].life) fx.splice(i, 1); }
   tickAmbient(dt);
-  if (shake > 0) shake = Math.max(0, shake - 60 * dt);
-  if (flashA > 0) flashA = Math.max(0, flashA - 3 * dt);
-  if (impactFrame > 0) impactFrame--;
   for (var h = hot.length - 1; h >= 0; h--){ hot[h].t += dt; if (hot[h].t > hot[h].life) hot.splice(h, 1); }
   for (var rg = rings.length - 1; rg >= 0; rg--){ rings[rg].t += dt; if (rings[rg].t > .6) rings.splice(rg, 1); }
   for (var bi = bolts.length - 1; bi >= 0; bi--){
@@ -1528,6 +2073,7 @@ function update(dt){
     if (!G.over && !bo.hit){ G.players.forEach(function(q){ if (!bo.hit && Math.abs(bo.x - q.x) < 34 && q.y < 60 && !q.ducking && q.inv <= 0){ bo.hit = true; hitPlayer(q, 14, 'ZAPPED!', bo.dir * 300); } }); }
     if (bo.x < -60 || bo.x > AW + 60 || bo.hit) bolts.splice(bi, 1);
   }
+  if (G.buns) updateBuns(dt * ts);
   pressed = {}; pressed2 = {};
 }
 // the camera follows the fighters on a wide field (round 4); on the normal field it stays at 0
@@ -1540,9 +2086,20 @@ function updateCamera(dt){
 }
 // cosmetic motion that both the host and a co-op guest run locally: snow puffs, DNA bits, the weather
 function tickAmbient(dt){
+  // here, not in update(): a co-op guest has to fade its own flashes and shakes too
+  if (flashA > 0) flashA = Math.max(0, flashA - 3 * dt);
+  if (shake > 0) shake = Math.max(0, shake - 60 * dt);
+  if (impactFrame > 0) impactFrame--;
   for (var j = puffs.length - 1; j >= 0; j--){ puffs[j].t += dt; if (puffs[j].t > .55) puffs.splice(j, 1); }
   for (var k = 0; k < dna.length; k++){ var d = dna[k]; d.t += dt; d.x += d.vx * dt; d.y += d.vy * dt; d.vx *= Math.pow(.35, dt); d.vy = d.vy * Math.pow(.4, dt) - 25 * dt; d.rot += d.rv * dt; d.tw += d.tv * dt; }
-  if (LEVELS[LEVEL].theme === 'space'){
+  var th = LEVELS[LEVEL].theme;
+  if (th === 'lab'){ /* sealed room: nothing drifts */ }
+  else if (th === 'cafe'){
+    for (var f5 = 0; f5 < flakes.length; f5++){ var fl5 = flakes[f5]; fl5.y += fl5.v * .9 * dt; fl5.x += (Math.sin(G.t * 1.1 + fl5.p) * 30 - 10) * dt; if (fl5.y > LH) { fl5.y = -8; fl5.x = Math.random() * (LW + 80); } }
+  }
+  else if (th === 'museum'){
+    for (var f4 = 0; f4 < flakes.length; f4++){ var fl4 = flakes[f4]; fl4.y += fl4.v * .12 * dt; fl4.x += Math.sin(G.t * .5 + fl4.p) * 5 * dt; if (fl4.y > LH) { fl4.y = -5; fl4.x = Math.random() * LW; } }
+  } else if (th === 'space'){
     for (var f3 = 0; f3 < flakes.length; f3++){ var fl3 = flakes[f3]; fl3.x -= (20 + fl3.v) * dt; if (fl3.x < -5) { fl3.x = LW + 5; fl3.y = Math.random() * LH; } }
   } else if (LEVELS[LEVEL].theme === 'wasteland'){
     for (var f2 = 0; f2 < flakes.length; f2++){ var fl2 = flakes[f2]; fl2.y -= fl2.v * .7 * dt; fl2.x += 14 * dt + Math.sin(G.t * 1.3 + fl2.p) * 16 * dt; if (fl2.y < -5) { fl2.y = LH + 5; fl2.x = Math.random() * LW; } }
@@ -1554,62 +2111,185 @@ function tickAmbient(dt){
 // ------------------------------------------------------------ draw
 function drawHUD(){
   if (G.vs){ drawVsHUD(); return; }
-  var p = G.p, r = G.r;
-  ctx.font = '700 15px ' + 'Nunito, sans-serif'; ctx.textBaseline = 'top';
+  if (G.push){ drawPushHUD(); return; }
+  var lv = LEVELS[LEVEL], compact = hudCompact();
+  var chars = G.players.concat(G.rhinos), pcts = G.comp ? pct100(chars.map(function(c){ return c.share || 0; })) : null;
+  ctx.font = '700 15px Nunito, sans-serif'; ctx.textBaseline = 'top';
   // one bar + special meter per fighter (the second one below the first)
+  var yP = 22;
   G.players.forEach(function(q, i){
-    var oy = i * 72, mine = !Net.on || !Net.peer || i === Net.me;
-    bar(24, 22 + oy, i ? 260 : 330, i ? 16 : 20, q.hp / q.maxhp, q.state === 'ko' ? '#8a8fa3' : '#6fe3a0', '#c8262c', q.def.name.toUpperCase() + (G.players.length > 1 && mine ? ' (YOU)' : '') + (G.comp ? ' · ' + Math.round(q.share * 100) + ' %' : ''), 'left', G.comp ? COMP_LIMIT : 0);
-    ctx.fillStyle = 'rgba(10,14,30,.55)'; roundRect(24, 66 + oy, 200, 10, 5); ctx.fill();
-    ctx.fillStyle = q.meter >= 100 ? '#6fe3a0' : '#93a0bf'; roundRect(24, 66 + oy, 200 * q.meter / 100, 10, 5); ctx.fill();
-    ctx.fillStyle = q.meter >= 100 ? '#6fe3a0' : '#c9d3e6'; ctx.font = '900 11px Nunito, sans-serif';
-    ctx.fillText(q.meter >= 100 ? 'SPECIAL READY — ' + q.def.special.name.toUpperCase() : 'SPECIAL ' + Math.floor(q.meter) + '%', 232, 63 + oy);
-    ctx.font = '700 15px Nunito, sans-serif';
+    var mine = !Net.on || !Net.peer || i === Net.me, w = i ? 260 : 330;
+    var lab = q.def.name.toUpperCase() + (G.players.length > 1 && mine ? ' (YOU)' : '') + (pcts ? ' · ' + pcts[chars.indexOf(q)] + ' %' : '');
+    var used = bar(24, yP, w, i ? 16 : 20, q.hp / q.maxhp, q.state === 'ko' ? '#8a8fa3' : '#6fe3a0', '#c8262c', lab, 'left', G.comp ? COMP_LIMIT : 0);
+    var my = compact ? yP + used + 5 : yP + 44, mh = compact ? hudPx(6) : 10;
+    meterBar(24, my, 200, mh, q.meter, 'left', G.buns ? (q.meter >= 100 ? (isTouch ? 'TRAY READY — TAP TRAY' : 'TRAY READY — 5 BUNS (L)') : 'TRAY ' + Math.floor(q.meter) + '%') : (q.meter >= 100 ? 'SPECIAL READY — ' + q.def.special.name.toUpperCase() : 'SPECIAL ' + Math.floor(q.meter) + '%'), compact);
+    yP = compact ? my + mh + hudPx(8) : yP + 72;
   });
+  var yR = hudRightTop();   // below the MENU / FULLSCREEN buttons in the corner
   G.rhinos.forEach(function(r, i){
-    var oy = 50 + i * 42, w = i ? 260 : 330, h = i ? 16 : 20;   // below the MENU / FULLSCREEN buttons in the corner
-    bar(LW - 24 - w, 22 + oy, w, h, r.hp / r.maxhp, r.space ? (r.angry ? '#ff8ad0' : '#7fe7ff') : r.mutant ? (r.angry ? '#ccff66' : '#8dff5a') : (r.angry ? '#ff5a3c' : '#f2c56b'), '#c8262c', ((r.morph && r.revealed) ? ANIMALS[r.morph].label : (LEVELS[LEVEL].huds ? LEVELS[LEVEL].huds[i] : LEVELS[LEVEL].hud + (i ? ' #' + (i + 1) : ''))) + (G.comp ? ' · ' + Math.round(r.share * 100) + ' %' : ''), 'right', G.comp ? COMP_LIMIT : 0);
+    var w = i ? 260 : 330, h = i ? 16 : 20, revealed = r.morph && r.revealed;
+    var base = revealed ? ANIMALS[r.morph].label : (lv.huds ? lv.huds[i] : lv.hud + (i ? ' #' + (i + 1) : ''));
+    if (compact) base = base.split(' · ')[0] + (!revealed && !lv.huds && i ? ' #' + (i + 1) : '');   // the name, not the lesson, on a phone
+    var used = bar(LW - 24 - w, yR, w, h, r.hp / r.maxhp, r.space ? (r.angry ? '#ff8ad0' : '#7fe7ff') : r.mutant ? (r.angry ? '#ccff66' : '#8dff5a') : (r.angry ? '#ff5a3c' : '#f2c56b'), '#c8262c',
+      base + (pcts ? ' · ' + pcts[chars.indexOf(r)] + ' %' : ''), 'right', G.comp ? COMP_LIMIT : 0);
+    yR += compact ? used + hudPx(6) : 42;
   });
   if (G.comp){
     // the whole ring as one stacked bar: it always fills up, whoever holds the pieces
-    var cw = 260, cx0 = LW / 2 - cw / 2, cy0 = 100, cx = cx0;   // between the fighter bars and the rhino bars
-    ctx.fillStyle = 'rgba(10,14,30,.6)'; roundRect(cx0 - 3, cy0 - 3, cw + 6, 18, 6); ctx.fill();
-    G.players.concat(G.rhinos).forEach(function(c){ var w = cw * (c.share || 0); if (w <= 0) return; ctx.fillStyle = c.def ? '#6fe3a0' : (c.skin === 'zebra' ? '#f4f0ea' : '#b0a89c'); ctx.fillRect(cx, cy0, w, 12); ctx.fillStyle = '#1a141e'; ctx.fillRect(cx, cy0, 1, 12); cx += w; });
-    ctx.fillStyle = '#c9d3e6'; ctx.font = '900 11px Nunito, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('ONE RING · SUMS TO 1 · LIMIT ' + Math.round(COMP_LIMIT * 100) + ' %', LW / 2, cy0 + 16); ctx.textAlign = 'left';
+    var cw = compact ? 220 : 260, cx0 = LW / 2 - cw / 2, cy0 = compact ? 22 + hudPx(34) : 100, cx = cx0, sh = compact ? hudPx(7) : 12;
+    ctx.fillStyle = 'rgba(10,14,30,.6)'; roundRect(cx0 - 3, cy0 - 3, cw + 6, sh + 6, 6); ctx.fill();
+    chars.forEach(function(c){ var w = cw * (c.share || 0); if (w <= 0) return; ctx.fillStyle = c.def && !c.isRhino ? '#6fe3a0' : (c.skin === 'zebra' ? '#f4f0ea' : '#b0a89c'); ctx.fillRect(cx, cy0, w, sh); ctx.fillStyle = '#1a141e'; ctx.fillRect(cx, cy0, 1, sh); cx += w; });
+    ctx.fillStyle = '#c9d3e6'; ctx.font = '900 ' + (compact ? hudPx(9) : 11) + 'px Nunito, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(compact ? 'SUM = 1 · LIMIT ' + Math.round(COMP_LIMIT * 100) + ' %' : 'ONE RING · SUMS TO 1 · LIMIT ' + Math.round(COMP_LIMIT * 100) + ' %', LW / 2, cy0 + sh + 4); ctx.textAlign = 'left';
   }
-  if (Net.on && Net.lost){ ctx.font = '900 13px Nunito, sans-serif'; ctx.fillStyle = '#ffd166'; ctx.textAlign = 'center'; ctx.fillText('FRIEND RECONNECTING…', LW / 2, 52); ctx.textAlign = 'left'; }
-  // timer
-  ctx.textAlign = 'center'; ctx.font = '400 30px Bangers, Impact, sans-serif'; ctx.fillStyle = '#eef2f8'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 4;
-  var s = Math.floor(G.elapsed); var tt = (s < 10 ? '0' : '') + s;
+  if (Net.on && Net.lost){ ctx.font = '900 ' + (compact ? hudPx(10) : 13) + 'px Nunito, sans-serif'; ctx.fillStyle = '#ffd166'; ctx.textAlign = 'center'; ctx.fillText('FRIEND RECONNECTING…', LW / 2, compact ? Math.max(yP, yR) + 6 : 52); ctx.textAlign = 'left'; }
+  hudTimer(Math.floor(G.elapsed));
+}
+// round 7: no health bars (nobody is hit, it is a shove) — a tug-of-war bar and the repeat to type
+function drawRepeat(u, cx, y, fs, small){
+  var q = pushSeq(u.stage), L = q.unit.length, n = q.seq.length, cw = fs * .74, gap = fs * .3;
+  var x0 = cx - (n * cw + (n / L - 1) * gap) / 2;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (var i = 0; i < n; i++){
+    var ch = q.seq.charAt(i), x = x0 + i * cw + Math.floor(i / L) * gap + cw / 2, done = i < u.pos, next = i === u.pos;
+    if (next && !small){ ctx.fillStyle = u.lock > 0 ? 'rgba(200,38,44,.6)' : 'rgba(26,20,30,.55)'; roundRect(x - cw / 2 + 1, y - fs * .6, cw - 2, fs * 1.95, 8); ctx.fill(); ctx.strokeStyle = u.lock > 0 ? '#ff6a4a' : '#f2c56b'; ctx.lineWidth = 3; ctx.stroke(); }
+    var lf = Math.round(fs * (next && !small ? 1.12 : 1));
+    ctx.globalAlpha = done ? .45 : 1;
+    ctx.font = '400 ' + lf + 'px Bangers, Impact, sans-serif'; ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(3, fs * .12); ctx.strokeStyle = '#1a141e';
+    ctx.fillStyle = done ? '#b8f0cc' : (next ? '#ffffff' : PUSH_COL[ch]);
+    ctx.strokeText(ch, x, y); ctx.fillText(ch, x, y);
+    if (!small){ ctx.font = '900 ' + Math.round(fs * .52) + 'px Nunito, sans-serif'; ctx.lineWidth = Math.max(2, fs * .08); ctx.strokeText(PUSH_ARROW[ch], x, y + fs * .9); ctx.fillStyle = done ? '#b8f0cc' : (next ? '#ffffff' : PUSH_COL[ch]); ctx.fillText(PUSH_ARROW[ch], x, y + fs * .9); }
+    ctx.globalAlpha = 1;
+  }
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+}
+function drawPushHUD(){
+  var pu = G.push, compact = hudCompact(), me = (Net.on && Net.peer) ? Net.me : 0, mine = G.players[me] || G.p;
+  var bx = 200, bw = LW - 400, by = compact ? hudRightTop() + 6 : 70, bh = compact ? hudPx(8) : 12;
+  var lo = pushLoseX(), f = clamp((pu.x - lo) / (PUSH.win - lo), 0, 1);
+  // who is pushing, top left
+  ctx.font = '900 ' + (compact ? hudPx(11) : 15) + 'px Nunito, sans-serif'; ctx.textBaseline = 'top'; ctx.lineJoin = 'round';
+  var names = G.players.filter(function(q){ return !q.gone; }).map(function(q){ return q.def.name.toUpperCase() + (pushers().length > 1 && q === mine ? ' (YOU)' : ''); }).join(' + ');
+  ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(10,14,30,.85)'; ctx.strokeText(names, 24, 22); ctx.fillStyle = '#ffffff'; ctx.fillText(names, 24, 22);
+  var tot = {slips: 0, units: 0}; G.players.forEach(function(q){ tot.slips += q.pu.slips; tot.units += q.pu.units; });
+  var sub = 'units ' + tot.units + ' · slips ' + tot.slips; ctx.font = '900 ' + (compact ? hudPx(9) : 12) + 'px Nunito, sans-serif';
+  ctx.strokeText(sub, 24, compact ? 22 + hudPx(15) : 42); ctx.fillStyle = '#ffd166'; ctx.fillText(sub, 24, compact ? 22 + hudPx(15) : 42);
+  hudTimer(Math.floor(G.elapsed));
+  // the tug of war: your edge on the left, the rhino's on the right
+  ctx.fillStyle = 'rgba(10,14,30,.7)'; roundRect(bx - 4, by - 4, bw + 8, bh + 8, 8); ctx.fill();
+  var tg = ctx.createLinearGradient(bx, 0, bx + bw, 0); tg.addColorStop(0, '#c8262c'); tg.addColorStop(.5, '#46506e'); tg.addColorStop(1, '#6fe3a0');
+  ctx.fillStyle = tg; roundRect(bx, by, bw, bh, bh / 2); ctx.fill();
+  var mx = bx + bw * f; ctx.fillStyle = '#f2c56b'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(mx, by + bh / 2, bh * .8 + 4, 0, 6.283); ctx.fill(); ctx.stroke();
+  ctx.font = '900 ' + (compact ? hudPx(9) : 11) + 'px Nunito, sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(10,14,30,.85)';
+  ctx.textAlign = 'left'; ctx.strokeText('◀ YOU OUT', bx, by + bh + 7); ctx.fillStyle = '#ffb0a0'; ctx.fillText('◀ YOU OUT', bx, by + bh + 7);
+  ctx.textAlign = 'right'; ctx.strokeText('RHINO OUT ▶', bx + bw, by + bh + 7); ctx.fillStyle = '#a8f5c8'; ctx.fillText('RHINO OUT ▶', bx + bw, by + bh + 7);
+  ctx.textAlign = 'left';
+  var note = function(y){ if (!(Net.on && Net.lost)) return; ctx.font = '900 ' + (compact ? hudPx(10) : 13) + 'px Nunito, sans-serif'; ctx.textAlign = 'center'; ctx.lineJoin = 'round'; ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(10,14,30,.9)'; ctx.strokeText('FRIEND RECONNECTING…', LW / 2, y); ctx.fillStyle = '#ffd166'; ctx.fillText('FRIEND RECONNECTING…', LW / 2, y); ctx.textAlign = 'left'; };
+  if (G.over || G.elapsed < 1.6){ note(by + bh + (compact ? hudPx(24) : 26)); return; }   // the banner owns the middle of the screen then
+  // your repeat, big, one arrow under each letter; a partner's progress small underneath
+  var mu = (Net.on && Net.peer && !Net.host && pu.pred) ? pu.pred : mine.pu, fs = compact ? hudPx(24) : 44, ly = by + bh + (compact ? hudPx(34) : 56);
+  var q = pushSeq(mu.stage);
+  ctx.font = '900 ' + (compact ? hudPx(9) : 12) + 'px Nunito, sans-serif'; ctx.textAlign = 'center'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(10,14,30,.85)';
+  var cap = 'REPEAT ' + (mu.stage + 1) + ' · (' + q.unit + ')×' + (q.seq.length / q.unit.length) + (mu.lock > 0 ? ' · SLIP!' : '');
+  ctx.strokeText(cap, LW / 2, ly - fs * .6 - (compact ? hudPx(12) : 16)); ctx.fillStyle = mu.lock > 0 ? '#ff8a6a' : '#eef2f8'; ctx.fillText(cap, LW / 2, ly - fs * .6 - (compact ? hudPx(12) : 16)); ctx.textAlign = 'left';
+  drawRepeat(mu, LW / 2, ly, fs, false);
+  var rows = 0;
+  G.players.forEach(function(q2, i){ if (i === me || q2.gone) return; rows++;
+    var sy = ly + fs * (compact ? 1.95 : 1.75);
+    ctx.font = '900 ' + (compact ? hudPx(9) : 11) + 'px Nunito, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#c9d3e6'; ctx.strokeText(q2.def.name.toUpperCase(), LW / 2, sy - fs * .55); ctx.fillText(q2.def.name.toUpperCase(), LW / 2, sy - fs * .55); ctx.textAlign = 'left';
+    drawRepeat(q2.pu, LW / 2, sy, Math.round(fs * .45), true); });
+  note(ly + fs * (rows ? 2.45 : 1.6));   // under the letters (and the partner's row), never beneath them
+}
+function hudTimer(s){
+  var fz = Math.round(30 * (hudCompact() ? Math.min(HUD_K, 1.5) : 1));
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.font = '400 ' + fz + 'px Bangers, Impact, sans-serif'; ctx.fillStyle = '#eef2f8'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 4;
+  var tt = (s < 10 ? '0' : '') + s;
   ctx.strokeText(tt, LW / 2, 16); ctx.fillText(tt, LW / 2, 16); ctx.textAlign = 'left';
 }
+// the special meter under a bar; on a phone its caption is the short one and sits beside it
+function meterBar(x, y, w, h, m, align, caption, compact, capBelow){
+  var full = m >= 100;
+  ctx.fillStyle = 'rgba(10,14,30,.55)'; roundRect(x, y, w, h, h / 2); ctx.fill();
+  ctx.fillStyle = full ? '#6fe3a0' : '#93a0bf'; roundRect(align === 'right' ? x + w - w * m / 100 : x, y, w * m / 100, h, h / 2); ctx.fill();
+  ctx.fillStyle = full ? '#6fe3a0' : '#c9d3e6';
+  if (compact){
+    ctx.font = '900 ' + hudPx(9) + 'px Nunito, sans-serif'; ctx.textBaseline = 'middle'; ctx.textAlign = align === 'right' ? 'right' : 'left';
+    var mw = (G && G.buns) ? 'TRAY' : 'SPC';
+    var mt = full ? (mw === 'TRAY' ? 'TRAY!' : 'SPECIAL!') : mw + ' ' + Math.floor(m) + '%';
+    ctx.lineJoin = 'round'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(10,14,30,.85)'; ctx.strokeText(mt, align === 'right' ? x - 8 : x + w + 8, y + h / 2 + 1);
+    ctx.fillText(mt, align === 'right' ? x - 8 : x + w + 8, y + h / 2 + 1);
+    ctx.textBaseline = 'top';
+  } else {
+    ctx.font = '900 11px Nunito, sans-serif'; ctx.textAlign = align === 'right' ? 'right' : 'left';
+    ctx.lineJoin = 'round'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(10,14,30,.8)';
+    if (capBelow){ ctx.strokeText(caption, align === 'right' ? x + w : x, y + 14); ctx.fillText(caption, align === 'right' ? x + w : x, y + 14); }   // versus: under the meter, both sides
+    else { ctx.strokeText(caption, x + w + 8, y - 3); ctx.fillText(caption, x + w + 8, y - 3); }                                                   // rounds: beside it
+  }
+  ctx.textAlign = 'left'; ctx.font = '700 15px Nunito, sans-serif';
+}
+// HUD sizing: the canvas is drawn at LW x LH logical px and scaled to fit the stage; on a phone that scale is ~0.37, so 13 px
+// text renders under 5 CSS px. HUD_K (set every frame in draw) grows the HUD text until it reads at ~9 CSS px, and in that
+// compact mode the labels ride inside the bars so the bigger type does not stack into the arena.
+var HUD_K = 1, HUD_CSS = 1;
+function hudCompact(){ return HUD_K > 1.25; }
+function hudPx(px){ return Math.round(px * HUD_K); }
+function hudRightTop(){ return hudCompact() ? Math.max(72, Math.round(46 / HUD_CSS)) : 72; }   // clear the corner buttons
+// whole percentages that add up to exactly 100 (largest remainder), for labels printed under a "sums to 1" caption
+function pct100(vals){
+  var tot = 0; vals.forEach(function(v){ tot += v; });
+  if (!(tot > 0)) return vals.map(function(){ return 0; });
+  var raw = vals.map(function(v){ return v / tot * 100; }), fl = raw.map(function(v){ return Math.floor(v); });
+  var left = 100 - fl.reduce(function(a, b){ return a + b; }, 0);
+  var order = raw.map(function(v, i){ return i; }).sort(function(a, b){ return (raw[b] - fl[b]) - (raw[a] - fl[a]); });
+  for (var k = 0; k < left && k < order.length; k++) if (vals[order[k]] > 0) fl[order[k]]++;
+  return fl;
+}
 function bar(x, y, w, h, v, col, back, label, align, tick){
+  var compact = hudCompact();
+  if (compact) h = Math.max(h, hudPx(11) + 8);
+  v = Math.max(0, Math.min(1, v));
   ctx.fillStyle = 'rgba(10,14,30,.6)'; roundRect(x - 3, y - 3, w + 6, h + 6, 6); ctx.fill();
   ctx.fillStyle = back; roundRect(x, y, w, h, 4); ctx.fill();
   ctx.fillStyle = col; if (align === 'left') { roundRect(x, y, w * v, h, 4); } else { roundRect(x + w * (1 - v), y, w * v, h, 4); } ctx.fill();
   if (tick){ ctx.fillStyle = '#eef2f8'; ctx.fillRect(align === 'left' ? x + w * tick - 1 : x + w * (1 - tick) - 1, y - 3, 2, h + 6); }   // detection limit
-  ctx.fillStyle = '#eef2f8'; ctx.font = '900 13px Nunito, sans-serif'; ctx.textAlign = align; ctx.fillText(label, align === 'left' ? x + 2 : x + w - 2, y + h + 6); ctx.textAlign = 'left';
+  ctx.textAlign = align;
+  if (compact){
+    // inside the bar, outlined so it reads over any fill, shrunk to fit rather than spill onto the arena
+    var fs = hudPx(11); ctx.font = '900 ' + fs + 'px Nunito, sans-serif';
+    while (fs > 10 && ctx.measureText(label).width > w - 12){ fs--; ctx.font = '900 ' + fs + 'px Nunito, sans-serif'; }
+    var tx = align === 'left' ? x + 6 : x + w - 6, ty = y + h / 2 + 1;
+    ctx.textBaseline = 'middle'; ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(3, hudPx(3)); ctx.strokeStyle = 'rgba(10,14,30,.9)';
+    ctx.strokeText(label, tx, ty); ctx.fillStyle = '#ffffff'; ctx.fillText(label, tx, ty); ctx.textBaseline = 'top';
+  } else {
+    ctx.font = '900 13px Nunito, sans-serif'; ctx.lineJoin = 'round'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(10,14,30,.8)';
+    ctx.strokeText(label, align === 'left' ? x + 2 : x + w - 2, y + h + 6); ctx.fillStyle = '#eef2f8'; ctx.fillText(label, align === 'left' ? x + 2 : x + w - 2, y + h + 6);
+  }
+  ctx.textAlign = 'left';
+  return compact ? h : h + 22;   // the height it used, label included, so callers can stack the next one
 }
 function roundRect(x, y, w, h, r){ if (w < 0) w = 0; ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 function star(cx, cy, R, n, inner, ang){ ctx.beginPath(); for (var k = 0; k < 2 * n; k++){ var rr = k % 2 ? R * inner : R, a = ang + Math.PI * k / n; var x = cx + rr * Math.cos(a), y = cy + rr * Math.sin(a); if (k === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); } ctx.closePath(); }
+function fxPt(x, y){ return (G && G.square) ? sqPt(x, GROUND - y) : [x, y]; }
 function drawFX(){
-  // snow puffs
-  for (var i = 0; i < puffs.length; i++){ var q = puffs[i], u = q.t / .55; ctx.globalAlpha = .7 * (1 - u); ctx.fillStyle = '#f6f9ff'; ctx.beginPath(); ctx.arc(q.x, q.y - u * 40, q.r + u * 24, 0, 6.283); ctx.fill(); }
+  // snow puffs (dust in the hall)
+  var pc = LEVELS[LEVEL].puff || '#f6f9ff';
+  for (var i = 0; i < puffs.length; i++){ var q = puffs[i], u = q.t / .55, qp = fxPt(q.x, q.y - u * 40); ctx.globalAlpha = .7 * (1 - u); ctx.fillStyle = q.col || pc; ctx.beginPath(); ctx.arc(qp[0], qp[1], q.r + u * 24, 0, 6.283); ctx.fill(); }
   ctx.globalAlpha = 1;
   for (var j = 0; j < fx.length; j++){
-    var e = fx[j], u2 = e.t / e.life, R = e.r * (.6 + .4 * Math.min(1, e.t * 12)) * (1 + .5 * u2), al = 1 - u2 * u2;
+    var e = fx[j], u2 = e.t / e.life, R = e.r * (.6 + .4 * Math.min(1, e.t * 12)) * (1 + .5 * u2), al = 1 - u2 * u2, ep = fxPt(e.x, e.y);
     ctx.globalAlpha = al;
-    star(e.x, e.y, R, 12, .55, e.t * 3); ctx.fillStyle = e.red ? '#ff6a4a' : '#ffe86e'; ctx.fill(); ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 3; ctx.stroke();
-    star(e.x, e.y, R * .62, 12, .55, -e.t * 2); ctx.fillStyle = '#fffbe8'; ctx.fill();
+    star(ep[0], ep[1], R, 12, .55, e.t * 3); ctx.fillStyle = e.red ? '#ff6a4a' : '#ffe86e'; ctx.fill(); ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 3; ctx.stroke();
+    star(ep[0], ep[1], R * .62, 12, .55, -e.t * 2); ctx.fillStyle = '#fffbe8'; ctx.fill();
     ctx.font = '400 ' + (e.big ? 44 : 28) + 'px Bangers, Impact, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.lineWidth = 6; ctx.strokeStyle = '#fff'; ctx.strokeText(e.label, e.x, e.y - 4); ctx.fillStyle = e.red ? '#c8262c' : '#e3352b'; ctx.fillText(e.label, e.x, e.y - 4);
+    ctx.lineWidth = 6; ctx.strokeStyle = '#fff'; ctx.strokeText(e.label, ep[0], ep[1] - 4); ctx.fillStyle = e.red ? '#c8262c' : '#e3352b'; ctx.fillText(e.label, ep[0], ep[1] - 4);
     ctx.textAlign = 'left'; ctx.textBaseline = 'top';
   }
   ctx.globalAlpha = 1;
   // DNA molecules
   for (var k = 0; k < dna.length; k++){
     var d = dna[k], fade = 1 - smooth(4, 6.5, d.t); if (fade <= 0) continue;
-    ctx.globalAlpha = fade; ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(d.rot);
+    var dp = d.scr ? [d.x, d.y] : fxPt(d.x, d.y);
+    ctx.globalAlpha = fade; ctx.save(); ctx.translate(dp[0], dp[1]); ctx.rotate(d.rot);
     if (d.letter){
       var col = {A:'#78ffa0', C:'#6ed2ff', G:'#ffdc6e', T:'#ff82be'}[d.letter];
       ctx.fillStyle = col; ctx.globalAlpha = fade * .3; ctx.beginPath(); ctx.arc(0, 0, 12, 0, 6.283); ctx.fill(); ctx.globalAlpha = fade;
@@ -1628,13 +2308,20 @@ function drawFX(){
   }
   ctx.globalAlpha = 1;
 }
+// letterbox colour and the colour of the ground below the arena on a tall phone, per theme
+var LEAF_COL = ['#d9822b', '#c0392b', '#e6b422'];
+var THEME_COL = {kiruna: ['#0c1434', '#c6d0e6'], wasteland: ['#2a1a14', '#6f5238'], space: ['#02030c', '#3c4048'], museum: ['#1b1612', '#211b17'], lab: ['#1b2330', '#98a2ae'], cafe: ['#2a1c14', '#5d544c']};
 function draw(){
   var sc = Math.min(canvas.width / LW, canvas.height / LH), offx = (canvas.width - LW * sc) / 2, offy = (canvas.height - LH * sc) / 2;
-  var wl = LEVELS[LEVEL].theme === 'wasteland', sp = LEVELS[LEVEL].theme === 'space';
-  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = sp ? '#02030c' : (wl ? '#2a1a14' : '#0c1434'); ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // a touch phone held upright has spare height: put the arena at the top and leave the band below it to the pads,
+  // so the right-hand column no longer sits on the rhino
+  if (isTouch && offy > 0) offy = 0;
+  HUD_CSS = sc / (dpr || 1); HUD_K = Math.max(1, Math.min(2.6, 8.6 / (13 * HUD_CSS)));
+  var th = LEVELS[LEVEL].theme, wl = th === 'wasteland', sp = th === 'space', mu = th === 'museum', tc = THEME_COL[th] || THEME_COL.kiruna;
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = tc[0]; ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.setTransform(sc, 0, 0, sc, offx, offy);
-  var EXT = offy / sc + 10;   // extra logical rows visible above/below in portrait
-  ctx.fillStyle = sp ? '#3c4048' : (wl ? '#6f5238' : '#c6d0e6'); ctx.fillRect(-10, LH, LW + 20, EXT + 10);
+  var EXT = (canvas.height - LH * sc - offy) / sc + 10;   // extra logical rows visible below the arena in portrait
+  ctx.fillStyle = tc[1]; ctx.fillRect(-10, LH, LW + 20, EXT + 10);
   var t = G ? G.t : performance.now() / 1000;
   var ox = 0, oy = 0;
   if (shake > 0){ ox = (Math.random() - .5) * shake; oy = (Math.random() - .5) * shake; }
@@ -1647,10 +2334,12 @@ function draw(){
   ctx.save(); ctx.translate(G ? -camX : 0, 0);   // world layer
   if (G){
     var p = G.p, rr = G.r;
-    // shadows
-    ctx.fillStyle = 'rgba(70,80,120,.28)';
-    G.rhinos.forEach(function(r0){ if (r0.state !== 'gone'){ var rc = rhinoRect(r0); ctx.beginPath(); ctx.ellipse((rc.x0 + rc.x1) / 2, GROUND, (rc.x1 - rc.x0) / 2, 12, 0, 0, 6.283); ctx.fill(); } });
-    G.players.forEach(function(q){ var js = 1 - Math.min(1, q.y / 220), pscl = ((q.state === 'special' && q.scale) ? q.scale : 1) * (q.size || 1); ctx.beginPath(); ctx.ellipse(q.x, GROUND, (40 * js + 8) * pscl, 8 * pscl, 0, 0, 6.283); ctx.fill(); });
+    if (G.square){ ctx.save(); sqRoomPath(8); ctx.clip(); }
+    // shadows (in the square each one in its owner's frame, on the wall it stands on)
+    ctx.fillStyle = mu ? 'rgba(10,6,2,.35)' : 'rgba(70,80,120,.28)';
+    G.rhinos.forEach(function(r0){ if (r0.state !== 'gone') inFrame(r0, function(){ var rc = rhinoRect(r0); ctx.beginPath(); ctx.ellipse((rc.x0 + rc.x1) / 2, GROUND, (rc.x1 - rc.x0) / 2, 12 * (r0.size || 1), 0, 0, 6.283); ctx.fill(); }); });
+    G.players.forEach(function(q){ inFrame(q, function(){ var js = 1 - Math.min(1, q.y / 220), pscl = ((q.state === 'special' && q.scale) ? q.scale : 1) * (q.size || 1); ctx.beginPath(); ctx.ellipse(q.x, GROUND, (40 * js + 8) * pscl, 8 * pscl, 0, 0, 6.283); ctx.fill(); }); });
+    if (G.buns) drawBuns(true);
     // radioactive hot spots
     for (var hh = 0; hh < hot.length; hh++){
       var hs = hot[hh], ha = Math.min(1, hs.t * 3) * (1 - smooth(hs.life - 1.5, hs.life, hs.t)) * (.75 + .25 * Math.sin(G.t * 6 + hh));
@@ -1658,12 +2347,12 @@ function draw(){
       ctx.fillStyle = hg; ctx.beginPath(); ctx.ellipse(hs.x, GROUND - 2, hs.r, hs.r * .28, 0, 0, 6.283); ctx.fill();
       ctx.fillStyle = 'rgba(220,255,180,' + (.8 * ha) + ')'; for (var bb = 0; bb < 3; bb++){ var bt = (G.t * .8 + bb * .37 + hh * .2) % 1; ctx.beginPath(); ctx.arc(hs.x + Math.sin(bb * 2.1 + hh) * hs.r * .5, GROUND - 4 - bt * 26, 3 * (1 - bt) + 1, 0, 6.283); ctx.fill(); }
     }
-    G.rhinos.forEach(function(rr){
+    G.rhinos.forEach(function(rr){ inFrame(rr, function(){
     // radiation glow around a mutant that is about to vent
     if (rr.mutant && rr.glow > 0 && rr.state !== 'gone'){ var gl = ctx.createRadialGradient(rr.x, GROUND - 110, 20, rr.x, GROUND - 110, 260); gl.addColorStop(0, 'rgba(160,255,110,' + (.55 * rr.glow) + ')'); gl.addColorStop(1, 'rgba(160,255,110,0)'); ctx.fillStyle = gl; ctx.fillRect(rr.x - 260, GROUND - 370, 520, 380); }
     if (rr.state === 'jetstomp' && rr.st > .4 && rr.st < 1.4){ var ta = .5 + .5 * Math.sin(G.t * 18); ctx.strokeStyle = 'rgba(255,70,60,' + (.5 + .5 * ta) + ')'; ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(rr.targetX, GROUND - 2, 150, 26, 0, 0, 6.283); ctx.stroke(); ctx.beginPath(); ctx.ellipse(rr.targetX, GROUND - 2, 60, 11, 0, 0, 6.283); ctx.stroke(); }
     // warning marker when the rhino is about to charge
-    if (rr.state === 'paw'){ ctx.font = '400 40px Bangers, Impact, sans-serif'; ctx.fillStyle = '#ff5a3c'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 5; ctx.textAlign = 'center'; var yy = GROUND - 2.4 * rs(rr) - 10 + 6 * Math.sin(rr.st * 30), mx = clamp(rr.x, camX + 40, camX + LW - 40); ctx.strokeText('!', mx, yy); ctx.fillText('!', mx, yy); ctx.textAlign = 'left'; }
+    if (rr.state === 'paw' && !G.square){ ctx.font = '400 40px Bangers, Impact, sans-serif'; ctx.fillStyle = '#ff5a3c'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 5; ctx.textAlign = 'center'; var yy = GROUND - 2.4 * rs(rr) - 10 + 6 * Math.sin(rr.st * 30), mx = clamp(rr.x, camX + 40, camX + LW - 40); ctx.strokeText('!', mx, yy); ctx.fillText('!', mx, yy); ctx.textAlign = 'left'; }
     if (rr.state !== 'gone') drawRhino(rr);
     if (rr.space && rr.state !== 'gone'){
       var SR = rs(rr), jx = rr.x - rr.facing * .95 * SR, jy = GROUND - rr.jump - 1.85 * SR;
@@ -1674,40 +2363,43 @@ function draw(){
       ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(hx - .3 * SR, hy - .4 * SR, .45 * SR, .25 * SR, -.6, 3.4, 5.6); ctx.stroke();
       if (rr.glow > 0){ var tipx = rr.x + rr.facing * 2.55 * SR, tipy = GROUND - rr.jump - 1.3 * SR; var lg = ctx.createRadialGradient(tipx, tipy, 2, tipx, tipy, 40 * rr.glow); lg.addColorStop(0, 'rgba(255,90,60,.9)'); lg.addColorStop(1, 'rgba(255,90,60,0)'); ctx.fillStyle = lg; ctx.fillRect(tipx - 50, tipy - 50, 100, 100); }
     }
-    });
+    }); if (G.square && rr.state === 'paw') sqPawMark(rr); });
     for (var bl = 0; bl < bolts.length; bl++){ var bo2 = bolts[bl]; ctx.strokeStyle = 'rgba(255,120,80,.45)'; ctx.lineWidth = 12; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(bo2.x - bo2.dir * 34, GROUND - 95); ctx.lineTo(bo2.x + bo2.dir * 8, GROUND - 95); ctx.stroke(); ctx.strokeStyle = '#ff4d3a'; ctx.lineWidth = 5; ctx.stroke(); ctx.strokeStyle = '#fff1c0'; ctx.lineWidth = 2; ctx.stroke(); }
-    G.rhinos.forEach(function(rr){ if (rr.state !== 'sleep') return;
-      // blanket over the back + pacifier + floating Zzz
-      var rc4 = rhinoRect(rr), bx0 = rr.x - rr.facing * 20, bw = 150;
+    G.rhinos.forEach(function(rr){ if (rr.state !== 'sleep') return; inFrame(rr, function(){
+      // blanket over the back + pacifier + floating Zzz, in rig units so a smaller rhino gets a smaller blanket
+      var k = rs(rr) / RS, gy = GROUND - (rr.jump || 0), bx0 = rr.x - rr.facing * 20 * k, bw = 150 * k;
       ctx.fillStyle = '#ffd1e0'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.moveTo(bx0 - bw / 2, GROUND - 168); ctx.quadraticCurveTo(bx0, GROUND - 205, bx0 + bw / 2, GROUND - 168); ctx.lineTo(bx0 + bw / 2 + 10, GROUND - 100); ctx.lineTo(bx0 - bw / 2 - 10, GROUND - 100); ctx.closePath(); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#ff8fb8'; for (var hb = 0; hb < 3; hb++){ ctx.beginPath(); ctx.arc(bx0 - 40 + hb * 40, GROUND - 140 + (hb % 2) * 14, 7, 0, 6.283); ctx.fill(); }
-      var snout = [rr.x + rr.facing * 2.35 * rs(rr), GROUND - .6 * rs(rr)];
-      ctx.fillStyle = '#6fd6ff'; ctx.beginPath(); ctx.arc(snout[0], snout[1], 11, 0, 6.283); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(snout[0], snout[1], 4, 0, 6.283); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(bx0 - bw / 2, gy - 168 * k); ctx.quadraticCurveTo(bx0, gy - 205 * k, bx0 + bw / 2, gy - 168 * k); ctx.lineTo(bx0 + bw / 2 + 10 * k, gy - 100 * k); ctx.lineTo(bx0 - bw / 2 - 10 * k, gy - 100 * k); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#ff8fb8'; for (var hb = 0; hb < 3; hb++){ ctx.beginPath(); ctx.arc(bx0 + (-40 + hb * 40) * k, gy + (-140 + (hb % 2) * 14) * k, 7 * k, 0, 6.283); ctx.fill(); }
+      var snout = [rr.x + rr.facing * 2.35 * rs(rr), gy - .6 * rs(rr)];
+      ctx.fillStyle = '#6fd6ff'; ctx.beginPath(); ctx.arc(snout[0], snout[1], Math.max(6, 11 * k), 0, 6.283); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(snout[0], snout[1], Math.max(2, 4 * k), 0, 6.283); ctx.fill();
       ctx.font = '400 30px Bangers, Impact, sans-serif'; ctx.fillStyle = '#eef2f8'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 4;
-      for (var zi = 0; zi < 3; zi++){ var zt = (G.t * .7 + zi * .33) % 1; var zx = rr.x + rr.facing * 1.6 * rs(rr) + zi * 12 + zt * 30, zy = GROUND - 2.0 * rs(rr) - zt * 80; ctx.globalAlpha = 1 - zt; ctx.strokeText('z', zx, zy); ctx.fillText('z', zx, zy); }
+      for (var zi = 0; zi < 3; zi++){ var zt = (G.t * .7 + zi * .33) % 1; var zx = rr.x + rr.facing * 1.6 * rs(rr) + zi * 12 + zt * 30, zy = gy - 2.0 * rs(rr) - zt * 80; ctx.globalAlpha = 1 - zt; ctx.strokeText('z', zx, zy); ctx.fillText('z', zx, zy); }
       ctx.globalAlpha = 1;
-    });
+    }); });
     for (var pi = G.players.length - 1; pi >= 0; pi--){ var q2 = G.players[pi];
       if (q2.inv > 0 && q2.state !== 'ko' && q2.state !== 'special' && Math.floor(G.t * 20) % 2 === 0) ctx.globalAlpha = .4;
-      fighterDraw(q2, t); ctx.globalAlpha = 1; }
+      inFrame(q2, function(){ fighterDraw(q2, t); }); ctx.globalAlpha = 1; }
+    if (G.buns) drawBuns(false);
     // radiation burst rings
     for (var ri = 0; ri < rings.length; ri++){ var rn = rings[ri], ru = rn.t / .6; ctx.strokeStyle = (rn.grey ? 'rgba(200,205,215,' : 'rgba(160,255,110,') + (1 - ru) + ')'; ctx.lineWidth = 14 * (1 - ru) + 2; ctx.beginPath(); ctx.ellipse(rn.x, GROUND - 60, 40 + 420 * ru, 20 + 150 * ru, 0, 0, 6.283); ctx.stroke(); }
+    if (G.square) ctx.restore();   // end of the room clip; the hit stars may reach over the walls
     drawFX();
   }
   ctx.restore();   // end of the world layer
   if (G){
     // speed lines during a charge / the flying kick (screen space)
     var anyFly = G.players.some(function(q){ return q.state === 'special' && q.def.special.kind === 'fly'; }), anyCharge = G.rhinos.some(function(r0){ return r0.state === 'charge'; });
-    if (anyCharge || anyFly){
+    if ((anyCharge || anyFly) && !G.square){
       ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 2;
       for (var i = 0; i < 9; i++){ var y = 120 + i * 40 + (i * 37) % 23, x0 = ((i * 211 + G.t * 900) % (LW + 200)) - 100; ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + 80 + i * 10, y); ctx.stroke(); }
     }
   }
   // snowflakes (round 1), rising embers (round 2) or space dust streaming past (round 3)
-  ctx.fillStyle = sp ? 'rgba(200,220,255,.5)' : (wl ? 'rgba(255,170,80,.75)' : '#f6f9ff');
-  for (var f = 0; f < flakes.length; f++){ var fl = flakes[f]; ctx.beginPath(); ctx.arc(fl.x, fl.y, wl ? fl.r * .8 : fl.r, 0, 6.283); ctx.fill(); }
+  ctx.fillStyle = mu ? 'rgba(255,236,196,.32)' : (sp ? 'rgba(200,220,255,.5)' : (wl ? 'rgba(255,170,80,.75)' : '#f6f9ff'));
+  if (th === 'cafe') for (var lf = 0; lf < flakes.length; lf++){ var fk = flakes[lf]; ctx.fillStyle = LEAF_COL[lf % 3]; ctx.beginPath(); ctx.ellipse(fk.x, fk.y, fk.r * 2.4, fk.r * 1.2, fk.p + t * (1 + fk.v / 30), 0, 6.283); ctx.fill(); }
+  else if (th !== 'lab') for (var f = 0; f < flakes.length; f++){ var fl = flakes[f]; ctx.beginPath(); ctx.arc(fl.x, fl.y, mu ? fl.r * .55 : (wl ? fl.r * .8 : fl.r), 0, 6.283); ctx.fill(); }
   ctx.restore();
   // vignette
   var vg = ctx.createRadialGradient(LW / 2, LH / 2, LH * .45, LW / 2, LH / 2, LH * .95); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.42)');
@@ -1727,10 +2419,21 @@ function draw(){
       else if (!allGone){ var just = 'JUST A ' + G.rhinos.filter(function(r0){ return r0.morph; }).map(function(r0){ return ANIMALS[r0.morph].name.toUpperCase(); }).join(' & A '); bigText(just, LW / 2, 200, Math.min(90, Math.floor(1500 / just.length))); }
       else bigText('FALSE POSITIVE', LW / 2, 190, 78);
     }
-    else if (G.over && G.won && !allGone){ bigText('K.O.!', LW / 2, 200, 120); }
+    else if (G.over && G.won && !allGone){ bigText(G.push ? 'PUSHED OFF!' : 'K.O.!', LW / 2, 200, G.push ? 96 : 120); }
     else if (G.over && G.won && allGone){ bigText('FALSE POSITIVE', LW / 2, 190, 78); }
-    if (!G.vs && G.over && !G.won){ bigText('TRAMPLED', LW / 2, 200, 100); }
-    if (!G.vs && !G.over && G.elapsed < 1.6){ var a = 1 - smooth(1.1, 1.6, G.elapsed); ctx.globalAlpha = a; bigText(G.elapsed < .8 ? LEVELS[LEVEL].name : 'FIGHT!', LW / 2, 220, 96); ctx.globalAlpha = 1; }
+    if (!G.vs && G.over && !G.won){ var lw = lossWord(G.players[(Net.on && Net.peer) ? Net.me : 0] || G.p); bigText(lw, LW / 2, 200, lw.length > 9 ? 84 : 100); }
+    // co-op starts straight into the fight (no level card), so a round that changes the controls says so for a few seconds
+    var rl = LEVELS[LEVEL].rules;
+    if (rl && !G.vs && !G.over && Net.on && Net.peer && !Net.lost && G.elapsed > 1.4 && G.elapsed < 7){
+      // on the floor in the push (the top belongs to the repeat), under the banner otherwise; sized like the HUD
+      var rfs = hudCompact() ? hudPx(11) : 17; ctx.font = '900 ' + rfs + 'px Nunito, sans-serif';
+      var rt = isTouch ? rl[1] : rl[0]; while (rfs > 10 && ctx.measureText(rt).width > LW - 60){ rfs--; ctx.font = '900 ' + rfs + 'px Nunito, sans-serif'; }
+      ctx.globalAlpha = smooth(1.4, 1.8, G.elapsed) * (1 - smooth(6.3, 7, G.elapsed)); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      var rw = ctx.measureText(rt).width + 36, ry = G.push ? 520 : 232;
+      ctx.fillStyle = 'rgba(10,14,30,.78)'; roundRect(LW / 2 - rw / 2, ry - rfs, rw, rfs * 2, 10); ctx.fill(); ctx.fillStyle = '#ffd166'; ctx.fillText(rt, LW / 2, ry + 1);
+      ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.globalAlpha = 1;
+    }
+    if (!G.vs && !G.over && G.elapsed < 1.6){ var a = 1 - smooth(1.1, 1.6, G.elapsed); ctx.globalAlpha = a; bigText(G.elapsed < .8 ? LEVELS[LEVEL].name : (LEVELS[LEVEL].start || 'FIGHT!'), LW / 2, 220, 96); ctx.globalAlpha = 1; }
     if (wl){
       // CRT look: green cast, scanlines, faint flicker
       ctx.fillStyle = 'rgba(80,255,120,' + (.05 + .015 * Math.sin(G.t * 37)) + ')'; ctx.fillRect(0, 0, LW, LH);
@@ -1786,8 +2489,10 @@ var Scores = (function(){
   }
   return {load: load, add: add, report: report, mode: function(){ return mode; }, savedRemote: function(){ return lastRemote; }};
 })();
-function scoreFor(g){ var hp = 0, hits = 0; g.players.forEach(function(q){ hp += q.hp; hits += q.hitsLanded; }); hp /= g.players.length; return Math.round(1000 + hp * 10 + Math.max(0, 120 - g.elapsed) * 20 + hits * 5 + LEVEL * 1500 + (g.pacifist ? 2500 : 0)); }
-function teamName(g){ return g.players.map(function(q){ return q.def.name; }).join(' + '); }
+function scoreFor(g){ var hp = 0, hits = 0; g.players.forEach(function(q){ hp += q.hp; hits += q.hitsLanded; }); hp /= g.players.length;
+  // the push: nobody loses health and letters are cheap, so accuracy stands in for health and repeat units for hits
+  if (g.push){ var L = 0, S = 0, U = 0; g.players.forEach(function(q){ L += q.pu.letters; S += q.pu.slips; U += q.pu.units; }); hp = 100 * L / Math.max(1, L + S); hits = Math.min(U, 16) * 5; } return Math.round(1000 + hp * 10 + Math.max(0, 120 - g.elapsed) * 20 + hits * 5 + LEVEL * 1500 + (g.pacifist ? 2500 : 0)); }
+function teamName(g){ return g.players.filter(function(q){ return !q.gone; }).map(function(q){ return q.def.name; }).join(' + '); }
 var lastEntry = null, board = [];   // board: the last leaderboard we saw, for the title screen and roster cards
 function isMine(e){ return !!lastEntry && ((lastEntry.id && e.id === lastEntry.id) || (e.name === lastEntry.name && e.score === lastEntry.score && e.t === lastEntry.t)); }
 function fmtScore(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
@@ -1833,7 +2538,7 @@ var TRYSTERO_URL = './vendor/trystero.js';
 var TURN_SERVERS = [];            // optional TURN servers [{urls, username, credential}] for strict NATs
 var TURN_CREDENTIALS_URL = '';    // optional: a URL returning a JSON array of ICE servers (e.g. Metered's turn/credentials), fetched before joining
 var RELAY_URL = SUPA.url.replace(/^http/, 'ws') + '/realtime/v1/websocket?apikey=' + SUPA.key + '&vsn=1.0.0';
-var Net = {on:false, host:false, me:0, code:'', peer:null, rtc:null, rtcUp:false, rtcPeer:null, relay:null, relayPeer:false, id:'', ready:false, peerReady:null, f:null, guestInp:{keys:{}, pressed:{}}, sfxQ:[], frame:0, lastKeys:'', err:'', timer:null, joining:false, full:false, lost:false, lostTimer:null};
+var Net = {crumbQ: [], on:false, host:false, me:0, code:'', peer:null, rtc:null, rtcUp:false, rtcPeer:null, relay:null, relayPeer:false, id:'', ready:false, peerReady:null, f:null, guestInp:{keys:{}, pressed:{}}, sfxQ:[], frame:0, lastKeys:'', err:'', timer:null, joining:false, full:false, lost:false, lostTimer:null};
 function iceServers(){
   if (!TURN_CREDENTIALS_URL) return Promise.resolve(TURN_SERVERS);
   return fetch(TURN_CREDENTIALS_URL).then(function(r){ return r.json(); }).then(function(list){ return TURN_SERVERS.concat(list || []); }).catch(function(){ return TURN_SERVERS; });
@@ -1925,7 +2630,12 @@ function coopJoin(){
     Net.joining = false; $('btnCoopJoin').disabled = false; $('btnVsJoin').disabled = false;
     buildRoster(); show('select'); scene = 'select'; updateCoopLine();
     if (Net.timer) clearInterval(Net.timer);
-    Net.timer = setInterval(function(){ if (!Net.on){ clearInterval(Net.timer); Net.timer = null; return; } if (scene === 'select') updateCoopLine(); }, 1000);
+    Net.timer = setInterval(function(){
+      if (!Net.on){ clearInterval(Net.timer); Net.timer = null; return; }
+      if (scene === 'select') updateCoopLine();
+      // unpaired: say hello again every few seconds, so a partner who was mid-fight pairs once they are free
+      if (!Net.peer && !Net.full && (Net.helloTick = (Net.helloTick || 0) + 1) % 3 === 0){ sendVia({t:'hello', paired: null}, 'relay'); if (Net.rtc) sendVia({t:'hello', paired: null}, 'rtc'); }
+    }, 1000);
   }).catch(function(e){ Net.on = false; Net.joining = false; $('btnCoopJoin').disabled = false; $('btnVsJoin').disabled = false; coopStatus('Could not start the multiplayer module: ' + ((e && e.message) || e) + '. Reload the page and try again.'); });
 }
 function netLeave(){
@@ -1937,7 +2647,7 @@ function netLeave(){
   Net.on = false; Net.rtc = null; Net.rtcUp = false; Net.rtcPeer = null; Net.relay = null; Net.relayPeer = false; Net.peer = null; Net.ready = false; Net.peerReady = null; Net.host = false; Net.me = 0; Net.f = null; Net.err = ''; Net.full = false; Net.lost = false; Net.joining = false;
   Net.guestInp = {keys:{}, pressed:{}};
   Net.mode = 'coop';
-  $('selCoop').hidden = true; $('fightVerb').textContent = 'FIGHT AS';
+  $('selCoop').hidden = true; $('fightVerb').textContent = 'FIGHT AS'; $('startLevel').disabled = false; $('startLevel').title = '';
 }
 function setPeer(id){
   id = String(id);
@@ -1953,6 +2663,7 @@ function peerGone(){
   Net.peer = null; Net.peerReady = null; Net.rtcPeer = null; Net.rtcUp = false; Net.relayPeer = false; Net.lost = false;
   Net.guestInp = {keys:{}, pressed:{}};
   if (scene === 'fight' && !Net.host){ G = null; show('select'); scene = 'select'; }
+  if (scene === 'fight' && Net.host && G && G.p2) G.p2.gone = true;   // the host plays on alone
   updateCoopLine();
 }
 // a transport dropped the partner: in the lobby that is goodbye; in a fight give the connection 8 s to come back
@@ -1975,7 +2686,11 @@ function netData(d, tid, via){
   if (d.to && d.to !== Net.id) return;                       // addressed to somebody else in the room
   // busy, or a hello from someone who is already with somebody else: this room is taken
   if (d.t === 'busy' || (d.t === 'hello' && d.paired && d.paired !== Net.id)){ if (!Net.peer){ Net.full = true; Net.err = 'that room already has two players — try another code'; updateCoopLine(); } return; }
-  if (!Net.peer){ if (scene === 'fight') return; setPeer(d.from); }           // never re-pair mid-fight
+  if (d.t === 'mid'){ if (!Net.peer){ Net.err = 'your friend is mid-fight — you pair as soon as it ends'; updateCoopLine(); } return; }
+  if (!Net.peer){
+    if (scene === 'fight'){ if (d.t === 'hello') sendVia({t:'mid', to: d.from}, via, tid); return; }   // never re-pair mid-fight, but say so
+    setPeer(d.from); Net.err = '';
+  }
   else if (Net.peer !== d.from){ if (d.t === 'hello') sendVia({t:'busy', to: d.from}, via, tid); return; }
   if (via === 'rtc'){ Net.rtcPeer = String(tid); Net.rtcUp = true; }
   if (via === 'relay') Net.relayPeer = true;
@@ -1983,8 +2698,12 @@ function netData(d, tid, via){
   if (d.t === 'hello'){ updateCoopLine(); }
   else if (d.t === 'ready'){ Net.peerReady = d.f; updateCoopLine(); if (Net.host && Net.ready && scene === 'select') coopStart(clampLevel($('startLevel').value)); }
   else if (d.t === 'unready'){ Net.peerReady = null; updateCoopLine(); }
-  else if (d.t === 'start'){ if (!Net.host){ LEVEL = clampLevel(d.level); Net.f = d.f; Net.mode = d.vs ? 'vs' : 'coop'; beginCoopRound(); } }
-  else if (d.t === 'in'){ if (Net.host){ var ko = {}; (d.k || []).forEach(function(k){ ko[k] = true; }); Net.guestInp.keys = ko; (d.p || []).forEach(function(k){ Net.guestInp.pressed[k] = true; }); } }
+  else if (d.t === 'start'){ if (!Net.host){ LEVEL = d.vs ? clampVsLevel(d.level) : clampLevel(d.level); Net.f = d.f; Net.mode = d.vs ? 'vs' : 'coop'; beginCoopRound(); } }
+  else if (d.t === 'in'){ if (Net.host){ var ko = {}; (d.k || []).forEach(function(k){ ko[k] = true; }); Net.guestInp.keys = ko; (d.p || []).forEach(function(k){ Net.guestInp.pressed[k] = true; });
+    // round 7: letters keep their order and their index, so a late, doubled or lost message never scrambles the repeat
+    if (d.q && d.q.length && G && G.push && Net.gq){ var i0 = d.i | 0, from = Math.max(0, (Net.gNext || 0) - i0);
+      for (var qi = from; qi < d.q.length && Net.gq.length < 64; qi++){ var ql = String(d.q[qi]).charAt(0); if ('ACGT'.indexOf(ql) >= 0) Net.gq.push({l: ql, i: i0 + qi}); }
+      Net.gNext = Math.max(Net.gNext || 0, i0 + d.q.length); } } }
   else if (d.t === 's'){ if (!Net.host && scene === 'fight') applySnap(d); }
   else if (d.t === 'result'){ if (!Net.host) showResult(); }
   else if (d.t === 'bye'){ peerGone(); }
@@ -1999,8 +2718,10 @@ function updateCoopLine(){
   else if (Net.lost) el.textContent = room + ' · connection to your friend lost — waiting up to 8 s for it to come back…';
   else if (Net.ready && !Net.peerReady) el.textContent = room + ' · you are ready — waiting for your friend to press FIGHT…' + via;
   else if (Net.ready && Net.peerReady) el.textContent = room + ' · starting…' + via;
+  else if (!Net.ready && Net.peerReady) el.textContent = room + ' · your friend is ready as ' + sideDefById(Net.peerReady).name.toUpperCase() + ' — press FIGHT to start' + via;
   else el.textContent = room + ' · friend connected' + via + (Net.host ? ' · you are the host and pick the round' : ' · the host picks the round') + ' · press FIGHT when ready.';
   $('fightVerb').textContent = Net.on ? 'READY AS' : 'FIGHT AS';
+  var guest = !!(Net.on && Net.peer && !Net.host); $('startLevel').disabled = guest; $('startLevel').title = guest ? 'the host picks the round' : '';
 }
 // a new pick after READY has to reach the partner, or you play the fighter you changed your mind about
 function repickReady(){ if (Net.on && Net.peer && Net.ready){ sendNet({t:'ready', f: myPickId()}); updateCoopLine(); } }
@@ -2011,21 +2732,26 @@ function coopReady(){
 function coopStart(level){
   // host only: same fighters again (rematch / next round) or the freshly picked pair
   if (!Net.host || !Net.peer) return;
-  LEVEL = level; Net.f = [myPickId(), Net.peerReady || (Net.f && Net.f[1]) || 'albertas'];
+  LEVEL = Net.mode === 'vs' ? clampVsLevel(level) : clampLevel(level); Net.f = [myPickId(), Net.peerReady || (Net.f && Net.f[1]) || 'albertas'];
   sendNet({t:'start', f: Net.f, level: LEVEL, vs: Net.mode === 'vs' ? 1 : 0}); beginCoopRound();
 }
 function clampLevel(v){ v = parseInt(v, 10); return (v >= 0 && v < LEVELS.length) ? v : 0; }
+// versus arenas are rounds 1-5 only: an online duel takes its arena from the round picker, which also lists rounds 6-8
+var VS_ARENAS = 5;
+function clampVsLevel(v){ v = clampLevel(v); return v < VS_ARENAS ? v : 0; }
 function defById(id){ for (var i = 0; i < ROSTER.length; i++) if (ROSTER[i].id === id) return ROSTER[i]; return ROSTER[0]; }
 function beginCoopRound(){
   if (Net.mode === 'vs'){ vsLocal = false; newVsFight(Net.f[0], Net.f[1]); }
   else newFight(defById(Net.f[0]), defById(Net.f[1]));
   scene = 'fight'; show(null);
-  Net.guestInp = {keys:{}, pressed:{}}; Net.sfxQ = []; Net.frame = 0; Net.lastKeys = '';
-  unlockAudio(); sfx('gong', {f: LEVEL ? 70 : 96, v: .6}); setTimeout(function(){ sfx('drum'); }, 800);
+  Net.guestInp = {keys:{}, pressed:{}}; Net.sfxQ = []; Net.crumbQ = []; Net.frame = 0; Net.lastKeys = ''; Net.gq = []; Net.gNext = 0; Net.sent = [];
+  $('startLevel').value = String(LEVEL);   // CHANGE FIGHTER after NEXT ROUND starts the round just reached, like solo
+  if (!Net.host && G.push) G.push.pred = {stage: 0, pos: 0, lock: 0};
+  unlockAudio(); sfx('gong', {f: LEVEL ? 70 : 96, v: .6}); fightTimeout(function(){ sfx('drum'); }, 800);
 }
 function hostTick(dt){
   var guest = G ? (G.vs ? G.sides[1] : G.p2) : null;
-  if (guest && Net.peer){ guest.inp.keys = Net.guestInp.keys; guest.inp.pressed = Net.guestInp.pressed; }
+  if (guest && Net.peer){ guest.inp.keys = Net.guestInp.keys; guest.inp.pressed = Net.guestInp.pressed; guest.inp.typed = Net.gq; }
   update(dt);
   if (guest){ Net.guestInp.pressed = {}; Net.frame++; if (Net.peer && Net.frame % (Net.rtcUp ? 2 : 3) === 0) sendSnap(); }   // 30 Hz P2P, 20 Hz over the relay
 }
@@ -2038,7 +2764,23 @@ function guestTick(dt){
   for (k in keys) if (keys[k]) kl.push(k);
   for (k in pressed) if (pressed[k]) pl.push(k);
   var sig = kl.join(','); Net.frame++;
-  if (pl.length || sig !== Net.lastKeys || Net.frame % 6 === 0){ Net.lastKeys = sig; sendNet({t:'in', k: kl, p: pl}); }
+  var tq = typedQ.length ? typedQ.splice(0, typedQ.length) : null;
+  if (G.push){
+    var pr = G.push.pred || (G.push.pred = {stage: 0, pos: 0, lock: 0});
+    if (pr.lock > 0) pr.lock -= dt;
+    if (tq){
+      // the same rules the host applies to its own keyboard: nothing during the banner, nothing while reeling from a slip,
+      // and a slip drops the rest of the batch. What survives is shown at once and sent; the host applies it as it is.
+      var keep = [];
+      if (!G.over && G.elapsed >= 1.6) for (var tk = 0; tk < tq.length && pr.lock <= 0; tk++){ keep.push(tq[tk]); if (pushTry(pr, tq[tk]) === 'slip'){ pr.lock = PUSH.lock; break; } }
+      tq = keep.length ? keep : null;
+    }
+  }
+  if (pl.length || tq || sig !== Net.lastKeys || Net.frame % 6 === 0){
+    Net.lastKeys = sig; var im = {t:'in', k: kl, p: pl};
+    if (tq){ im.q = tq; im.i = Net.sent.length; Net.sent = Net.sent.concat(tq); }
+    sendNet(im);
+  }
   pressed = {};
 }
 var POSE_KEYS = ['crouch', 'lean', 'lh', 'lk', 'rh', 'rk', 'la', 'le', 'ra', 're'];
@@ -2047,8 +2789,8 @@ function r2(v){ return Math.round((v || 0) * 100) / 100; }
 function r3(v){ return v == null ? null : Math.round(v * 1000) / 1000; }
 function packP(p){ return [r1(p.x), r1(p.y), p.facing, r1(p.hp), p.meter | 0, p.state, r2(p.st), r2(p.inv), r2(p.flash), r2(p.scale || 1), p.ducking ? 1 : 0, POSE_KEYS.map(function(k){ return r2(p.pose[k]); }), p.alt ? 1 : 0, p.hitsLanded, r3(p.share)]; }
 function unpackP(p, a){ p.x = a[0]; p.y = a[1]; p.facing = a[2]; p.hp = a[3]; p.meter = a[4]; p.state = a[5]; p.st = a[6]; p.inv = a[7]; p.flash = a[8]; p.scale = a[9]; p.ducking = !!a[10]; var o = {}; POSE_KEYS.forEach(function(k, i){ o[k] = a[11][i]; }); p.pose = o; p.alt = !!a[12]; p.hitsLanded = a[13]; if (a[14] != null){ p.share = a[14]; p.size = sizeOf(a[14]); } }
-function packR(r){ return [r1(r.x), r.facing, r.hp, r.state, r2(r.st), r1(r.jump), r2(r.tilt), r2(r.head), r2(r.squash), r2(r.run), r2(r.phase), r2(r.tail), r2(r.flash), r2(r.glow), r.angry ? 1 : 0, r.dir, r1(r.targetX), r.morph || '', r.revealed ? 1 : 0, r.willFeint ? 1 : 0, r3(r.share), r.meter | 0]; }
-function unpackR(r, a){ r.x = a[0]; r.facing = a[1]; r.hp = a[2]; r.state = a[3]; r.st = a[4]; r.jump = a[5]; r.tilt = a[6]; r.head = a[7]; r.squash = a[8]; r.run = a[9]; r.phase = a[10]; r.tail = a[11]; r.flash = a[12]; r.glow = a[13]; r.angry = !!a[14]; r.dir = a[15]; r.targetX = a[16]; r.morph = a[17] || null; r.revealed = !!a[18]; r.willFeint = !!a[19]; if (a[20] != null){ r.share = a[20]; r.size = sizeOf(a[20]); } if (a[21] != null) r.meter = a[21]; }
+function packR(r){ return [r1(r.x), r.facing, r.hp, r.state, r2(r.st), r1(r.jump), r2(r.tilt), r2(r.head), r2(r.squash), r2(r.run), r2(r.phase), r2(r.tail), r2(r.flash), r2(r.glow), r.angry ? 1 : 0, r.dir, r1(r.targetX), r.morph || '', r.revealed ? 1 : 0, r.willFeint ? 1 : 0, r3(r.share), r.meter | 0, r.hitsLanded | 0]; }
+function unpackR(r, a){ r.x = a[0]; r.facing = a[1]; r.hp = a[2]; r.state = a[3]; r.st = a[4]; r.jump = a[5]; r.tilt = a[6]; r.head = a[7]; r.squash = a[8]; r.run = a[9]; r.phase = a[10]; r.tail = a[11]; r.flash = a[12]; r.glow = a[13]; r.angry = !!a[14]; r.dir = a[15]; r.targetX = a[16]; r.morph = a[17] || null; r.revealed = !!a[18]; r.willFeint = !!a[19]; if (a[20] != null){ r.share = a[20]; r.size = sizeOf(a[20]); } if (a[21] != null) r.meter = a[21]; if (a[22] != null) r.hitsLanded = a[22]; }
 function sendSnap(){
   var snap = {t:'s', T: r2(G.t), e: r2(G.elapsed), o: G.over ? 1 : 0, w: G.won ? 1 : 0, pf: G.pacifist ? 1 : 0,
     P: G.players.map(packP), R: G.rhinos.map(packR),
@@ -2056,12 +2798,15 @@ function sendSnap(){
     hot: hot.map(function(h){ return [r1(h.x), r1(h.r), r2(h.t), h.life]; }),
     rg: rings.map(function(g){ return [r1(g.x), r2(g.t), g.grey ? 1 : 0]; }),
     bo: bolts.map(function(b){ return [r1(b.x), b.dir, r2(b.t)]; }),
-    sh: r1(shake), fl: r2(flashA), sm: r2(slowmo), imf: impactFrame, sx: Net.sfxQ, vw: G.vsWin};
+    sh: r1(shake), fl: r2(flashA), sm: r2(slowmo), imf: impactFrame, sx: Net.sfxQ, vw: G.vsWin, vt: G.vsTime ? 1 : 0,
+    bs: G.buns ? [G.bunStats.thrown, G.bunStats.hit, G.bunStats.eaten, G.bunStats.picked] : null, cr: Net.crumbQ.splice(0, Net.crumbQ.length),
+    bu: G.buns ? G.bunsFly.map(function(b){ return [r1(b.x), r1(b.h), r2(b.spin)]; }) : null, gb: G.buns ? G.bunsGround.map(function(g){ return r1(g.x); }) : null,
+    pu: G.push ? [r1(G.push.x), r2(G.push.pressure), G.players.map(function(q){ var u = q.pu; return [u.stage, u.pos, r2(u.lock), r2(u.slipT), r2(u.okT), u.slips, u.units, u.letters, u.ack | 0]; })] : null};
   Net.sfxQ = []; sendNet(snap);
 }
 function applySnap(d){
   if (!G || !d.P) return;
-  G.t = d.T; G.elapsed = d.e; G.over = !!d.o; G.won = !!d.w; G.pacifist = !!d.pf; if (d.vw != null) G.vsWin = d.vw;
+  G.t = d.T; G.elapsed = d.e; G.over = !!d.o; G.won = !!d.w; G.pacifist = !!d.pf; if (d.vw != null) G.vsWin = d.vw; if (d.vt != null) G.vsTime = !!d.vt;
   for (var i = 0; i < G.players.length && i < d.P.length; i++) unpackP(G.players[i], d.P[i]);
   for (var ri = 0; ri < G.rhinos.length && ri < d.R.length; ri++){
     var r = G.rhinos[ri], wasGone = r.state === 'gone'; unpackR(r, d.R[ri]);
@@ -2071,19 +2816,35 @@ function applySnap(d){
   hot = d.hot.map(function(a){ return {x: a[0], r: a[1], t: a[2], life: a[3]}; });
   rings = d.rg.map(function(a){ return {x: a[0], t: a[1], grey: !!a[2]}; });
   bolts = d.bo.map(function(a){ return {x: a[0], dir: a[1], t: a[2]}; });
+  if (G.buns && d.bs) G.bunStats = {thrown: d.bs[0], hit: d.bs[1], eaten: d.bs[2], picked: d.bs[3]};
+  (d.cr || []).forEach(function(c){ crumbs(c[0], c[1], c[2]); });   // crumbs are cosmetic: the guest makes its own from the host's list
+  if (G.buns){ G.bunsFly = (d.bu || []).map(function(a){ return {x: a[0], h: a[1], spin: a[2]}; }); G.bunsGround = (d.gb || []).map(function(x){ return {x: x, t: 0}; }); }
+  if (d.pu && G.push){
+    G.push.x = d.pu[0]; G.push.pressure = d.pu[1];
+    (d.pu[2] || []).forEach(function(a, i){ var q = G.players[i]; if (!q || !q.pu) return; var u = q.pu; u.stage = a[0]; u.pos = a[1]; u.lock = a[2]; u.slipT = a[3]; u.okT = a[4]; u.slips = a[5]; u.units = a[6]; u.letters = a[7]; u.ack = a[8]; });
+    // your own row: the host's word, plus every letter you typed that it has not read yet
+    var mp = G.players[Net.me];
+    if (mp && mp.pu){ var pr = {stage: mp.pu.stage, pos: mp.pu.pos, lock: G.push.pred ? G.push.pred.lock : 0}; for (var k = mp.pu.ack; k < (Net.sent || []).length; k++) pushTry(pr, Net.sent[k]); G.push.pred = pr; }
+  }
   shake = d.sh; flashA = Math.max(flashA, d.fl); slowmo = d.sm; impactFrame = d.imf;
-  (d.sx || []).forEach(function(k){ sfx(k); });
+  (d.sx || []).forEach(function(k){ if (Array.isArray(k)) sfx(k[0], {f: k[1]}); else sfx(k); });
 }
 
 // ------------------------------------------------------------ screens
 var $ = function(id){ return document.getElementById(id); };
-function show(id){ ['title', 'select', 'result', 'scores', 'levelCard', 'coop', 'versus'].forEach(function(s){ $(s).hidden = s !== id; }); $('menuBtn').hidden = id === 'title'; document.body.setAttribute('data-scene', id || 'fight'); }
+function show(id){
+  ['title', 'select', 'result', 'scores', 'levelCard', 'coop', 'versus'].forEach(function(s){ $(s).hidden = s !== id; });
+  $('menuBtn').hidden = id === 'title'; document.body.setAttribute('data-scene', id || 'fight');
+  // focus the new panel (not a button: a stray Space must not press REMATCH) so Tab and screen readers start there
+  var pn = id ? $(id).querySelector('.panel') : null;
+  if (pn){ if (!pn.hasAttribute('tabindex')) pn.setAttribute('tabindex', '-1'); try { pn.focus({preventScroll: true}); } catch (e) { try { pn.focus(); } catch (e2) {} } }
+}
 // back to the main menu from anywhere (Esc, or the ☰ MENU button): abandons a running fight
 function goMenu(){
   if (scene === 'title') return;
   if (termTimer){ clearInterval(termTimer); termTimer = null; }
   if (!$('videoBox').hidden) closeVideo();
-  G = null; vsLocal = false; clearKeys(); slowmo = 0; shake = 0; flashA = 0;
+  G = null; vsLocal = false; clearKeys(); slowmo = 0; shake = 0; flashA = 0; setPadLabels(null);
   netLeave();
   show('title'); scene = 'title'; refreshBoard();
 }
@@ -2091,6 +2852,8 @@ function buildRoster(){
   var host = $('roster'); host.innerHTML = '';
   var vsPick = Net.on && Net.mode === 'vs';
   if (!vsPick) pickRhino = false;
+  Array.prototype.forEach.call($('startLevel').options, function(o){ o.disabled = vsPick && +o.value >= VS_ARENAS; });
+  if (vsPick && +$('startLevel').value >= VS_ARENAS) $('startLevel').value = '0';
   setPickName();
   ROSTER.forEach(function(d, i){
     var el = document.createElement('button'); el.className = 'fighter' + (i === selected ? ' sel' : ''); el.type = 'button'; el.setAttribute('aria-label', d.name);
@@ -2125,17 +2888,19 @@ function buildRoster(){
 function setPickName(){
   var n = pickRhino ? 'THE RHINO' : ROSTER[selected].name.toUpperCase();
   $('selName').textContent = n; $('selName2').textContent = n;
+  var sp = pickRhino ? {name: 'Jet Stomp', desc: 'Horn sweep on punch, a charge on kick, and a jet stomp when the meter is full.'} : ROSTER[selected].special;
+  $('selMove').textContent = 'Special: ' + sp.name + ' — ' + sp.desc;
   $('btnVideo').hidden = pickRhino;
 }
 function beginRound(){
   $('startLevel').value = String(LEVEL);
   newFight(ROSTER[selected]); scene = 'fight'; show(null);
-  unlockAudio(); sfx('gong', {f: LEVEL ? 70 : 96, v: .6}); setTimeout(function(){ sfx('drum'); }, 800);
-  if (LEVEL) setTimeout(function(){ sfx('geiger'); }, 300);
+  unlockAudio(); sfx('gong', {f: LEVEL ? 70 : 96, v: .6}); fightTimeout(function(){ sfx('drum'); }, 800);
+  if (LEVEL && !LEVELS[LEVEL].calm) fightTimeout(function(){ sfx('geiger'); }, 300);
 }
-var termTimer = null;
+var termTimer = null, CARD_STYLES = ['rad', 'blue', 'museum', 'lab', 'cafe'];
 function showLevelCard(){
-  var lv = LEVELS[LEVEL]; show('levelCard'); scene = 'card';
+  var lv = LEVELS[LEVEL]; G = null; show('levelCard'); scene = 'card';   // no stale fight drawn behind the card
   $('startLevel').value = String(LEVEL);   // BACK must not throw away the round you just unlocked
   var el = $('termText'), html = lv.card, i = 0; el.innerHTML = '';
   if (termTimer) clearInterval(termTimer);
@@ -2143,10 +2908,14 @@ function showLevelCard(){
   termTimer = setInterval(function(){
     if (i >= html.length){ el.innerHTML = html; clearInterval(termTimer); termTimer = null; return; }   // drop the cursor when the text is done
     if (html[i] === '<'){ var j = html.indexOf('>', i); i = j + 1; } else i++;
+    var stick = el.scrollTop + el.clientHeight >= el.scrollHeight - 24;   // the reader has not scrolled away
     el.innerHTML = html.slice(0, i) + '<span style="opacity:' + (Math.floor(Date.now() / 300) % 2) + '">█</span>';
-    if (i % 3 === 0) sfx('geiger');
+    if (stick) el.scrollTop = el.scrollHeight;
+    if (i % 3 === 0){ if (lv.calm) sfx('tick'); else sfx('geiger'); }
   }, 18);
-  $('btnLevelGo').textContent = 'FIGHT ' + lv.name; el.classList.toggle('blue', !!lv.blue); $('btnLevelGo').classList.toggle('blue', !!lv.blue); $('btnLevelGo').classList.toggle('rad', !lv.blue);
+  var cs = lv.cardStyle || (lv.blue ? 'blue' : 'rad');
+  $('btnLevelGo').textContent = 'FIGHT ' + lv.name;
+  CARD_STYLES.forEach(function(c){ el.classList.toggle(c, c === cs && c !== 'rad'); $('btnLevelGo').classList.toggle(c, c === cs); });
 }
 function startFight(){
   if (Net.on){ coopReady(); return; }
@@ -2157,9 +2926,10 @@ function showResult(){
   if (!G || scene !== 'fight') return;   // the fight was abandoned via the menu
   if (Net.on && Net.host && Net.peer) sendNet({t:'result'});
   if (G.vs){ showVsResult(); return; }
-  var p = G.players[(Net.on && Net.peer) ? Net.me : 0] || G.p, r = G.r, coop = G.players.length > 1;
+  var p = G.players[(Net.on && Net.peer) ? Net.me : 0] || G.p, r = G.r, coop = G.players.length > 1 && !(G.p2 && G.p2.gone);
   $('resCoop').hidden = !coop;
-  if (coop){ $('resCoop').textContent = Net.host ? 'Co-op: you are the host — REMATCH or NEXT ROUND starts it for both of you.' : 'Co-op: waiting for the host to pick REMATCH or NEXT ROUND…'; }
+  var nx = (G.won && LEVEL < LEVELS.length - 1) ? ' or NEXT ROUND' : '';
+  if (coop){ $('resCoop').textContent = Net.host ? 'Co-op: you are the host — REMATCH' + nx + ' starts it for both of you.' : 'Co-op: waiting for the host to pick REMATCH' + nx + '…'; }
   $('scoreLine').hidden = !G.won; $('nameBox').hidden = !G.won; $('btnSave').disabled = false; $('btnSave').textContent = 'SAVE SCORE';
   var hasNext = G.won && LEVEL < LEVELS.length - 1;
   $('btnNext').hidden = !hasNext || (coop && !Net.host); $('btnNext').textContent = hasNext ? LEVELS[LEVEL + 1].next : '';
@@ -2168,9 +2938,16 @@ function showResult(){
     var sc = scoreFor(G); $('scoreLine').textContent = 'SCORE ' + sc.toLocaleString();
     $('playerName').value = p.def.name;
     if (G.pacifist){
-      var animals = G.rhinos.filter(function(r0){ return r0.morph; }).map(function(r0){ return ANIMALS[r0.morph].name; }).join(' + '), readLabel = LEVEL === 4 ? 'Rhinoceros + Zebra (relative abundance)' : 'Rhinoceros' + (LEVEL === 3 ? ' ×2 (PCR duplicate)' : LEVEL === 2 ? ' (wrong sample)' : LEVEL ? ' (contaminant match)' : ' (98.7%)');
+      var animals = G.rhinos.filter(function(r0){ return r0.morph; }).map(function(r0){ return ANIMALS[r0.morph].name; }).join(' + '), readLabel = LEVELS[LEVEL].read;
       $('resBig').textContent = 'PEACE'; $('resTitle').textContent = 'FALSE POSITIVE RECLASSIFIED';
-      $('resReadout').innerHTML = '> read: <b>' + readLabel + '</b> — status: <b>RECLASSIFIED → ' + animals + '</b><br>> fighter: <b>' + teamName(G) + '</b> · waited <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>0</b> · pacifist bonus: <b>+2500</b><br>> lesson: you never had to hit it. Look at the alignment long enough and the rhino is a ' + animals + ' — a related sequence that scored high, not a rhino. Never was.' + (LEVEL < LEVELS.length - 1 ? '<br>> next: round ' + (LEVEL + 2) + '.' : '<br>> dataset clean. The crew can go home.');
+      var morphs = G.rhinos.filter(function(r0){ return r0.morph; }), many = morphs.length > 1;
+      var whoWas = many ? (LEVELS[LEVEL].huds ? 'the rhino and the zebra are' : 'the two rhinos are') : 'the rhino is';
+      var whatNow = morphs.map(function(r0){ return 'a ' + ANIMALS[r0.morph].name; }).join(' and ');
+      $('resReadout').innerHTML = '> read: <b>' + readLabel + '</b> — status: <b>RECLASSIFIED → ' + animals + '</b><br>> fighter: <b>' + teamName(G) + '</b> · waited <b>' + G.elapsed.toFixed(1) + ' s</b> · ' +
+        (G.comp ? 'share of the ring: <b>' + Math.round((p.share || 0) * 100) + ' %</b>' : 'HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b>') +
+        '<br>> hits landed: <b>0</b> · pacifist bonus: <b>+2500</b><br>> lesson: you never had to hit ' + (many ? 'them' : 'it') + '. Look at the alignment long enough and ' + whoWas + ' ' + whatNow + ' — ' +
+        (many ? 'related sequences that scored high, not rhinos' : 'a related sequence that scored high, not a rhino') + '. Never ' + (many ? 'were' : 'was') + '.' +
+        (LEVEL < LEVELS.length - 1 ? '<br>> next: round ' + (LEVEL + 2) + '.' : '<br>> dataset clean. The crew can go home.');
     } else if (LEVEL === 0){
       $('resBig').textContent = 'K.O.!'; $('resTitle').textContent = 'FALSE POSITIVE REMOVED';
       $('resReadout').innerHTML = '> read: <b>Rhinoceros (98.7%)</b> — status: <b>REMOVED</b><br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · finisher: <b>' + (p.lastMove || p.def.special.name) + '</b><br>> no rhinos were harmed. It was one short read that looked like a horse.<br>> next: the reference genome itself is <b>contaminated</b>. Round 2.';
@@ -2182,18 +2959,39 @@ function showResult(){
       $('resReadout').innerHTML = '> duplicate reads: <b>Rhinoceros ×2 (PCR duplicate)</b> — status: <b>REMOVED</b><br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · round bonus: <b>+4500</b><br>> lesson: PCR copies of one molecule are not independent evidence. Deduplicate before you count.<br>> next: the counts are only <b>relative</b>. Round 5.';
     } else if (LEVEL === 4){
       $('resBig').textContent = 'DOMINANT'; $('resTitle').textContent = 'FALSE POSITIVES BELOW DETECTION LIMIT';
-      $('resReadout').innerHTML = '> reads: <b>Rhinoceros + Zebra (relative abundance)</b> — status: <b>NOT DETECTED</b><br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · share of the ring: <b>' + Math.round(p.share * 100) + ' %</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · round bonus: <b>+6000</b><br>> lesson: sequencing counts are compositional. They only say what fraction of the reads each species got, and the fractions always sum to one — so when one goes down, the others go up without changing at all. Dataset clean. The crew can go home.';
+      $('resReadout').innerHTML = '> reads: <b>Rhinoceros + Zebra (relative abundance)</b> — status: <b>NOT DETECTED</b><br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · share of the ring: <b>' + Math.round(p.share * 100) + ' %</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · round bonus: <b>+6000</b><br>> lesson: sequencing counts are compositional. They only say what fraction of the reads each species got, and the fractions always sum to one — so when one goes down, the others go up without changing at all.<br>> next: the reference specimen itself is <b>mislabelled</b>. Round 6.';
+    } else if (LEVELS[LEVEL].win){
+      var wv = LEVELS[LEVEL].win;
+      $('resBig').textContent = wv.big; $('resTitle').textContent = wv.title;
+      $('resReadout').innerHTML = '> read: <b>' + LEVELS[LEVEL].read + '</b> — status: <b>' + wv.status + '</b><br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · ' + winStats(p) +
+        '<br>> ' + (G.push ? 'right letters: <b>' + pushTotals().letters : 'hits landed: <b>' + p.hitsLanded) + '</b> · round bonus: <b>+' + fmtScore(LEVEL * 1500) + '</b><br>> lesson: ' + wv.lesson +
+        (LEVEL < LEVELS.length - 1 ? '<br>> next: ' + wv.next : '<br>> dataset clean. The crew can go home.');
     } else {
       $('resBig').textContent = 'CLEAN'; $('resTitle').textContent = 'REFERENCE DECONTAMINATED';
       $('resReadout').innerHTML = '> mutant read: <b>Rhinoceros (contaminant match)</b> — status: <b>REMOVED</b><br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · round bonus: <b>+1500</b><br>> lesson: a read can match a contaminant inside a reference genome, not the species the genome is named after.<br>> next: the read is on the move. Round 3.';
     }
   } else {
     var rads = p.killedBy === 'rads';
-    $('resBig').textContent = G.comp ? 'OUTCOMPETED' : rads ? 'IRRADIATED' : 'TRAMPLED'; $('resTitle').textContent = G.comp ? 'THE FALSE POSITIVES DOMINATE THE SAMPLE' : rads ? 'THE CONTAMINATED GROUND GOT YOU' : 'THE RHINO STAYS IN THE DATASET';
-    $('resReadout').innerHTML = G.comp ? ('> reads: <b>Rhinoceros + Zebra (relative abundance)</b> — status: <b>' + G.rhinos.map(function(r0){ return Math.round((r0.share || 0) * 100) + ' %'; }).join(' + ') + '</b><br>> fighter: <b>' + teamName(G) + '</b> · survived <b>' + G.elapsed.toFixed(1) + ' s</b> · your share fell below the <b>detection limit</b><br>> tip: every hit you take makes both of them bigger. Land hits and keep the share coming your way.')
-      : ('> read: <b>Rhinoceros' + (LEVEL === 3 ? ' ×2 (PCR duplicate)' : LEVEL === 2 ? ' (wrong sample)' : LEVEL ? ' (contaminant match)' : ' (98.7%)') + '</b> — status: <b>still there</b><br>> fighter: <b>' + teamName(G) + '</b> · survived <b>' + G.elapsed.toFixed(1) + ' s</b> · rhino HP left: <b>' + G.rhinos.map(function(r0){ return Math.round(r0.hp) + '/' + r0.maxhp; }).join(' + ') + '</b><br>> tip: ' + (rads ? 'the green patches keep burning while you stand in them — jump out, or stay off the ground the rhino skidded over.' : 'jump the charge when you see the <b>!</b>, duck the horn sweep, and hit it while it skids (or sleeps).'));
+    var lz = LEVELS[LEVEL].lose;
+    $('resBig').textContent = lossWord(p); $('resTitle').textContent = lz ? lz.title : G.comp ? 'THE FALSE POSITIVES DOMINATE THE SAMPLE' : rads ? 'THE CONTAMINATED GROUND GOT YOU' : 'THE RHINO STAYS IN THE DATASET';
+    var pt = G.push ? pushTotals() : null;
+    $('resReadout').innerHTML = G.push ? ('> read: <b>' + LEVELS[LEVEL].read + '</b> — status: <b>still there</b><br>> fighter: <b>' + teamName(G) + '</b> · held on <b>' + G.elapsed.toFixed(1) + ' s</b> · right letters: <b>' + pt.letters + '</b> · slips: <b>' + pt.slips + '</b> · repeat units: <b>' + pt.units + '</b><br>> tip: ' + lz.tip)
+      : G.comp ? ('> reads: <b>Rhinoceros + Zebra (relative abundance)</b> — status: <b>' + G.rhinos.map(function(r0){ return Math.round((r0.share || 0) * 100) + ' %'; }).join(' + ') + '</b><br>> fighter: <b>' + teamName(G) + '</b> · survived <b>' + G.elapsed.toFixed(1) + ' s</b> · your share fell below the <b>detection limit</b><br>> tip: every hit you take makes both of them bigger. Land hits and keep the share coming your way.')
+      : ('> read: <b>' + LEVELS[LEVEL].read + '</b> — status: <b>' + stillThere() + '</b><br>> fighter: <b>' + teamName(G) + '</b> · survived <b>' + G.elapsed.toFixed(1) + ' s</b> · rhino HP left: <b>' + G.rhinos.map(function(r0){ return r0.state === 'gone' || r0.state === 'ko' ? 'removed' : Math.round(r0.hp) + '/' + r0.maxhp; }).join(' + ') + '</b><br>> tip: ' + (rads ? 'the green patches keep burning while you stand in them — jump out, or stay off the ground the rhino skidded over.' : (LEVELS[LEVEL].tip || 'jump the charge when you see the <b>!</b>, duck the horn sweep, and hit it while it skids (or sleeps).')));
   }
   show('result'); scene = 'result';
+}
+function pushTotals(){ var t = {letters: 0, slips: 0, units: 0}; G.players.forEach(function(q){ if (q.pu){ t.letters += q.pu.letters; t.slips += q.pu.slips; t.units += q.pu.units; } }); return t; }
+function winStats(p){
+  if (G.buns){ var bs = G.bunStats; return 'HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b> · buns: <b>' + bs.thrown + '</b> thrown, <b>' + bs.hit + '</b> on target, <b>' + bs.eaten + '</b> eaten by the rhino'; }
+  if (G.push){ var t = pushTotals(); return 'repeat units: <b>' + t.units + '</b> · slips: <b>' + t.slips + '</b>'; }
+  return 'HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b>';
+}
+// the word for a lost round, shared by the canvas banner and the result panel so they can never disagree
+function lossWord(p){ return G.push ? 'PUSHED OUT' : G.comp ? 'OUTCOMPETED' : (p && p.killedBy === 'rads') ? 'IRRADIATED' : 'TRAMPLED'; }
+function stillThere(){
+  var n = G.rhinos.length, live = liveRhinos().length;
+  return n > 1 ? (live + ' of ' + n + ' still there') : 'still there';
 }
 function showVsResult(){
   var online = Net.on && Net.peer, me = online ? Net.me : 0, win = G.vsWin, a = G.sides[0], b = G.sides[1];
@@ -2245,10 +3043,9 @@ $('theVideo').addEventListener('ended', function(){ setTimeout(closeVideo, 800);
 $('btnScores').addEventListener('click', function(){ unlockAudio(); openScores(); });
 $('btnScoresBack').addEventListener('click', function(){ show('title'); scene = 'title'; });
 $('btnSave').addEventListener('click', function(){
-  if (!G || !G.won) return;
+  if (!G || !G.won || G.vs || $('nameBox').hidden) return;   // versus never reaches the leaderboard, and a hidden box saves nothing
   var mine = G.players[(Net.on && Net.peer) ? Net.me : 0] || G.p;
   var name = ($('playerName').value || mine.def.name).replace(/[\u0000-\u001f\u007f]/g, '').replace(/\s+/g, ' ').trim().slice(0, 16) || mine.def.name;
-  try { localStorage.setItem('swebits_name', name); } catch (e) {}
   lastEntry = {name: name, fighter: teamName(G).slice(0, 24), score: scoreFor(G), time: Math.round(G.elapsed * 10) / 10, level: LEVEL + 1, t: Date.now()};
   $('btnSave').disabled = true; $('btnSave').textContent = 'SAVING…';
   Scores.add(lastEntry).then(function(list){ $('btnSave').textContent = Scores.savedRemote() ? 'SAVED' : 'SAVED ON THIS DEVICE ONLY'; sfx('chime', {f: Scores.savedRemote() ? 2093 : 1046}); renderScores(list); renderBest(); show('scores'); scene = 'scores'; });
@@ -2289,7 +3086,7 @@ refreshBoard();
 var last = performance.now();
 function frame(now){
   var dt = Math.min(.05, (now - last) / 1000); last = now;
-  if (scene === 'fight'){ if (Net.on && Net.peer && !Net.host) guestTick(dt); else hostTick(dt); } else { pressed = {}; pressed2 = {}; }
+  if (scene === 'fight'){ if (Net.on && Net.peer && !Net.host) guestTick(dt); else hostTick(dt); } else { pressed = {}; pressed2 = {}; typedQ.length = 0; }
   draw();
   requestAnimationFrame(frame);
 }
