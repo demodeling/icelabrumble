@@ -1292,6 +1292,7 @@ test('June kicks above her own head, and the axe kick comes down after three of 
   await page.evaluate(() => { const g = window.__fight(); g.r.x = g.p.x + 200; g.r.facing = -1; g.p.facing = 1; g.p.meter = 100; g.p.state = 'idle'; });
   const hp0 = await page.evaluate(() => window.__fight().r.hp);
   await page.keyboard.press('l');
+  await expect.poll(() => page.evaluate(() => window.__fight().p.state), { timeout: 3000 }).toBe('special');   // the key lands on the next frame
   await expect.poll(() => page.evaluate(() => window.__fight().p.state), { timeout: 4000 }).not.toBe('special');
   const done = await page.evaluate(() => { const g = window.__fight(); return { hits: g.p.hitsLanded, hp: g.r.hp }; });
   expect(done.hits).toBeGreaterThanOrEqual(2);
