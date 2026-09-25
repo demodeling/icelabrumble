@@ -844,6 +844,13 @@ test('Anton rides a skateboard: he rolls on after you let go and carves to a sto
   await page.waitForTimeout(250);
   expect(await page.evaluate(() => window.__fight().p.x)).toBeGreaterThan(released.x + 20);   // still rolling, no key held
   await expect.poll(() => page.evaluate(() => window.__fight().p.vx), { timeout: 4000 }).toBe(0);   // …and it stops by itself
+  // both directions at once is the brake: rolling at full speed, he stops dead
+  await page.keyboard.down('ArrowRight'); await page.waitForTimeout(400);
+  await page.keyboard.down('ArrowLeft'); await page.waitForTimeout(100);
+  const braked = await page.evaluate(() => window.__fight().p.x);
+  await page.waitForTimeout(300);
+  expect(await page.evaluate(() => window.__fight().p.x)).toBe(braked);
+  await page.keyboard.up('ArrowLeft'); await page.keyboard.up('ArrowRight');
   expect(errors).toEqual([]);
 });
 

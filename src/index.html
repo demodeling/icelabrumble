@@ -2103,8 +2103,9 @@ function updatePlayer(p, dt){
     if (def.skate){
       // Anton's skateboard: push off towards where you steer, roll on when you let go, carve to a stop
       var top = speed * 1.15, acc = want ? 1500 : 520;
+      var brake = keys.left && keys.right;   // both directions at once: stand on the brake (both held = stand still, as on foot)
       p.vx = want ? clamp(p.vx + want * acc * dt, -top, top) : p.vx * Math.pow(.18, dt);
-      if (!want && Math.abs(p.vx) < 12) p.vx = 0;
+      if (!want && (brake || Math.abs(p.vx) < 12)) p.vx = 0;
       p.x += p.vx * dt; moving = Math.abs(p.vx) > 40;
     }
     else if (want){ p.x += want * speed * dt; moving = true; }

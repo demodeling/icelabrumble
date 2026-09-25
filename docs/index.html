@@ -203,7 +203,7 @@
       <p class="small" id="titleBest"></p>
       <p class="small">Sound on for the full kung-fu experience. Works on Safari, iPhone and iPad — tap ⛶ FULLSCREEN for a widescreen arena on your phone.</p>
       <p class="small" id="iosHint" hidden>iPhone: for a real full screen, tap Share → <b>Add to Home Screen</b> and open the game from there (no Safari bars at all).</p>
-      <p class="small ver" id="verLine">v2.1.0 · build b1fc29e</p>
+      <p class="small ver" id="verLine">v2.1.0 · build 94875b1</p>
     </div></div>
 
     <div id="select" class="overlay" hidden><div class="panel">
@@ -2103,8 +2103,9 @@ function updatePlayer(p, dt){
     if (def.skate){
       // Anton's skateboard: push off towards where you steer, roll on when you let go, carve to a stop
       var top = speed * 1.15, acc = want ? 1500 : 520;
+      var brake = keys.left && keys.right;   // both directions at once: stand on the brake (both held = stand still, as on foot)
       p.vx = want ? clamp(p.vx + want * acc * dt, -top, top) : p.vx * Math.pow(.18, dt);
-      if (!want && Math.abs(p.vx) < 12) p.vx = 0;
+      if (!want && (brake || Math.abs(p.vx) < 12)) p.vx = 0;
       p.x += p.vx * dt; moving = Math.abs(p.vx) > 40;
     }
     else if (want){ p.x += want * speed * dt; moving = true; }
