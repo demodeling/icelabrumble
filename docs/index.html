@@ -74,7 +74,7 @@
   .tb.iso{display:none;}
   body[data-arena="island"] .tb.iso{display:flex;}
   body[data-arena="island"] .tb.flat{display:none;}
-  .roster{display:grid;grid-template-columns:repeat(7,minmax(0,136px));justify-content:center;gap:8px;width:min(100%,960px);}
+  .roster{display:grid;grid-template-columns:repeat(4,minmax(0,200px));justify-content:center;gap:8px;width:min(100%,960px);}
   @media (max-width:640px){.roster{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}}
   .fighter{background:var(--night2);border:3px solid transparent;border-radius:12px;padding:6px 4px 5px;min-width:0;cursor:pointer;
            display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--snow);transition:transform .1s,border-color .1s;}
@@ -203,7 +203,7 @@
       <p class="small" id="titleBest"></p>
       <p class="small">Sound on for the full kung-fu experience. Works on Safari, iPhone and iPad — tap ⛶ FULLSCREEN for a widescreen arena on your phone.</p>
       <p class="small" id="iosHint" hidden>iPhone: for a real full screen, tap Share → <b>Add to Home Screen</b> and open the game from there (no Safari bars at all).</p>
-      <p class="small ver" id="verLine">v2.4.0 · build b7bfcad</p>
+      <p class="small ver" id="verLine">v2.5.0 · build 9b31ed7</p>
     </div></div>
 
     <div id="select" class="overlay" hidden><div class="panel">
@@ -253,6 +253,7 @@
     <div id="scores" class="overlay" hidden><div class="panel">
       <h2>HIGH SCORES</h2>
       <p class="small" id="scoresMode"></p>
+      <label class="check">Show <select id="scoresRound"><option value="0">All rounds</option></select></label>
       <table class="scores" id="scoresTable"><thead><tr><th class="num">#</th><th>NAME</th><th>FIGHTER</th><th class="num">TIME</th><th class="num">SCORE</th><th></th></tr></thead><tbody></tbody></table>
       <div class="row"><button class="btn secondary" id="btnScoresBack">BACK</button></div>
     </div></div>
@@ -269,7 +270,7 @@
       <p class="small">Every face is drawn by the game itself: a paper-cutout avatar, not a portrait, and no photograph of anyone is stored or shipped anywhere in this project.</p>
       <p class="small">Rounds 1–8 come from the sister game, <b>Swebits Rumble</b>; rounds 9–11 were IceLab’s own.</p>
       <p class="small">The rhino is a false positive. No rhinos were harmed; it was one short read that looked like a horse.</p>
-      <p class="small ver">Built with Claude · v2.4.0 · <a href="https://www.umu.se/en/icelab/" target="_blank" rel="noopener">umu.se/en/icelab</a></p>
+      <p class="small ver">Built with Claude · v2.5.0 · <a href="https://www.umu.se/en/icelab/" target="_blank" rel="noopener">umu.se/en/icelab</a></p>
       <div class="row"><button class="btn secondary" id="btnCreditsBack">BACK</button></div>
     </div></div>
 
@@ -298,7 +299,7 @@ var FACES = {};   // faces are drawn procedurally in this edition
 // A short bench for now: the full IceLab members roster (and the Swebits crew) are off while these three are built
 // out — both live in the git history (MEMBERS / THEMES / LOOK_FIX before the Swebits merge) and can come back.
 // Per-fighter traits: skate (Anton rides a skateboard: momentum instead of instant stops), highKick (June's kick
-// goes above her own head), glasses: 'big' (Aswin). Special kinds are in specialUpdate(): jujitsu, axe, shout, fancy, mind, water and spikes are theirs; cactus: true = Sasha's look.
+// goes above her own head), glasses: 'big' (Aswin). Special kinds are in specialUpdate(): jujitsu, axe, shout, fancy, mind, water, spikes and sneak are theirs; cactus: true = Sasha's look.
 var ROSTER = [
   {id:'anton', name:'Anton', face:'anton', shirt:'#6e3a3a', pants:'#33384e', hp:100, speed:1.2, power:1.0, jump:1.1, skate:true,
    special:{name:'Skate-Jitsu Throw', kind:'jujitsu', dmg:44, desc:'Rolls in on the board, grips the horn and throws the rhino over his hip.'}},
@@ -313,7 +314,9 @@ var ROSTER = [
   {id:'abigail', name:'Abigail', face:'abigail', shirt:'#1f6f86', pants:'#2f3450', hp:100, speed:1.05, power:1.0, jump:1.05,
    special:{name:'Fingertip Flood', kind:'water', dmg:7, hits:6, desc:'Water flows from her fingertips — six hard jets that soak the rhino and wash it back.'}},
   {id:'sasha', name:'Sasha', face:'sasha', shirt:'#3a2326', pants:'#5c5e63', hp:110, speed:.95, power:1.0, jump:.95, cactus:true,
-   special:{name:'Spine Storm', kind:'spikes', dmg:3, hits:3, desc:'Puffs up like the cactus he is and fires three fans of spines. Every one that lands pricks.'}}
+   special:{name:'Spine Storm', kind:'spikes', dmg:3, hits:3, desc:'Puffs up like the cactus he is and fires three fans of spines. Every one that lands pricks.'}},
+  {id:'suvam', name:'Suvam', face:'suvam', shirt:'#c9772e', pants:'#e8dcc2', hp:100, speed:1.1, power:1.0, jump:1.05,
+   special:{name:'Desert Headlock', kind:'sneak', dmg:6, hits:5, desc:'The Punjab desert blows in, he vanishes in the sand, turns up behind the rhino — and puts it in a headlock.'}}
 ];
 var faceImgs = {};
 // ------------------------------------------------------------ cutout-style faces (construction-paper look)
@@ -325,6 +328,7 @@ var LOOK = {
   ake:   {skin:'#f3c8b0', hair:{type:'short', color:'#c9a266', receding:true}, beard:null, glasses:true, mouth:'smile'},
   abigail: {skin:'#f2d0b4', hair:{type:'long', color:'#8a6a48'}, beard:null, glasses:false, mouth:'smile'},
   // Sasha looks like a cactus — a maroon one: maroon skin, a crew cut of spines and a flower on top (the flower is drawn in the rig), in a darker maroon hoodie
+  suvam: {skin:'#c08b62', hair:{type:'short', color:'#2b2320'}, beard:{type:'stubble', color:'#2b2320'}, glasses:false, mouth:'smile'},
   sasha: {skin:'#8a4550', hair:{type:'buzz', color:'#3e1a20'}, beard:null, glasses:false, mouth:'smile'}
 };
 function drawCutoutFace(c, cx, cy, S, look, fac, opt){
@@ -1125,6 +1129,8 @@ var POSE = {
   // Åke: fingertips to the temples, then both palms out
   mind:   {crouch:.08, lean:-.12, lh:14, lk:10, rh:-14, rk:10, la:168, le:150, ra:162, re:150},
   mindPush:{crouch:.2, lean:.28, lh:30, lk:25, rh:-28, rk:22, la:94, le:2, ra:90, re:6},
+  // Suvam: on the rhino's back, both arms round its neck
+  headlock:{crouch:.55, lean:.45, lh:80, lk:90, rh:40, rk:100, la:100, le:60, ra:95, re:70},
   // Abigail: both arms out straight, fingers first
   water:  {crouch:.22, lean:.18, lh:34, lk:30, rh:-26, rk:24, la:90, le:0, ra:84, re:6},
   // Sarah: arms flung wide, letting it have it
@@ -2053,7 +2059,7 @@ function rhinoKO(r){
 // pacifist ending: never land a hit and outlast the rhino (60 s in round 1, +30 s per round) and the read turns out to be something else
 var LOCAL_BUILD = /^(localhost|127\.0\.0\.1|)$/.test(location.hostname);   // file:// or a dev server: debug hooks allowed
 var PACIFIST_DEBUG = LOCAL_BUILD ? parseFloat((location.hash.match(/pacifist=([0-9]*\.?[0-9]+(?:e[+-]?[0-9]+)?)/i) || [])[1]) : NaN;
-if (LOCAL_BUILD){ window.__fight = function(){ return G; }; window.__pct100 = function(v){ return pct100(v); }; window.__sq = function(){ return {P: SQ.P, base: sqBase, pt: sqPt, wrap: wrapDelta}; }; window.__level = function(){ return LEVEL; }; window.__flash = function(){ return flashA; }; window.__push = function(){ return {win: PUSH.win, lose: pushLoseX()}; }; window.__levels = function(){ return LEVELS; }; window.__zoom = function(){ return isleZoom(); }; window.__fx = function(){ return fx; }; window.__spikes = function(){ return spikes; }; }   // tests peek at the fight state
+if (LOCAL_BUILD){ window.__fight = function(){ return G; }; window.__pct100 = function(v){ return pct100(v); }; window.__sq = function(){ return {P: SQ.P, base: sqBase, pt: sqPt, wrap: wrapDelta}; }; window.__level = function(){ return LEVEL; }; window.__flash = function(){ return flashA; }; window.__push = function(){ return {win: PUSH.win, lose: pushLoseX()}; }; window.__levels = function(){ return LEVELS; }; window.__zoom = function(){ return isleZoom(); }; window.__fx = function(){ return fx; }; window.__spikes = function(){ return spikes; }; window.__desert = function(){ return desertAmount(); }; }   // tests peek at the fight state
 function pacifistTime(){ return PACIFIST_DEBUG > 0 ? PACIFIST_DEBUG : (LEVELS[LEVEL].pacifist || 60 + 30 * LEVEL); }
 // Round 9 chains the reveal: every 30 s (G.stageT, per pass) the classifier reports again, and a species that does not
 // belong in a Kiruna sample means another pass (the level's `reruns` of them at most). #reveal=<kind> forces the species.
@@ -2347,6 +2353,45 @@ function specialUpdate(p, dt){
       }
     }
   }
+  else if (kind === 'sneak'){
+    // Suvam: the Punjab desert blows in, he is gone in the sand, turns up behind the rhino, hops onto its back and
+    // holds it in a headlock for a few seconds (the rhino is 'choked': frozen, and loses health at every squeeze)
+    var S = SNEAK, g2 = p.grabbed;
+    p.inv = Math.max(p.inv, .1);
+    if (st < S.vanish){
+      pose = mixPose(POSE.guard, POSE.duck, st / S.vanish);
+      if (Math.random() < .6) puffs.push({x: p.x + rnd(-50, 50), y: GROUND - rnd(0, 150), t: 0, r: rnd(10, 22), col: '#e2c08a', z: p.z});
+    }
+    else if (!p.attackHit){
+      p.attackHit = true;
+      var tg = sneakTarget(p);
+      if (!tg){ fx.push({x: p.headPt[0], y: p.headPt[1] - 30, z: p.z, t: 0, life: .8, r: 40, label: 'nobody here…', big: false}); p.state = 'idle'; return POSE.guard; }
+      p.grabbed = g2 = tg; sfx('whoosh');
+      if (tg.isRhino){ tg.state = 'choked'; tg.st = 0; tg.run = 0; tg.chargeHit = true; }
+      if (isleOn()) p.z = tg.z;
+    }
+    if (g2 && st >= S.vanish){
+      var alive = g2.isRhino ? (g2.state === 'choked') : vsAlive(g2);
+      if (g2.isRhino){
+        // on its back, just behind the head, facing the way it faces
+        p.facing = g2.facing; p.x = g2.x + g2.facing * .55 * rs(g2); p.y = 1.35 * rs(g2) + (g2.jump || 0); p.vy = 0;
+      } else { p.facing = g2.x > p.x ? 1 : -1; p.x = g2.x - p.facing * 60; }
+      var hold = st - S.vanish, ih = Math.floor((hold - S.appear) / S.tick);
+      pose = hold < S.appear ? mixPose(POSE.jump, POSE.headlock, hold / S.appear) : mixPose(POSE.headlock, POSE.grab, .2 + .2 * Math.sin(hold * 18));
+      if (alive && hold >= S.appear && ih < (sp.hits || 5) && p.specialHits === ih){
+        p.specialHits++; var last = ih === (sp.hits || 5) - 1;
+        var at = g2.isRhino ? [g2.x + g2.facing * 1.4 * rs(g2), GROUND - 1.6 * rs(g2) - (g2.jump || 0)] : [g2.x, GROUND - g2.y - 110];
+        if (g2.isRhino) g2.state = 'idle';            // hitRhino staggers an idle rhino; put it straight back in the hold
+        hitFoe(g2, p, at, sp.dmg, last, last ? 'TAP OUT!' : (ih % 2 ? 'SQUEEZE!' : 'GRRK!'));
+        if (g2.isRhino && g2.state !== 'ko' && g2.state !== 'gone') { g2.state = 'choked'; g2.st = 0; }
+      }
+      if (!alive || hold > S.appear + (sp.hits || 5) * S.tick + .1){
+        // let go and hop off behind it
+        if (g2.isRhino && g2.state === 'choked'){ g2.state = 'stagger'; g2.st = -.4; }
+        p.grabbed = null; p.state = 'idle'; p.vy = 380; p.x -= p.facing * 40; return POSE.jump;
+      }
+    }
+  }
   else if (kind === 'spikes'){
     // Sasha: puffs up, then three fans of spines, one every 0.4 s
     var nv = sp.hits || 3;
@@ -2448,6 +2493,47 @@ function mindKO(p, t){
     rhinoKO(t);
   }
   else hitFoe(t, p, at, Math.ceil(t.hp / Math.max(.1, p.def.power)) + 1, true, 'MIND BLOWN!');
+}
+// Suvam's special. The desert is a backdrop that fades in while any fighter is doing it (both co-op pages can work
+// that out from the fighters' state, so nothing extra goes over the wire)
+var SNEAK = {vanish: .55, appear: .3, tick: .32};
+function sneakTarget(p){
+  var best = null, bd = 1e9;
+  liveRhinos().forEach(function(r){
+    if (!inReach(r, p) || r.state === 'morph' || r.state === 'graze' || r.state === 'trot' || r.state === 'thrown') return;
+    var d = Math.abs(G.square ? wrapDelta(r.x - p.x) : r.x - p.x);
+    if (d < bd){ bd = d; best = r; }
+  });
+  if (!best && G.vs){ var f = vsFoeOf(p); if (f && !f.isRhino && vsAlive(f)) best = f; }
+  return best;
+}
+function desertAmount(){
+  if (!G) return 0;
+  var a = 0;
+  G.players.forEach(function(q){ if (q.state === 'special' && q.def.special.kind === 'sneak') a = Math.max(a, smooth(0, .4, q.st)); });
+  return a;
+}
+function drawDesert(t, a){
+  // the Thar edge of the Punjab: a hot orange sky, a low white sun, dunes in three bands, a khejri tree, a heat shimmer
+  ctx.save(); ctx.globalAlpha = a;
+  var sk = ctx.createLinearGradient(0, 0, 0, GROUND); sk.addColorStop(0, '#f2a65a'); sk.addColorStop(.55, '#f7cf8a'); sk.addColorStop(1, '#fbe3b4');
+  ctx.fillStyle = sk; ctx.fillRect(-20, 0, LW + 40, LH);
+  var sun = ctx.createRadialGradient(700, 150, 10, 700, 150, 120); sun.addColorStop(0, 'rgba(255,252,236,1)'); sun.addColorStop(.35, 'rgba(255,240,200,.8)'); sun.addColorStop(1, 'rgba(255,230,180,0)');
+  ctx.fillStyle = sun; ctx.fillRect(560, 20, 280, 280);
+  [['#e3b06b', 330, 40, .006], ['#d99a52', 390, 30, .009], ['#c9843f', 440, 22, .013]].forEach(function(b, k){
+    ctx.fillStyle = b[0]; ctx.beginPath(); ctx.moveTo(-20, LH);
+    for (var x = -20; x <= LW + 20; x += 20) ctx.lineTo(x, b[1] - b[2] * Math.sin(x * b[3] + k * 1.7) - b[2] * .4 * Math.sin(x * b[3] * 2.3 + k));
+    ctx.lineTo(LW + 20, LH); ctx.closePath(); ctx.fill();
+  });
+  ctx.fillStyle = '#e9c88f'; ctx.fillRect(-20, GROUND, LW + 40, LH - GROUND);
+  // a khejri tree on the far dune
+  ctx.strokeStyle = '#5a3e26'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(160, 360); ctx.lineTo(166, 320); ctx.lineTo(150, 300); ctx.moveTo(166, 320); ctx.lineTo(184, 298); ctx.stroke();
+  ctx.fillStyle = '#6b7a3a'; [[146, 296, 18], [172, 290, 22], [190, 298, 14]].forEach(function(c){ ctx.beginPath(); ctx.ellipse(c[0], c[1], c[2], c[2] * .55, 0, 0, 6.283); ctx.fill(); });
+  // heat shimmer over the sand
+  ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 2;
+  for (var i = 0; i < 6; i++){ var yy = GROUND - 30 - i * 14; ctx.beginPath(); for (var x2 = 0; x2 <= LW; x2 += 16){ var y2 = yy + 3 * Math.sin(x2 * .05 + t * 6 + i); if (x2 === 0) ctx.moveTo(x2, y2); else ctx.lineTo(x2, y2); } ctx.stroke(); }
+  ctx.restore();
 }
 // Sasha, the cactus: little pale spines along every limb and down the torso, ribs on the body, and a pink flower on
 // top of his head. When he puffs up for his special the spines stand out further
@@ -2603,6 +2689,7 @@ function updateRhino(r, dt){
   else if (r.jump > 0 && r.state !== 'jetstomp'){ r.jump = Math.max(0, r.jump - 140 * dt); }
   if (r.state === 'ko'){ var a = r.st; r.tilt = -.5 * Math.exp(-a * 1.2) * Math.cos(a * 7); r.head = .4 * Math.exp(-a * 2) * Math.cos(a * 9); r.squash = .1 * Math.exp(-a * 6); return; }
   if (r.state === 'gone') return;
+  if (r.state === 'choked'){ r.run = 0; r.head = -.15 + .08 * Math.sin(r.st * 30); r.tilt = .03 * Math.sin(r.st * 23); if (r.st > 1.5){ r.state = 'stagger'; r.st = 0; } return; }   // Suvam's headlock
   if (r.state === 'thrown'){ if (r.st > 1.2){ r.state = 'stagger'; r.st = 0; r.jump = 0; r.tilt = 0; } return; }   // Anton's throw moves it; this only lets go if he is interrupted
   if (r.state === 'morph'){
     // shudder, vanish in a cloud, come back as something harmless
@@ -3103,6 +3190,7 @@ function draw(){
   if (G && AW > LW){ ctx.translate(-camX * .5, 0); ctx.scale(1 + .5 * (AW - LW) / LW, 1); }
   drawBackground(t);
   ctx.restore();
+  var dsa = desertAmount(); if (dsa > 0 && !(G && isleOn())) drawDesert(t, dsa);   // Suvam's special: the Punjab desert blows in
   ctx.save(); ctx.translate(G ? -camX : 0, 0);   // world layer
   if (G && isleOn()) drawIsleWorld(t);
   else if (G){
@@ -3242,27 +3330,32 @@ var Scores = (function(){
   function localLoad(){ try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } }
   function localSave(list){ try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) {} }
   function sortTrim(list){ list.sort(function(a, b){ return b.score - a.score || a.time - b.time; }); return list.slice(0, SUPA.top); }
+  // lvl (1-based round, 0/undefined = every round): the per-round leaderboard. The device keeps more than the top 25
+  // overall so a round with lower scores still has its own list offline.
+  function onLevel(list, lvl){ return lvl ? list.filter(function(e){ return e.level === lvl; }) : list; }
   function headers(extra){ var h = {apikey: SUPA.key, 'Content-Type': 'application/json'}; for (var k in extra) h[k] = extra[k]; return h; }
   function fromRow(r){ return {id: r.id, name: r.name, fighter: r.fighter, score: r.score, time: Number(r.time_s) || 0, level: r.level, t: Date.parse(r.created_at) || 0}; }
   function toRow(e){ return {name: e.name, fighter: e.fighter, score: e.score, time_s: e.time, level: e.level}; }
   function check(res){ if (!res.ok) throw new Error('supabase ' + res.status); return res.status === 204 ? null : res.json(); }
-  function remoteLoad(){
-    return fetch(SUPA.url + '/rest/v1/' + SUPA.table + '?select=id,name,fighter,score,time_s,level,created_at&order=score.desc,time_s.asc&limit=' + SUPA.top, {headers: headers()})
+  function remoteLoad(lvl){
+    return fetch(SUPA.url + '/rest/v1/' + SUPA.table + '?select=id,name,fighter,score,time_s,level,created_at' + (lvl ? '&level=eq.' + (lvl | 0) : '') + '&order=score.desc,time_s.asc&limit=' + SUPA.top, {headers: headers()})
       .then(check).then(function(rows){ mode = 'shared'; return rows.map(fromRow); });
   }
-  function remoteAdd(entry){
+  function remoteAdd(entry, lvl){
     return fetch(SUPA.url + '/rest/v1/' + SUPA.table, {method: 'POST', headers: headers({Prefer: 'return=representation'}), body: JSON.stringify(toRow(entry))})
-      .then(check).then(function(rows){ if (rows && rows[0]) entry.id = rows[0].id; return remoteLoad(); });
+      .then(check).then(function(rows){ if (rows && rows[0]) entry.id = rows[0].id; return remoteLoad(lvl); });
   }
-  function load(){
-    if (!remote){ mode = 'local'; return Promise.resolve(localLoad()); }
-    return remoteLoad().catch(function(){ mode = 'local'; return localLoad(); });
+  function load(lvl){
+    if (!remote){ mode = 'local'; return Promise.resolve(sortTrim(onLevel(localLoad(), lvl))); }
+    return remoteLoad(lvl).catch(function(){ mode = 'local'; return sortTrim(onLevel(localLoad(), lvl)); });
   }
-  function add(entry){
-    var list = sortTrim(localLoad().concat([entry])); localSave(list);   // the device always keeps its own copy
+  function add(entry, lvl){
+    var all = localLoad().concat([entry]); all.sort(function(a, b){ return b.score - a.score || a.time - b.time; });
+    localSave(all.slice(0, 200));   // the device always keeps its own copy (enough for every round's list)
+    var list = sortTrim(onLevel(all, lvl));
     lastRemote = false;
     if (!remote) return Promise.resolve(list);
-    return remoteAdd(entry).then(function(l){ lastRemote = true; return l; }).catch(function(){ mode = 'local'; return list; });
+    return remoteAdd(entry, lvl).then(function(l){ lastRemote = true; return l; }).catch(function(){ mode = 'local'; return list; });
   }
   // a public write endpoint will eventually get a silly entry: reporting hides it for everyone
   function report(entry){
@@ -3278,11 +3371,12 @@ function teamName(g){ return g.players.filter(function(q){ return !q.gone; }).ma
 var lastEntry = null, board = [];   // board: the last leaderboard we saw, for the title screen and roster cards
 function isMine(e){ return !!lastEntry && ((lastEntry.id && e.id === lastEntry.id) || (e.name === lastEntry.name && e.score === lastEntry.score && e.t === lastEntry.t)); }
 function fmtScore(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+var scoresRound = 0;   // the round the HIGH SCORES screen shows (0 = all rounds)
 function renderScores(list){
-  board = list;
+  if (!scoresRound) board = list;   // the title best and the fighter cards are always the all-rounds board
   var tb = document.querySelector('#scoresTable tbody'); tb.innerHTML = '';
   var shared = Scores.mode() === 'shared';
-  if (!list.length){ var tr0 = document.createElement('tr'); var td0 = document.createElement('td'); td0.colSpan = 6; td0.textContent = 'No rhinos removed yet. Be the first.'; tr0.appendChild(td0); tb.appendChild(tr0); }
+  if (!list.length){ var tr0 = document.createElement('tr'); var td0 = document.createElement('td'); td0.colSpan = 6; td0.textContent = scoresRound ? 'Nobody has a score on this round yet. Be the first.' : 'No rhinos removed yet. Be the first.'; tr0.appendChild(td0); tb.appendChild(tr0); }
   list.forEach(function(e, i){
     var tr = document.createElement('tr'); if (isMine(e)) tr.className = 'me';
     [[i + 1, 'num'], [e.name, ''], [e.fighter + (e.level ? ' · R' + e.level : ''), ''], [(e.time || 0).toFixed(1) + ' s', 'num'], [fmtScore(e.score), 'num']].forEach(function(cell){ var td = document.createElement('td'); td.textContent = cell[0]; td.className = cell[1]; tr.appendChild(td); });
@@ -3292,7 +3386,7 @@ function renderScores(list){
       rb.addEventListener('click', function(){
         if (!window.confirm('Hide "' + e.name + '" (' + fmtScore(e.score) + ') from the leaderboard for everyone?')) return;
         rb.disabled = true; rb.textContent = '…';
-        Scores.report(e).then(function(ok){ if (ok) sfx('chime', {f: 1046}); Scores.load().then(function(l){ renderScores(l); renderBest(); }); });
+        Scores.report(e).then(function(ok){ if (ok) sfx('chime', {f: 1046}); Scores.load(scoresRound).then(function(l){ renderScores(l); refreshBoard(); }); });
       });
       tdr.appendChild(rb);
     }
@@ -3313,7 +3407,17 @@ function openCredits(){
     ' fighters while the rest of IceLab waits on the bench. Each has a move of their own: ' + ROSTER.map(function(d){ return d.special.name; }).join(', ') + '.';
   show('credits'); scene = 'credits';
 }
-function openScores(){ show('scores'); scene = 'scores'; Scores.load().then(function(list){ renderScores(list); renderBest(); }); }
+function fillScoresRound(){
+  var sel = $('scoresRound'); if (sel.options.length === LEVELS.length + 1) return;
+  sel.innerHTML = '<option value="0">All rounds</option>' + LEVELS.map(function(lv, i){ var o = $('startLevel').options[i]; return '<option value="' + (i + 1) + '">' + (o ? o.textContent : lv.name) + '</option>'; }).join('');
+}
+// lvl: 1-based round to show, 0 = all rounds
+function openScores(lvl){
+  fillScoresRound(); scoresRound = lvl || 0; $('scoresRound').value = String(scoresRound);
+  show('scores'); scene = 'scores';
+  var want = scoresRound;
+  Scores.load(want).then(function(list){ if (want !== scoresRound) return; renderScores(list); renderBest(); });
+}
 
 // ------------------------------------------------------------ co-op over WebRTC
 // Two players in one room. The peer with the lower id hosts: it runs the whole simulation (both fighters + the rhino)
@@ -3843,7 +3947,8 @@ function closeVideo(){ var v = $('theVideo'); v.pause(); $('videoBox').hidden = 
 $('btnIntro').addEventListener('click', function(){ unlockAudio(); openVideo('intro'); });
 $('btnVideoClose').addEventListener('click', closeVideo);
 $('theVideo').addEventListener('ended', function(){ setTimeout(closeVideo, 800); });
-$('btnScores').addEventListener('click', function(){ unlockAudio(); openScores(); });
+$('btnScores').addEventListener('click', function(){ unlockAudio(); openScores(0); });
+$('scoresRound').addEventListener('change', function(){ openScores(parseInt($('scoresRound').value, 10) || 0); });
 $('btnScoresBack').addEventListener('click', function(){ show('title'); scene = 'title'; });
 $('zoomBtn').addEventListener('click', function(e){ e.preventDefault(); unlockAudio(); cycleZoom(); blurFocus(); });
 $('btnCredits').addEventListener('click', function(){ unlockAudio(); openCredits(); });
@@ -3854,7 +3959,9 @@ $('btnSave').addEventListener('click', function(){
   var name = ($('playerName').value || mine.def.name).replace(/[\u0000-\u001f\u007f]/g, '').replace(/\s+/g, ' ').trim().slice(0, 16) || mine.def.name;
   lastEntry = {name: name, fighter: teamName(G).slice(0, 48), score: scoreFor(G), time: Math.round(G.elapsed * 10) / 10, level: LEVEL + 1, t: Date.now()};
   $('btnSave').disabled = true; $('btnSave').textContent = 'SAVING…';
-  Scores.add(lastEntry).then(function(list){ $('btnSave').textContent = Scores.savedRemote() ? 'SAVED' : 'SAVED ON THIS DEVICE ONLY'; sfx('chime', {f: Scores.savedRemote() ? 2093 : 1046}); renderScores(list); renderBest(); show('scores'); scene = 'scores'; });
+  // after a save the list is the round you just played, with your entry in it; the picker switches to all rounds
+  var lvlSaved = lastEntry.level; fillScoresRound(); scoresRound = lvlSaved; $('scoresRound').value = String(lvlSaved);
+  Scores.add(lastEntry, lvlSaved).then(function(list){ $('btnSave').textContent = Scores.savedRemote() ? 'SAVED' : 'SAVED ON THIS DEVICE ONLY'; sfx('chime', {f: Scores.savedRemote() ? 2093 : 1046}); renderScores(list); refreshBoard(); show('scores'); scene = 'scores'; });
 });
 $('btnStart').addEventListener('click', function(){ unlockAudio(); sfx('gong', {f: 120, v: .4}); buildRoster(); show('select'); scene = 'select'; });
 $('btnFight').addEventListener('click', startFight);

@@ -9,7 +9,7 @@ test('game boots and a fight runs', async ({ page }) => {
   await page.goto(URL);
   await expect(page.locator('#btnStart')).toBeVisible();
   await page.click('#btnStart');
-  await expect(page.locator('.fighter')).toHaveCount(7);
+  await expect(page.locator('.fighter')).toHaveCount(8);
   await page.click('.fighter:nth-child(2)');          // June (not pre-selected, so one click only selects)
   await page.click('#btnFight');
   await page.waitForTimeout(1500);
@@ -19,13 +19,13 @@ test('game boots and a fight runs', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('the bench: seven fighters, each with a move of their own and no per-fighter video', async ({ page }) => {
+test('the bench: eight fighters, each with a move of their own and no per-fighter video', async ({ page }) => {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(URL);
   await page.click('#btnStart');
-  await expect(page.locator('.fighter .name')).toHaveText(['Anton', 'June', 'Sarah', 'Aswin', 'Åke', 'Abigail', 'Sasha']);
-  await expect(page.locator('.fighter .move')).toHaveText(['Skate-Jitsu Throw', 'Sky-High Axe Kick', 'Strewth Barrage', 'Black-Tie Boom', 'Claude Mind Spark', 'Fingertip Flood', 'Spine Storm']);
+  await expect(page.locator('.fighter .name')).toHaveText(['Anton', 'June', 'Sarah', 'Aswin', 'Åke', 'Abigail', 'Sasha', 'Suvam']);
+  await expect(page.locator('.fighter .move')).toHaveText(['Skate-Jitsu Throw', 'Sky-High Axe Kick', 'Strewth Barrage', 'Black-Tie Boom', 'Claude Mind Spark', 'Fingertip Flood', 'Spine Storm', 'Desert Headlock']);
   await expect(page.locator('#btnVideo')).toHaveCount(0);
   await expect(page.locator('#selMove')).toContainText('Skate-Jitsu Throw');
   await page.click('.fighter:nth-child(3)');
@@ -527,7 +527,8 @@ async function mockSupabase(page, rows) {
     calls.push(req.method() + ' ' + url.replace(/^.*\/rest\/v1\//, ''));
     if (url.includes('/rpc/report_icelab_score')) { const id = req.postDataJSON().score_id; rows = rows.filter(r => r.id !== id); return route.fulfill({ status: 204, body: '' }); }
     if (req.method() === 'POST') { const row = Object.assign({ id: 100 + rows.length, created_at: new Date().toISOString() }, req.postDataJSON()); rows.push(row); return route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify([row]) }); }
-    const sorted = rows.slice().sort((a, b) => b.score - a.score || a.time_s - b.time_s);
+    const lv = (url.match(/[?&]level=eq\.(\d+)/) || [])[1];
+    const sorted = rows.filter(r => !lv || r.level === +lv).sort((a, b) => b.score - a.score || a.time_s - b.time_s);
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(sorted) });
   });
   return calls;
@@ -575,7 +576,8 @@ test('saving a score posts it to the table and highlights it', async ({ page }) 
   await expect(page.locator('#scores')).toBeVisible();
   await expect(page.locator('#btnSave')).toHaveText('SAVED');
   expect(calls.some(c => c.startsWith('POST icelab_scores'))).toBe(true);
-  await expect(page.locator('#scoresTable tbody tr')).toHaveCount(3);
+  await expect(page.locator('#scoresRound')).toHaveValue('1');                 // the list is the round just played
+  await expect(page.locator('#scoresTable tbody tr')).toHaveCount(2);          // Pelle's round-1 score and the new one
   await expect(page.locator('#scoresTable tbody tr.me')).toHaveCount(1);
   await expect(page.locator('#scoresTable tbody tr.me')).toContainText('Tester');
   expect(errors).toEqual([]);
@@ -697,9 +699,9 @@ test('versus (beta): two pages duel through a room, one of them as the rhino', a
   await A.evaluate(() => window.__coopPeer('b')); await B.evaluate(() => window.__coopPeer('a'));
   await expect(A.locator('#selCoop')).toContainText('Versus room DUEL');
   // the rhino card only exists in a versus lobby
-  await expect(A.locator('.fighter')).toHaveCount(8);
+  await expect(A.locator('.fighter')).toHaveCount(9);
   await A.click('.fighter:nth-child(2)'); await A.click('#btnFight');       // host: June
-  await B.click('.fighter:nth-child(8)');                                  // guest: THE RHINO
+  await B.click('.fighter:nth-child(9)');                                  // guest: THE RHINO
   await expect(B.locator('#selName')).toHaveText('THE RHINO');
   await B.click('#btnFight');
   await expect(A.locator('#select')).toBeHidden(); await expect(B.locator('#select')).toBeHidden();
@@ -733,7 +735,7 @@ test('a re-pick after READY reaches the other player, in co-op and in a versus r
   // the guest readies as Sarah, then changes its mind and takes the rhino card before the host starts
   await B.click('.fighter:nth-child(3)'); await B.click('#btnFight');
   await expect(B.locator('#selCoop')).toContainText('you are ready');
-  await B.click('.fighter:nth-child(8)');                      // THE RHINO
+  await B.click('.fighter:nth-child(9)');                      // THE RHINO
   await expect(B.locator('#selName')).toHaveText('THE RHINO');
   await A.click('.fighter:nth-child(2)'); await A.click('#btnFight');   // host: June
   await expect(A.locator('#select')).toBeHidden();
@@ -757,7 +759,7 @@ test('versus: REMATCH after the opponent leaves goes back to the versus screen, 
   }
   await A.evaluate(() => window.__coopPeer('b')); await B.evaluate(() => window.__coopPeer('a'));
   await A.click('.fighter:nth-child(2)'); await A.click('#btnFight');
-  await B.click('.fighter:nth-child(8)'); await B.click('#btnFight');
+  await B.click('.fighter:nth-child(9)'); await B.click('#btnFight');
   await expect(A.locator('#select')).toBeHidden();
   await B.keyboard.press('Escape');                              // the opponent walks away mid-duel
   await A.waitForTimeout(400);
@@ -1520,7 +1522,7 @@ test('the credits screen celebrates IceLab and names the bench', async ({ page }
   await page.click('#btnCredits');
   await expect(page.locator('#credits')).toBeVisible();
   await expect(page.locator('#credits')).toContainText('Why IceLab is great');
-  await expect(page.locator('#credRoster')).toContainText('Anton, June, Sarah, Aswin, Åke, Abigail, Sasha');
+  await expect(page.locator('#credRoster')).toContainText('Anton, June, Sarah, Aswin, Åke, Abigail, Sasha, Suvam');
   await page.click('#btnCreditsBack');
   await expect(page.locator('#title')).toBeVisible();
   expect(errors).toEqual([]);
@@ -1626,5 +1628,63 @@ test('Sasha the cactus fires three fans of spines: they fly, prick the rhino, an
   await expect.poll(() => page.evaluate(() => window.__fight().p.state), { timeout: 5000 }).not.toBe('special');
   await expect.poll(() => page.evaluate(() => window.__spikes().length), { timeout: 3000 }).toBe(0);
   expect(await page.evaluate(() => window.__fight().p.hitsLanded)).toBe(out.hits);
+  expect(errors).toEqual([]);
+});
+
+test('high scores per round: the picker filters the table, and a save shows the round just played', async ({ page }) => {
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  const calls = await mockSupabase(page, ROWS.map(r => Object.assign({}, r)).concat([{ id: 3, name: 'Ella', fighter: 'Åke', score: 21000, time_s: 30.5, level: 11, created_at: '2026-09-25T10:00:00Z' }]));
+  await page.goto(URL);
+  await page.click('#btnScores');
+  await expect(page.locator('#scoresTable tbody tr')).toHaveCount(3);                    // all rounds
+  expect(await page.locator('#scoresRound option').count()).toBe(12);                     // all + eleven rounds
+  await page.selectOption('#scoresRound', '11');
+  await expect(page.locator('#scoresTable tbody tr')).toHaveCount(1);
+  await expect(page.locator('#scoresTable tbody tr').first()).toContainText('Ella');
+  expect(calls.some(c => /level=eq\.11/.test(c))).toBe(true);
+  await page.selectOption('#scoresRound', '5');
+  await expect(page.locator('#scoresTable tbody tr')).toHaveCount(1);
+  await expect(page.locator('#scoresTable tbody tr').first()).toContainText('Be the first');
+  // the title-screen best is still the best of every round
+  await page.click('#btnScoresBack');
+  await expect(page.locator('#titleBest')).toContainText('21,000');
+  // win round 1 and save: the table opens on round 1, with the new entry in it
+  await page.goto(URL + '#pacifist=2'); await page.reload();   // a hash-only goto does not reload, and the debug hook is read at load
+  await page.click('#btnStart'); await page.click('.fighter:nth-child(2)'); await page.click('#btnFight');
+  await expect.poll(() => page.evaluate(() => !!window.__fight()), { timeout: 5000 }).toBe(true);
+  await page.evaluate(() => { window.__fight().p.inv = 1e9; });   // the peace ending needs her standing at the end of it
+  await expect(page.locator('#result')).toBeVisible({ timeout: 20000 });
+  await expect(page.locator('#resBig')).toHaveText('PEACE');
+  await page.fill('#playerName', 'Rounder'); await page.click('#btnSave');
+  await expect(page.locator('#scores')).toBeVisible();
+  await expect(page.locator('#scoresRound')).toHaveValue('1');
+  await expect(page.locator('#scoresTable tbody tr.me')).toContainText('Rounder');
+  expect(await page.locator('#scoresTable tbody tr').count()).toBe(2);                    // Pelle's round-1 score and the new one
+  expect(errors).toEqual([]);
+});
+
+test('Suvam brings the Punjab desert, turns up behind the rhino and holds it in a headlock', async ({ page }) => {
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  await page.click('#btnStart');
+  await page.click('.fighter:nth-child(8)');                    // Suvam
+  await expect(page.locator('#selName')).toHaveText('SUVAM');
+  await page.click('#btnFight');
+  await expect.poll(() => page.evaluate(() => window.__fight() ? window.__fight().elapsed : 0), { timeout: 8000 }).toBeGreaterThan(1.7);
+  await page.evaluate(() => { const g = window.__fight(); g.r.state = 'idle'; g.r.timer = 1e9; g.p.x = 150; g.r.x = 720; g.r.facing = -1; g.p.inv = 1e9; g.p.meter = 100; });
+  const hp0 = await page.evaluate(() => window.__fight().r.hp);
+  await page.keyboard.press('l');
+  await expect.poll(() => page.evaluate(() => window.__desert()), { timeout: 3000 }).toBeGreaterThan(0.5);     // the desert blows in
+  await expect.poll(() => page.evaluate(() => window.__fight().r.state), { timeout: 3000 }).toBe('choked');
+  const hold = await page.evaluate(() => { const g = window.__fight(); return { dx: g.p.x - g.r.x, up: g.p.y }; });
+  expect(Math.abs(hold.dx)).toBeLessThan(120);                  // he got over there without walking
+  expect(hold.up).toBeGreaterThan(60);                          // on its back
+  await expect.poll(() => page.evaluate(() => window.__fight().p.state), { timeout: 5000 }).not.toBe('special');
+  const out = await page.evaluate(() => { const g = window.__fight(); return { hits: g.p.hitsLanded, hp: g.r.hp, rs: g.r.state, meter: g.p.meter }; });
+  expect(out.hits).toBe(5);
+  expect(out.hp).toBeLessThan(hp0);
+  expect(out.rs).not.toBe('choked');                            // and he lets go
+  expect(out.meter).toBe(0);
+  await expect.poll(() => page.evaluate(() => window.__desert()), { timeout: 3000 }).toBe(0);                  // back to Kiruna
   expect(errors).toEqual([]);
 });
