@@ -9,7 +9,7 @@ test('game boots and a fight runs', async ({ page }) => {
   await page.goto(URL);
   await expect(page.locator('#btnStart')).toBeVisible();
   await page.click('#btnStart');
-  await expect(page.locator('.fighter')).toHaveCount(3);
+  await expect(page.locator('.fighter')).toHaveCount(4);
   await page.click('.fighter:nth-child(2)');          // June (not pre-selected, so one click only selects)
   await page.click('#btnFight');
   await page.waitForTimeout(1500);
@@ -19,13 +19,13 @@ test('game boots and a fight runs', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('the bench: three fighters, each with a move of their own and no per-fighter video', async ({ page }) => {
+test('the bench: four fighters, each with a move of their own and no per-fighter video', async ({ page }) => {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(URL);
   await page.click('#btnStart');
-  await expect(page.locator('.fighter .name')).toHaveText(['Anton', 'June', 'Sarah']);
-  await expect(page.locator('.fighter .move')).toHaveText(['Skate-Jitsu Throw', 'Sky-High Axe Kick', 'Strewth Barrage']);
+  await expect(page.locator('.fighter .name')).toHaveText(['Anton', 'June', 'Sarah', 'Aswin']);
+  await expect(page.locator('.fighter .move')).toHaveText(['Skate-Jitsu Throw', 'Sky-High Axe Kick', 'Strewth Barrage', 'Black-Tie Boom']);
   await expect(page.locator('#btnVideo')).toHaveCount(0);
   await expect(page.locator('#selMove')).toContainText('Skate-Jitsu Throw');
   await page.click('.fighter:nth-child(3)');
@@ -697,9 +697,9 @@ test('versus (beta): two pages duel through a room, one of them as the rhino', a
   await A.evaluate(() => window.__coopPeer('b')); await B.evaluate(() => window.__coopPeer('a'));
   await expect(A.locator('#selCoop')).toContainText('Versus room DUEL');
   // the rhino card only exists in a versus lobby
-  await expect(A.locator('.fighter')).toHaveCount(4);
+  await expect(A.locator('.fighter')).toHaveCount(5);
   await A.click('.fighter:nth-child(2)'); await A.click('#btnFight');       // host: June
-  await B.click('.fighter:nth-child(4)');                                  // guest: THE RHINO
+  await B.click('.fighter:nth-child(5)');                                  // guest: THE RHINO
   await expect(B.locator('#selName')).toHaveText('THE RHINO');
   await B.click('#btnFight');
   await expect(A.locator('#select')).toBeHidden(); await expect(B.locator('#select')).toBeHidden();
@@ -733,7 +733,7 @@ test('a re-pick after READY reaches the other player, in co-op and in a versus r
   // the guest readies as Sarah, then changes its mind and takes the rhino card before the host starts
   await B.click('.fighter:nth-child(3)'); await B.click('#btnFight');
   await expect(B.locator('#selCoop')).toContainText('you are ready');
-  await B.click('.fighter:nth-child(4)');                      // THE RHINO
+  await B.click('.fighter:nth-child(5)');                      // THE RHINO
   await expect(B.locator('#selName')).toHaveText('THE RHINO');
   await A.click('.fighter:nth-child(2)'); await A.click('#btnFight');   // host: June
   await expect(A.locator('#select')).toBeHidden();
@@ -757,7 +757,7 @@ test('versus: REMATCH after the opponent leaves goes back to the versus screen, 
   }
   await A.evaluate(() => window.__coopPeer('b')); await B.evaluate(() => window.__coopPeer('a'));
   await A.click('.fighter:nth-child(2)'); await A.click('#btnFight');
-  await B.click('.fighter:nth-child(4)'); await B.click('#btnFight');
+  await B.click('.fighter:nth-child(5)'); await B.click('#btnFight');
   await expect(A.locator('#select')).toBeHidden();
   await B.keyboard.press('Escape');                              // the opponent walks away mid-duel
   await A.waitForTimeout(400);
@@ -1509,8 +1509,33 @@ test('the credits screen celebrates IceLab and names the bench', async ({ page }
   await page.click('#btnCredits');
   await expect(page.locator('#credits')).toBeVisible();
   await expect(page.locator('#credits')).toContainText('Why IceLab is great');
-  await expect(page.locator('#credRoster')).toContainText('Anton, June, Sarah');
+  await expect(page.locator('#credRoster')).toContainText('Anton, June, Sarah, Aswin');
   await page.click('#btnCreditsBack');
   await expect(page.locator('#title')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('Aswin dresses up and talks so loud the rhino takes damage and runs — whichever side of him it is on', async ({ page }) => {
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  await page.click('#btnStart');
+  await page.click('.fighter:nth-child(4)');                    // Aswin
+  await expect(page.locator('#selMove')).toContainText('very loud');
+  await page.click('#btnFight');
+  await expect.poll(() => page.evaluate(() => window.__fight() ? window.__fight().elapsed : 0), { timeout: 8000 }).toBeGreaterThan(1.7);
+  // the rhino BEHIND him, 350 px off: no contact, and he is not even facing it
+  await page.evaluate(() => { const g = window.__fight(); g.r.state = 'idle'; g.r.timer = 1e9; g.p.x = 700; g.r.x = 350; g.p.inv = 1e9; g.p.meter = 100; });
+  const hp0 = await page.evaluate(() => window.__fight().r.hp);
+  await page.keyboard.press('l');
+  await expect.poll(() => page.evaluate(() => window.__fight().p.state), { timeout: 3000 }).toBe('special');
+  await expect.poll(() => page.evaluate(() => window.__fight().r.state), { timeout: 4000 }).toBe('scared');
+  const x0 = await page.evaluate(() => window.__fight().r.x);
+  await page.waitForTimeout(300);
+  expect(await page.evaluate(() => window.__fight().r.x)).toBeLessThan(x0);   // running away from him
+  await expect.poll(() => page.evaluate(() => window.__fight().p.state), { timeout: 5000 }).not.toBe('special');
+  const out = await page.evaluate(() => { const g = window.__fight(); return { hits: g.p.hitsLanded, hp: g.r.hp, meter: g.p.meter }; });
+  expect(out.hits).toBe(3);
+  expect(out.hp).toBeLessThan(hp0);
+  expect(out.meter).toBe(0);
   expect(errors).toEqual([]);
 });

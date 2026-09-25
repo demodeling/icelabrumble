@@ -74,7 +74,7 @@
   .tb.iso{display:none;}
   body[data-arena="island"] .tb.iso{display:flex;}
   body[data-arena="island"] .tb.flat{display:none;}
-  .roster{display:grid;grid-template-columns:repeat(3,minmax(0,220px));justify-content:center;gap:8px;width:min(100%,960px);}
+  .roster{display:grid;grid-template-columns:repeat(4,minmax(0,200px));justify-content:center;gap:8px;width:min(100%,960px);}
   @media (max-width:640px){.roster{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}}
   .fighter{background:var(--night2);border:3px solid transparent;border-radius:12px;padding:6px 4px 5px;min-width:0;cursor:pointer;
            display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--snow);transition:transform .1s,border-color .1s;}
@@ -203,7 +203,7 @@
       <p class="small" id="titleBest"></p>
       <p class="small">Sound on for the full kung-fu experience. Works on Safari, iPhone and iPad — tap ⛶ FULLSCREEN for a widescreen arena on your phone.</p>
       <p class="small" id="iosHint" hidden>iPhone: for a real full screen, tap Share → <b>Add to Home Screen</b> and open the game from there (no Safari bars at all).</p>
-      <p class="small ver" id="verLine">v2.0.0 · build 0e33016</p>
+      <p class="small ver" id="verLine">v2.1.0 · build b1fc29e</p>
     </div></div>
 
     <div id="select" class="overlay" hidden><div class="panel">
@@ -269,7 +269,7 @@
       <p class="small">Every face is drawn by the game itself: a paper-cutout avatar, not a portrait, and no photograph of anyone is stored or shipped anywhere in this project.</p>
       <p class="small">Rounds 1–8 come from the sister game, <b>Swebits Rumble</b>; rounds 9–11 were IceLab’s own.</p>
       <p class="small">The rhino is a false positive. No rhinos were harmed; it was one short read that looked like a horse.</p>
-      <p class="small ver">Built with Claude · v2.0.0 · <a href="https://www.umu.se/en/icelab/" target="_blank" rel="noopener">umu.se/en/icelab</a></p>
+      <p class="small ver">Built with Claude · v2.1.0 · <a href="https://www.umu.se/en/icelab/" target="_blank" rel="noopener">umu.se/en/icelab</a></p>
       <div class="row"><button class="btn secondary" id="btnCreditsBack">BACK</button></div>
     </div></div>
 
@@ -298,21 +298,24 @@ var FACES = {};   // faces are drawn procedurally in this edition
 // A short bench for now: the full IceLab members roster (and the Swebits crew) are off while these three are built
 // out — both live in the git history (MEMBERS / THEMES / LOOK_FIX before the Swebits merge) and can come back.
 // Per-fighter traits: skate (Anton rides a skateboard: momentum instead of instant stops), highKick (June's kick
-// goes above her own head). Special kinds are implemented in specialUpdate(): jujitsu, axe and shout are theirs.
+// goes above her own head), glasses: 'big' (Aswin). Special kinds are in specialUpdate(): jujitsu, axe, shout and fancy are theirs.
 var ROSTER = [
   {id:'anton', name:'Anton', face:'anton', shirt:'#6e3a3a', pants:'#33384e', hp:100, speed:1.2, power:1.0, jump:1.1, skate:true,
    special:{name:'Skate-Jitsu Throw', kind:'jujitsu', dmg:44, desc:'Rolls in on the board, grips the horn and throws the rhino over his hip.'}},
   {id:'june', name:'June', face:'june', shirt:'#2b4a5a', pants:'#2f3450', hp:95, speed:1.1, power:1.0, jump:1.2, highKick:true,
    special:{name:'Sky-High Axe Kick', kind:'axe', dmg:12, hits:3, desc:'Three kicks above her own head, then the heel comes down like an axe.'}},
   {id:'sarah', name:'Sarah', face:'sarah', shirt:'#1f3d34', pants:'#3b3f55', hp:105, speed:1.0, power:1.05, jump:1.0,
-   special:{name:'Strewth Barrage', kind:'shout', dmg:9, hits:5, desc:'Shouts mean Australian things at it. Every insult costs it health.'}}
+   special:{name:'Strewth Barrage', kind:'shout', dmg:9, hits:5, desc:'Shouts mean Australian things at it. Every insult costs it health.'}},
+  {id:'aswin', name:'Aswin', face:'aswin', shirt:'#3b5fa8', pants:'#2c3048', hp:100, speed:1.0, power:1.0, jump:1.0,
+   special:{name:'Black-Tie Boom', kind:'fancy', dmg:11, hits:3, desc:'Dresses up very fancy and talks very loud. The rhino is terrified.'}}
 ];
 var faceImgs = {};
 // ------------------------------------------------------------ cutout-style faces (construction-paper look)
 var LOOK = {
   anton: {skin:'#f0c8ae', hair:{type:'short', color:'#5a3d26', messy:true}, beard:{type:'goatee', color:'#7a5236'}, mouth:'smile'},
   june:  {skin:'#f0cdb0', hair:{type:'bangs', color:'#2b2320'}, beard:null, mouth:'smile'},
-  sarah: {skin:'#f2d0b4', hair:{type:'long', color:'#8a6a48'}, beard:null, mouth:'open', brow:true}
+  sarah: {skin:'#f2d0b4', hair:{type:'long', color:'#8a6a48'}, beard:null, mouth:'open', brow:true},
+  aswin: {skin:'#c08b62', hair:{type:'short', color:'#2b2320'}, beard:null, glasses:'big', mouth:'smile'}
 };
 function drawCutoutFace(c, cx, cy, S, look, fac, opt){
   // S = head width. Big round head, big oval eyes, thick paper-cut outline.
@@ -366,7 +369,13 @@ function drawCutoutFace(c, cx, cy, S, look, fac, opt){
   [-1, 1].forEach(function(sd){ c.beginPath(); c.ellipse(sd * ex * .95 + sh, eyy, ex, ey, 0, 0, 6.283); c.fill(); c.stroke(); });
   c.fillStyle = INKC; [-1, 1].forEach(function(sd){ c.beginPath(); c.arc(sd * ex * .95 + sh + S * .05, eyy + S * .02, S * .04, 0, 6.283); c.fill(); });
   if (look.brow || opt.angry){ c.lineWidth = lw; [-1, 1].forEach(function(sd){ c.beginPath(); c.moveTo(sd * ex * 1.7 + sh, eyy - ey * 1.05 + (opt.angry ? sd * -S * .03 : 0)); c.lineTo(sd * ex * .3 + sh, eyy - ey * 1.25 + (opt.angry ? S * .04 : 0)); c.stroke(); }); }
-  if (look.glasses){ c.lineWidth = lw * .7; c.strokeStyle = '#3a2f2a'; [-1, 1].forEach(function(sd){ c.beginPath(); c.ellipse(sd * ex * .95 + sh, eyy, ex * 1.12, ey * 1.1, 0, 0, 6.283); c.stroke(); }); c.beginPath(); c.moveTo(sh - ex * .05, eyy - ey * .3); c.lineTo(sh + ex * .05, eyy - ey * .3); c.stroke(); }
+  if (look.glasses === 'big'){
+    // Aswin: very big glasses, thick frames, lenses wider than the eyes by a mile
+    var gk = 1.6; c.fillStyle = 'rgba(190,225,255,.22)'; c.lineWidth = lw * 1.1; c.strokeStyle = '#1e1a18';
+    [-1, 1].forEach(function(sd){ c.beginPath(); c.ellipse(sd * ex * 1.05 + sh, eyy, ex * 1.12 * gk, ey * 1.1 * gk, 0, 0, 6.283); c.fill(); c.stroke(); });
+    c.beginPath(); c.moveTo(sh - ex * .15, eyy - ey * .45); c.lineTo(sh + ex * .15, eyy - ey * .45); c.stroke();
+  }
+  else if (look.glasses){ c.lineWidth = lw * .7; c.strokeStyle = '#3a2f2a'; [-1, 1].forEach(function(sd){ c.beginPath(); c.ellipse(sd * ex * .95 + sh, eyy, ex * 1.12, ey * 1.1, 0, 0, 6.283); c.stroke(); }); c.beginPath(); c.moveTo(sh - ex * .05, eyy - ey * .3); c.lineTo(sh + ex * .05, eyy - ey * .3); c.stroke(); }
   // goatee: a chin patch (drawn before the mouth) + a thin mustache
   if (bd && bd.type === 'goatee'){
     outlined(bd.color, function(){ c.moveTo(-S * .2, S * .3); c.quadraticCurveTo(-S * .2, ry * 1.12, S * .04, ry * 1.14); c.quadraticCurveTo(S * .28, ry * 1.12, S * .28, S * .3); c.quadraticCurveTo(S * .04, S * .36, -S * .2, S * .3); });
@@ -1152,12 +1161,27 @@ function fighterDrawInner(f, t){
   drawPoly(torso, shirt, null, 0);
   var tee = [tp(-tw*.16, tl + 3), tp(tw*.16, tl + 3), tp(tw*.09, tl*.55), tp(-tw*.09, tl*.55)]; drawPoly(tee, f.flash > 0 ? '#fff' : '#eeece8', null, 0);
   seg(legNear, legw, pants); foot(legNear[2], fac, '#1c1a1c');
+  var fancy = f.state === 'special' && f.def.special.kind === 'fancy' && f.st > .45;
+  if (fancy){
+    // Aswin's black tie: tailcoat over the shirt, white front, a red bow tie at the collar
+    drawPoly([tp(-tw*.5, .0), tp(tw*.5, .0), tp(tw*.56, tl + 2), tp(-tw*.56, tl + 2)], '#16141c', '#1a141e', 2);
+    drawPoly([tp(-tw*.16, tl*.2), tp(tw*.16, tl*.2), tp(tw*.12, tl), tp(-tw*.12, tl)], '#fbfaf6', null, 0);
+    var bt = tp(0, tl - 4); ctx.fillStyle = '#c8262c'; ctx.beginPath(); ctx.moveTo(bt[0], bt[1]); ctx.lineTo(bt[0] - 9, bt[1] - 6); ctx.lineTo(bt[0] - 9, bt[1] + 6); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(bt[0], bt[1]); ctx.lineTo(bt[0] + 9, bt[1] - 6); ctx.lineTo(bt[0] + 9, bt[1] + 6); ctx.closePath(); ctx.fill();
+  }
   // neck + head
   ctx.strokeStyle = '#e8bea5'; ctx.lineWidth = hr * .8; ctx.beginPath(); ctx.moveTo(neck[0], neck[1]); ctx.lineTo(hc[0], hc[1] + hr * .5); ctx.stroke();
-  var mouthNow = f.state === 'hurt' ? 'open' : (f.state === 'special' && f.def.special.kind === 'shout') ? 'open' : (f.state === 'special' || f.state === 'punch' || f.state === 'kick' || f.state === 'push') ? 'grr' : (f.state === 'win' ? 'open' : null);
+  var mouthNow = f.state === 'hurt' ? 'open' : (f.state === 'special' && (f.def.special.kind === 'shout' || (f.def.special.kind === 'fancy' && f.st > .5))) ? 'open' : (f.state === 'special' || f.state === 'punch' || f.state === 'kick' || f.state === 'push') ? 'grr' : (f.state === 'win' ? 'open' : null);
   if (f.flash > 0) ctx.globalAlpha = .5;
   drawCutoutFace(ctx, hc[0], hc[1] - hr * .1, hr * 2.9, LOOK[f.def.face], fac, {mouth: mouthNow, angry: f.state === 'special'});
   ctx.globalAlpha = 1;
+  if (fancy){
+    // …and a top hat
+    var hx = hc[0], hy = hc[1] - hr * 1.25;
+    ctx.fillStyle = '#16141c'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 2;
+    ctx.fillRect(hx - hr * 1.5, hy - 2, hr * 3, 6); ctx.fillRect(hx - hr * .95, hy - hr * 2, hr * 1.9, hr * 2);
+    ctx.fillStyle = '#c8262c'; ctx.fillRect(hx - hr * .95, hy - hr * .55, hr * 1.9, hr * .35);
+  }
   if (LEVELS[LEVEL].theme === 'space'){
     var hr2 = hr * 1.85; ctx.fillStyle = 'rgba(160,215,255,.22)'; ctx.strokeStyle = 'rgba(220,240,255,.85)'; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.ellipse(hc[0], hc[1] - hr * .15, hr2, hr2 * 1.02, 0, 0, 6.283); ctx.fill(); ctx.stroke();
@@ -2299,7 +2323,40 @@ function specialUpdate(p, dt){
       }
     }
   }
+  else if (kind === 'fancy'){
+    // Aswin: a puff of smoke, out he comes in black tie, and then he talks — very loudly. Everything in earshot
+    // (either side of him) takes it personally and runs
+    var n4 = sp.hits || 3, per4 = .6, t0 = .55, i4 = Math.floor((st - t0) / per4);
+    if (st < t0){
+      pose = mixPose(POSE.guard, POSE.win, smooth(0, .3, st));
+      if (!p.attackHit){ p.attackHit = true; sfx('boom'); for (var fp = 0; fp < 18; fp++) puffs.push({x: p.x + rnd(-60, 60), y: GROUND - rnd(20, 170), t: rnd(0, .2), r: rnd(12, 26), z: p.z}); }
+    }
+    else if (i4 < n4){
+      var u6 = (st - t0 - i4 * per4) / per4;
+      pose = mixPose(POSE.guard, POSE.shout, Math.min(1, u6 * 5));
+      if (p.specialHits === i4){
+        p.specialHits++; sfx('shout'); sfx('gong', {f: 150 + 40 * i4, v: .5}); shake = Math.max(shake, 10);
+        fx.push({say: true, big: true, label: FANCY[(i4 + Math.floor(Math.random() * FANCY.length)) % FANCY.length], x: p.headPt[0] + p.facing * 40, y: p.headPt[1] - 56, z: p.z, dir: p.facing, t: 0, life: 1.1, r: 0});
+        rings.push({x: p.x, t: 0, grey: true});
+        loudHits(p, sp.dmg, i4 === n4 - 1);
+      }
+    }
+    else { pose = mixPose(POSE.shout, POSE.guard, smooth(0, .3, st - t0 - n4 * per4)); if (st > t0 + n4 * per4 + .3) p.state = 'idle'; }
+  }
   return pose;
+}
+// Aswin's small talk, delivered at full volume
+var FANCY = ['GOOD EVENING, MR RHINO!!', 'MAY I OFFER YOU A CANAPÉ?!', 'I HAVE A POSTER SESSION AT FOUR!!', 'SPLENDID WEATHER FOR A SEMINAR!!', 'HAVE YOU READ MY PREPRINT?!', 'TERRIBLY SORRY — WRONG SAMPLE!!'];
+// everything within 600 px of Aswin, either side of him, takes the noise and runs from it
+function loudHits(p, dmg, last){
+  var reach = 600 * (G.square ? SQ.size : 1);
+  liveRhinos().forEach(function(r){
+    if (!inReach(r, p) || r.state === 'morph' || r.state === 'graze' || r.state === 'trot' || r.state === 'thrown') return;
+    var d = G.square ? wrapDelta(r.x - p.x) : r.x - p.x; if (Math.abs(d) > reach) return;
+    hitFoe(r, p, [r.x, GROUND - 1.6 * rs(r) - r.jump], dmg, last, last ? 'EEK!' : (Math.random() < .5 ? 'YIKES!' : 'EEP!'));
+    if (r.state !== 'ko' && r.state !== 'gone' && !G.over){ r.state = 'scared'; r.st = 0; r.dir = d >= 0 ? 1 : -1; r.facing = r.dir; r.chargeHit = true; }
+  });
+  if (G.vs){ var f = vsFoeOf(p); if (f && !f.isRhino && vsAlive(f) && Math.abs(f.x - p.x) < reach) hitFoe(f, p, [f.x, GROUND - f.y - 110], dmg, last, 'EEK!'); }
 }
 // Sarah's material. Mean, Australian, and all aimed at a rhino that should not be in a Kiruna sample
 var AUSSIE = ['RACK OFF, YA DRONGO!', 'YA FLAMIN\' GALAH!', 'GET STUFFED, YA DROPKICK!', 'PULL YA HEAD IN!', 'DEAD SET MUPPET!',
@@ -2320,8 +2377,8 @@ function earshot(p){
 // a speech bubble (Sarah's shouts): drifts towards whoever it was aimed at and fades
 function drawSay(e, ep, al){
   var u = e.t / e.life, x = ep[0] + (e.dir || 1) * 70 * u, y = ep[1] - 26 * u;
-  ctx.font = '900 16px Nunito, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  var w = ctx.measureText(e.label).width + 22, h = 30, sc = .7 + .3 * Math.min(1, e.t * 10);
+  ctx.font = '900 ' + (e.big ? 21 : 16) + 'px Nunito, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  var w = ctx.measureText(e.label).width + 22, h = e.big ? 36 : 30, sc = .7 + .3 * Math.min(1, e.t * 10);
   ctx.save(); ctx.translate(x, y); ctx.scale(sc, sc); ctx.globalAlpha = al;
   ctx.fillStyle = '#fffbe8'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 3;
   roundRect(-w / 2, -h / 2, w, h, 12); ctx.fill(); ctx.stroke();
@@ -2493,6 +2550,12 @@ function updateRhino(r, dt){
   } else if (r.state === 'sleep'){
     r.run = 0; r.tilt = lerp(r.tilt, .05, Math.min(1, dt * 3)); r.head = lerp(r.head, -.35, Math.min(1, dt * 3)); r.squash = .03 * Math.sin(r.st * 2.5);
     if (r.st > 4.2){ r.state = 'idle'; r.st = 0; r.timer = .4; r.rage += 2; }
+  } else if (r.state === 'scared'){
+    // Aswin talked at it: head up, legs going, away from him — and no attacks until it has calmed down
+    r.run = 1; r.phase += dt * 22; r.head = .25 + .05 * Math.sin(r.st * 30); r.tilt = -.05; r.facing = r.dir;
+    r.x += r.dir * 360 * (1 - smooth(.6, 1.1, r.st)) * dt * (isleOn() ? ISLE.spd : 1);
+    if (Math.random() < .4) puffs.push({x: r.x - r.dir * rnd(60, 130), y: GROUND - rnd(0, 20), t: 0, r: rnd(5, 11), z: r.z});
+    if (r.st > 1.1){ r.state = 'idle'; r.st = 0; r.timer = .6; r.head = 0; r.tilt = 0; }
   } else if (r.state === 'stagger'){
     r.squash = .06 * Math.exp(-r.st * 8); r.tilt = -.08 * Math.exp(-r.st * 6);
     if (r.st > .28){ r.state = 'idle'; r.st = 0; r.timer = Math.max(.25, (r.angry ? .5 : 1.0) - r.rage * .04); }
