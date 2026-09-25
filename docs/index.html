@@ -74,7 +74,7 @@
   .tb.iso{display:none;}
   body[data-arena="island"] .tb.iso{display:flex;}
   body[data-arena="island"] .tb.flat{display:none;}
-  .roster{display:grid;grid-template-columns:repeat(5,minmax(0,180px));justify-content:center;gap:8px;width:min(100%,960px);}
+  .roster{display:grid;grid-template-columns:repeat(6,minmax(0,160px));justify-content:center;gap:8px;width:min(100%,960px);}
   @media (max-width:640px){.roster{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}}
   .fighter{background:var(--night2);border:3px solid transparent;border-radius:12px;padding:6px 4px 5px;min-width:0;cursor:pointer;
            display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--snow);transition:transform .1s,border-color .1s;}
@@ -203,7 +203,7 @@
       <p class="small" id="titleBest"></p>
       <p class="small">Sound on for the full kung-fu experience. Works on Safari, iPhone and iPad — tap ⛶ FULLSCREEN for a widescreen arena on your phone.</p>
       <p class="small" id="iosHint" hidden>iPhone: for a real full screen, tap Share → <b>Add to Home Screen</b> and open the game from there (no Safari bars at all).</p>
-      <p class="small ver" id="verLine">v2.2.0 · build 24fa0a6</p>
+      <p class="small ver" id="verLine">v2.3.0 · build ff2abd6</p>
     </div></div>
 
     <div id="select" class="overlay" hidden><div class="panel">
@@ -269,7 +269,7 @@
       <p class="small">Every face is drawn by the game itself: a paper-cutout avatar, not a portrait, and no photograph of anyone is stored or shipped anywhere in this project.</p>
       <p class="small">Rounds 1–8 come from the sister game, <b>Swebits Rumble</b>; rounds 9–11 were IceLab’s own.</p>
       <p class="small">The rhino is a false positive. No rhinos were harmed; it was one short read that looked like a horse.</p>
-      <p class="small ver">Built with Claude · v2.2.0 · <a href="https://www.umu.se/en/icelab/" target="_blank" rel="noopener">umu.se/en/icelab</a></p>
+      <p class="small ver">Built with Claude · v2.3.0 · <a href="https://www.umu.se/en/icelab/" target="_blank" rel="noopener">umu.se/en/icelab</a></p>
       <div class="row"><button class="btn secondary" id="btnCreditsBack">BACK</button></div>
     </div></div>
 
@@ -298,7 +298,7 @@ var FACES = {};   // faces are drawn procedurally in this edition
 // A short bench for now: the full IceLab members roster (and the Swebits crew) are off while these three are built
 // out — both live in the git history (MEMBERS / THEMES / LOOK_FIX before the Swebits merge) and can come back.
 // Per-fighter traits: skate (Anton rides a skateboard: momentum instead of instant stops), highKick (June's kick
-// goes above her own head), glasses: 'big' (Aswin). Special kinds are in specialUpdate(): jujitsu, axe, shout, fancy and mind are theirs.
+// goes above her own head), glasses: 'big' (Aswin). Special kinds are in specialUpdate(): jujitsu, axe, shout, fancy, mind and water are theirs.
 var ROSTER = [
   {id:'anton', name:'Anton', face:'anton', shirt:'#6e3a3a', pants:'#33384e', hp:100, speed:1.2, power:1.0, jump:1.1, skate:true,
    special:{name:'Skate-Jitsu Throw', kind:'jujitsu', dmg:44, desc:'Rolls in on the board, grips the horn and throws the rhino over his hip.'}},
@@ -309,7 +309,9 @@ var ROSTER = [
   {id:'aswin', name:'Aswin', face:'aswin', shirt:'#3b5fa8', pants:'#2c3048', hp:100, speed:1.0, power:1.0, jump:1.0,
    special:{name:'Black-Tie Boom', kind:'fancy', dmg:11, hits:3, desc:'Dresses up very fancy and talks very loud. The rhino is terrified.'}},
   {id:'ake', name:'Åke', face:'ake', shirt:'#2d3346', pants:'#3b3f55', hp:100, speed:.95, power:1.0, jump:.95,
-   special:{name:'Claude Mind Spark', kind:'mind', dmg:0, desc:'Fingers to the temples, a spark of AI between the hands — and the rhino is simply gone.'}}
+   special:{name:'Claude Mind Spark', kind:'mind', dmg:0, desc:'Fingers to the temples, a spark of AI between the hands — and the rhino is simply gone.'}},
+  {id:'abigail', name:'Abigail', face:'abigail', shirt:'#1f6f86', pants:'#2f3450', hp:100, speed:1.05, power:1.0, jump:1.05,
+   special:{name:'Fingertip Flood', kind:'water', dmg:7, hits:6, desc:'Water flows from her fingertips — six hard jets that soak the rhino and wash it back.'}}
 ];
 var faceImgs = {};
 // ------------------------------------------------------------ cutout-style faces (construction-paper look)
@@ -318,7 +320,8 @@ var LOOK = {
   june:  {skin:'#f0cdb0', hair:{type:'bangs', color:'#2b2320'}, beard:null, mouth:'smile'},
   sarah: {skin:'#f2d0b4', hair:{type:'long', color:'#8a6a48'}, beard:null, mouth:'open', brow:true},
   aswin: {skin:'#c08b62', hair:{type:'short', color:'#2b2320'}, beard:null, glasses:'big', mouth:'smile'},
-  ake:   {skin:'#f3c8b0', hair:{type:'short', color:'#c9a266', receding:true}, beard:null, glasses:true, mouth:'smile'}
+  ake:   {skin:'#f3c8b0', hair:{type:'short', color:'#c9a266', receding:true}, beard:null, glasses:true, mouth:'smile'},
+  abigail: {skin:'#f2d0b4', hair:{type:'long', color:'#8a6a48'}, beard:null, glasses:false, mouth:'smile'}
 };
 function drawCutoutFace(c, cx, cy, S, look, fac, opt){
   // S = head width. Big round head, big oval eyes, thick paper-cut outline.
@@ -1118,6 +1121,8 @@ var POSE = {
   // Åke: fingertips to the temples, then both palms out
   mind:   {crouch:.08, lean:-.12, lh:14, lk:10, rh:-14, rk:10, la:168, le:150, ra:162, re:150},
   mindPush:{crouch:.2, lean:.28, lh:30, lk:25, rh:-28, rk:22, la:94, le:2, ra:90, re:6},
+  // Abigail: both arms out straight, fingers first
+  water:  {crouch:.22, lean:.18, lh:34, lk:30, rh:-26, rk:24, la:90, le:0, ra:84, re:6},
   // Sarah: arms flung wide, letting it have it
   shout:  {crouch:.12, lean:-.18, lh:22, lk:22, rh:-20, rk:20, la:118, le:18, ra:104, re:26}
 };
@@ -1185,6 +1190,7 @@ function fighterDrawInner(f, t){
     var ms = f.st < .7 ? [hc[0], hc[1] - hr * 2.4] : [(armNear[2][0] + armFar[2][0]) / 2 + fac * 26, (armNear[2][1] + armFar[2][1]) / 2];
     drawMindSpark(ms[0], ms[1], 10 + 22 * smooth(0, .7, f.st), f.st * 2);
   }
+  if (f.state === 'special' && f.def.special.kind === 'water' && f.st > .2 && f.st < WATER.end) drawWaterJet(f, armNear[2], armFar[2], fac);
   if (fancy){
     // …and a top hat
     var hx = hc[0], hy = hc[1] - hr * 1.25;
@@ -2334,6 +2340,26 @@ function specialUpdate(p, dt){
       }
     }
   }
+  else if (kind === 'water'){
+    // Abigail: arms out, and water flows from her fingertips — six jets' worth, each one soaking and shoving it back
+    var nw = sp.hits || 6;
+    if (st < WATER.start) pose = mixPose(POSE.guard, POSE.water, st / WATER.start);
+    else if (st < WATER.end){
+      pose = mixPose(POSE.water, POSE.water, 0); pose.lean = POSE.water.lean + .03 * Math.sin(st * 40);   // the recoil of a fire hose
+      var iw = Math.floor((st - WATER.start) / WATER.tick);
+      if (iw < nw && p.specialHits === iw){
+        p.specialHits++; sfx('whoosh');
+        var wt = waterTarget(p);
+        if (wt){
+          var tr = wt.t, last = iw === nw - 1, at = tr.isRhino ? [tr.x - p.facing * 1.2 * rs(tr), GROUND - 1.1 * rs(tr) - tr.jump] : [tr.x, GROUND - tr.y - 100];
+          hitFoe(tr, p, at, sp.dmg, last, last ? 'DRENCHED!' : (iw % 2 ? 'SPLASH!' : 'SPLOSH!'));
+          if (tr.isRhino && tr.state !== 'ko' && tr.state !== 'gone' && tr.state !== 'thrown') tr.x += p.facing * WATER.push;
+          for (var wp = 0; wp < 5; wp++) puffs.push({x: at[0] + rnd(-30, 30), y: at[1] + rnd(-30, 30), t: rnd(0, .15), r: rnd(6, 13), col: wp % 2 ? '#8fd3ff' : '#d6f0ff', z: tr.z});
+        }
+      }
+    }
+    else { pose = mixPose(POSE.water, POSE.guard, smooth(WATER.end, WATER.end + .3, st)); if (st > WATER.end + .3) p.state = 'idle'; }
+  }
   else if (kind === 'mind'){
     // Åke: fingers to the temples, a spark gathers over his head, both palms out — and the rhino is out
     p.inv = Math.max(p.inv, .1);
@@ -2404,6 +2430,38 @@ function mindKO(p, t){
     rhinoKO(t);
   }
   else hitFoe(t, p, at, Math.ceil(t.hp / Math.max(.1, p.def.power)) + 1, true, 'MIND BLOWN!');
+}
+// Abigail's special: water from her fingertips. The jet runs to the nearest rhino in front of her (it stops where it
+// hits) or WATER.reach, whichever is nearer; every WATER.tick it lands a hit and washes the rhino back a little
+var WATER = {start: .25, tick: .24, end: 1.9, reach: 540, push: 26};
+function waterTarget(p){
+  var best = null, bd = 1e9;
+  liveRhinos().forEach(function(r){
+    if (!inReach(r, p) || r.state === 'morph' || r.state === 'graze' || r.state === 'trot') return;
+    var rc = rhinoRect(r), near = p.facing > 0 ? rc.x0 : rc.x1, d = (near - p.x) * p.facing;
+    if (G.square){ d = wrapDelta(r.x - p.x) * p.facing - 1.6 * rs(r); }
+    if (d < -40 || d > WATER.reach) return;
+    if (d < bd){ bd = d; best = r; }
+  });
+  if (!best && G.vs){ var f = vsFoeOf(p); if (f && !f.isRhino && vsAlive(f)){ var fd = (f.x - p.x) * p.facing - 40; if (fd > -40 && fd < WATER.reach){ best = f; bd = fd; } } }
+  return best ? {t: best, d: Math.max(20, bd)} : null;
+}
+function drawWaterJet(f, h1, h2, fac){
+  var tg = waterTarget(f), len = tg ? tg.d + 40 : WATER.reach, t = G.t;
+  ctx.save(); ctx.lineCap = 'round';
+  [h1, h2].forEach(function(h, k){
+    var x0 = h[0] + fac * 6, y0 = h[1], x1 = f.x + fac * len, y1 = h[1] + 10 + k * 8;
+    for (var pass = 0; pass < 2; pass++){
+      ctx.strokeStyle = pass ? 'rgba(210,240,255,.9)' : 'rgba(60,150,230,.85)'; ctx.lineWidth = pass ? 3 : 10;
+      ctx.beginPath(); ctx.moveTo(x0, y0);
+      for (var i = 1; i <= 16; i++){ var u = i / 16, x = lerp(x0, x1, u), y = lerp(y0, y1, u) + Math.sin(u * 14 - t * 30 + k * 2) * 4 * u; ctx.lineTo(x, y); }
+      ctx.stroke();
+    }
+    // spray where it lands
+    ctx.fillStyle = 'rgba(170,220,255,.85)';
+    for (var d = 0; d < 6; d++){ var a = (t * 9 + d * 1.1 + k) % 1; ctx.beginPath(); ctx.arc(x1 - fac * a * 30 + Math.sin(d * 7) * 10, y1 - a * 40 + (d % 3) * 6, 4 - a * 2, 0, 6.283); ctx.fill(); }
+  });
+  ctx.restore();
 }
 // Aswin's small talk, delivered at full volume
 var FANCY = ['GOOD EVENING, MR RHINO!!', 'MAY I OFFER YOU A CANAPÉ?!', 'I HAVE A POSTER SESSION AT FOUR!!', 'SPLENDID WEATHER FOR A SEMINAR!!', 'HAVE YOU READ MY PREPRINT?!', 'TERRIBLY SORRY — WRONG SAMPLE!!'];
