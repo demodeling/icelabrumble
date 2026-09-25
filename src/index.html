@@ -74,7 +74,7 @@
   .tb.iso{display:none;}
   body[data-arena="island"] .tb.iso{display:flex;}
   body[data-arena="island"] .tb.flat{display:none;}
-  .roster{display:grid;grid-template-columns:repeat(6,minmax(0,160px));justify-content:center;gap:8px;width:min(100%,960px);}
+  .roster{display:grid;grid-template-columns:repeat(7,minmax(0,136px));justify-content:center;gap:8px;width:min(100%,960px);}
   @media (max-width:640px){.roster{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}}
   .fighter{background:var(--night2);border:3px solid transparent;border-radius:12px;padding:6px 4px 5px;min-width:0;cursor:pointer;
            display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--snow);transition:transform .1s,border-color .1s;}
@@ -298,7 +298,7 @@ var FACES = {};   // faces are drawn procedurally in this edition
 // A short bench for now: the full IceLab members roster (and the Swebits crew) are off while these three are built
 // out — both live in the git history (MEMBERS / THEMES / LOOK_FIX before the Swebits merge) and can come back.
 // Per-fighter traits: skate (Anton rides a skateboard: momentum instead of instant stops), highKick (June's kick
-// goes above her own head), glasses: 'big' (Aswin). Special kinds are in specialUpdate(): jujitsu, axe, shout, fancy, mind and water are theirs.
+// goes above her own head), glasses: 'big' (Aswin). Special kinds are in specialUpdate(): jujitsu, axe, shout, fancy, mind, water and spikes are theirs; cactus: true = Sasha's look.
 var ROSTER = [
   {id:'anton', name:'Anton', face:'anton', shirt:'#6e3a3a', pants:'#33384e', hp:100, speed:1.2, power:1.0, jump:1.1, skate:true,
    special:{name:'Skate-Jitsu Throw', kind:'jujitsu', dmg:44, desc:'Rolls in on the board, grips the horn and throws the rhino over his hip.'}},
@@ -311,7 +311,9 @@ var ROSTER = [
   {id:'ake', name:'Åke', face:'ake', shirt:'#2d3346', pants:'#3b3f55', hp:100, speed:.95, power:1.0, jump:.95,
    special:{name:'Claude Mind Spark', kind:'mind', dmg:0, desc:'Fingers to the temples, a spark of AI between the hands — and the rhino is simply gone.'}},
   {id:'abigail', name:'Abigail', face:'abigail', shirt:'#1f6f86', pants:'#2f3450', hp:100, speed:1.05, power:1.0, jump:1.05,
-   special:{name:'Fingertip Flood', kind:'water', dmg:7, hits:6, desc:'Water flows from her fingertips — six hard jets that soak the rhino and wash it back.'}}
+   special:{name:'Fingertip Flood', kind:'water', dmg:7, hits:6, desc:'Water flows from her fingertips — six hard jets that soak the rhino and wash it back.'}},
+  {id:'sasha', name:'Sasha', face:'sasha', shirt:'#3a2326', pants:'#5c5e63', hp:110, speed:.95, power:1.0, jump:.95, cactus:true,
+   special:{name:'Spine Storm', kind:'spikes', dmg:3, hits:3, desc:'Puffs up like the cactus he is and fires three fans of spines. Every one that lands pricks.'}}
 ];
 var faceImgs = {};
 // ------------------------------------------------------------ cutout-style faces (construction-paper look)
@@ -321,7 +323,9 @@ var LOOK = {
   sarah: {skin:'#f2d0b4', hair:{type:'long', color:'#8a6a48'}, beard:null, mouth:'open', brow:true},
   aswin: {skin:'#c08b62', hair:{type:'short', color:'#2b2320'}, beard:null, glasses:'big', mouth:'smile'},
   ake:   {skin:'#f3c8b0', hair:{type:'short', color:'#c9a266', receding:true}, beard:null, glasses:true, mouth:'smile'},
-  abigail: {skin:'#f2d0b4', hair:{type:'long', color:'#8a6a48'}, beard:null, glasses:false, mouth:'smile'}
+  abigail: {skin:'#f2d0b4', hair:{type:'long', color:'#8a6a48'}, beard:null, glasses:false, mouth:'smile'},
+  // Sasha looks like a cactus: green skin, a crew cut of spines and a flower on top (the flower is drawn in the rig), in his dark maroon hoodie
+  sasha: {skin:'#8fc47e', hair:{type:'buzz', color:'#2f6b36'}, beard:null, glasses:false, mouth:'smile'}
 };
 function drawCutoutFace(c, cx, cy, S, look, fac, opt){
   // S = head width. Big round head, big oval eyes, thick paper-cut outline.
@@ -1181,7 +1185,7 @@ function fighterDrawInner(f, t){
     ctx.beginPath(); ctx.moveTo(bt[0], bt[1]); ctx.lineTo(bt[0] + 9, bt[1] - 6); ctx.lineTo(bt[0] + 9, bt[1] + 6); ctx.closePath(); ctx.fill();
   }
   // neck + head
-  ctx.strokeStyle = '#e8bea5'; ctx.lineWidth = hr * .8; ctx.beginPath(); ctx.moveTo(neck[0], neck[1]); ctx.lineTo(hc[0], hc[1] + hr * .5); ctx.stroke();
+  ctx.strokeStyle = f.def.cactus ? '#8fc47e' : '#e8bea5'; ctx.lineWidth = hr * .8; ctx.beginPath(); ctx.moveTo(neck[0], neck[1]); ctx.lineTo(hc[0], hc[1] + hr * .5); ctx.stroke();
   var mouthNow = f.state === 'hurt' ? 'open' : (f.state === 'special' && (f.def.special.kind === 'shout' || (f.def.special.kind === 'fancy' && f.st > .5))) ? 'open' : (f.state === 'special' || f.state === 'punch' || f.state === 'kick' || f.state === 'push') ? 'grr' : (f.state === 'win' ? 'open' : null);
   if (f.flash > 0) ctx.globalAlpha = .5;
   drawCutoutFace(ctx, hc[0], hc[1] - hr * .1, hr * 2.9, LOOK[f.def.face], fac, {mouth: mouthNow, angry: f.state === 'special'});
@@ -1190,7 +1194,9 @@ function fighterDrawInner(f, t){
     var ms = f.st < .7 ? [hc[0], hc[1] - hr * 2.4] : [(armNear[2][0] + armFar[2][0]) / 2 + fac * 26, (armNear[2][1] + armFar[2][1]) / 2];
     drawMindSpark(ms[0], ms[1], 10 + 22 * smooth(0, .7, f.st), f.st * 2);
   }
+  if (f.def.cactus) cactusBits(f, [legFar, legNear, armFar, armNear], torso, hc, hr, fac);
   if (f.state === 'special' && f.def.special.kind === 'water' && f.st > .2 && f.st < WATER.end) drawWaterJet(f, armNear[2], armFar[2], fac);
+  if (f.def.cactus) drawCactusFlower(f);
   if (fancy){
     // …and a top hat
     var hx = hc[0], hy = hc[1] - hr * 1.25;
@@ -1247,7 +1253,7 @@ function fighterDrawInner(f, t){
     ctx.restore();
   }
   function foot(a, fc, col){ ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(a[0] - fc * 6, a[1] - 3); ctx.lineTo(a[0] + fc * 16, a[1] - 1); ctx.lineTo(a[0] + fc * 16, a[1] + 6); ctx.lineTo(a[0] - fc * 7, a[1] + 6); ctx.closePath(); ctx.fill(); }
-  function hand(a, watch){ if (watch){ ctx.fillStyle = '#141418'; ctx.beginPath(); ctx.arc(a[0], a[1], 7.5, 0, 6.283); ctx.fill(); } ctx.fillStyle = '#e8bea5'; ctx.beginPath(); ctx.arc(a[0], a[1], 6, 0, 6.283); ctx.fill(); }
+  function hand(a, watch){ if (watch){ ctx.fillStyle = '#141418'; ctx.beginPath(); ctx.arc(a[0], a[1], 7.5, 0, 6.283); ctx.fill(); } ctx.fillStyle = f.def.cactus ? '#8fc47e' : '#e8bea5'; ctx.beginPath(); ctx.arc(a[0], a[1], 6, 0, 6.283); ctx.fill(); }
   f.handPt = armNear[2]; f.farHandPt = armFar[2]; f.footPt = legNear[2]; f.headPt = hc;
 }
 function shade(hex, d){
@@ -1691,6 +1697,7 @@ function drawIsleWorld(t){
   });
   items.sort(function(a, b){ return b.z - a.z; });   // far first
   for (var i = 0; i < items.length; i++) items[i].d();
+  drawSpikes();
   G.players.forEach(function(q){
     if (q.state === 'ko') return;
     var pr = isleAt(q.x, q.z), cy = pr[1] - (2.35 * RS + q.y) * pr[2] - 14 - 3 * Math.sin(G.t * 4);
@@ -1748,7 +1755,7 @@ function newVsFight(idA, idB){
   // the compositional arena: one ring shared between the two of you, sizes summing to one
   if (G.comp){ G.compN = sides.length; sides.forEach(function(c){ c.share = 1 / sides.length; c.size = 1; }); compSync(); }
   camX = clamp((sides[0].x + sides[1].x) / 2 - LW / 2, 0, Math.max(0, AW - LW));
-  particles = []; fx = []; dna = []; puffs = []; hot = []; rings = []; bolts = []; shake = 0; flashA = 0; slowmo = 0; impactFrame = 0;
+  particles = []; fx = []; dna = []; puffs = []; hot = []; rings = []; bolts = []; spikes = []; shake = 0; flashA = 0; slowmo = 0; impactFrame = 0;
   clearKeys(); blurFocus();
 }
 function beginVsLocal(){
@@ -1771,11 +1778,11 @@ function foeAt(p, pt, pad){
     if (inRect(pt, fr, pad)) return q; } }
   return null;
 }
-function hitFoe(t, p, pt, dmg, big, label){
+function hitFoe(t, p, pt, dmg, big, label, o){
   if (!t || G.over) return;   // after the bell (or the knockout) nothing lands, and nothing is counted
-  if (t.isRhino){ hitRhino(t, p, pt, dmg, big, label); return; }
+  if (t.isRhino){ hitRhino(t, p, pt, dmg, big, label, o); return; }
   p.hitsLanded++;
-  if (p.state !== 'special') p.meter = Math.min(100, p.meter + (big ? 26 : 14));
+  if (p.state !== 'special' && !(o && o.noMeter)) p.meter = Math.min(100, p.meter + (big ? 26 : 14));
   fx.push({x: pt[0], y: pt[1], t: 0, life: big ? .6 : .38, r: big ? 95 : 55, label: label || (big ? 'WHAM!' : (Math.random() < .5 ? 'POW!' : 'BAM!')), big: big});
   shake = Math.max(shake, big ? 16 : 7); impactFrame = big ? 3 : 1;
   hitPlayer(t, Math.round(dmg * p.def.power), label || (big ? 'WHAM!' : 'POW!'), (t.x > p.x ? 1 : -1) * (big ? 420 : 210));
@@ -1888,7 +1895,7 @@ function newFight(def, def2){
   if (G.comp){ var chars = G.players.concat(rhinos); G.compN = chars.length; chars.forEach(function(c){ c.share = 1 / chars.length; c.size = 1; }); compSync(); }
   camX = clamp(p.x - LW / 2, 0, AW - LW);
   clearKeys(); blurFocus();
-  particles = []; fx = []; dna = []; puffs = []; hot = []; rings = []; bolts = []; shake = 0; flashA = 0; slowmo = 0; impactFrame = 0;
+  particles = []; fx = []; dna = []; puffs = []; hot = []; rings = []; bolts = []; spikes = []; shake = 0; flashA = 0; slowmo = 0; impactFrame = 0;
 }
 
 // player attacks: {state, dur, hitFrom, hitTo, pose sequence}
@@ -2046,7 +2053,7 @@ function rhinoKO(r){
 // pacifist ending: never land a hit and outlast the rhino (60 s in round 1, +30 s per round) and the read turns out to be something else
 var LOCAL_BUILD = /^(localhost|127\.0\.0\.1|)$/.test(location.hostname);   // file:// or a dev server: debug hooks allowed
 var PACIFIST_DEBUG = LOCAL_BUILD ? parseFloat((location.hash.match(/pacifist=([0-9]*\.?[0-9]+(?:e[+-]?[0-9]+)?)/i) || [])[1]) : NaN;
-if (LOCAL_BUILD){ window.__fight = function(){ return G; }; window.__pct100 = function(v){ return pct100(v); }; window.__sq = function(){ return {P: SQ.P, base: sqBase, pt: sqPt, wrap: wrapDelta}; }; window.__level = function(){ return LEVEL; }; window.__flash = function(){ return flashA; }; window.__push = function(){ return {win: PUSH.win, lose: pushLoseX()}; }; window.__levels = function(){ return LEVELS; }; window.__zoom = function(){ return isleZoom(); }; window.__fx = function(){ return fx; }; }   // tests peek at the fight state
+if (LOCAL_BUILD){ window.__fight = function(){ return G; }; window.__pct100 = function(v){ return pct100(v); }; window.__sq = function(){ return {P: SQ.P, base: sqBase, pt: sqPt, wrap: wrapDelta}; }; window.__level = function(){ return LEVEL; }; window.__flash = function(){ return flashA; }; window.__push = function(){ return {win: PUSH.win, lose: pushLoseX()}; }; window.__levels = function(){ return LEVELS; }; window.__zoom = function(){ return isleZoom(); }; window.__fx = function(){ return fx; }; window.__spikes = function(){ return spikes; }; }   // tests peek at the fight state
 function pacifistTime(){ return PACIFIST_DEBUG > 0 ? PACIFIST_DEBUG : (LEVELS[LEVEL].pacifist || 60 + 30 * LEVEL); }
 // Round 9 chains the reveal: every 30 s (G.stageT, per pass) the classifier reports again, and a species that does not
 // belong in a Kiruna sample means another pass (the level's `reruns` of them at most). #reveal=<kind> forces the species.
@@ -2340,6 +2347,17 @@ function specialUpdate(p, dt){
       }
     }
   }
+  else if (kind === 'spikes'){
+    // Sasha: puffs up, then three fans of spines, one every 0.4 s
+    var nv = sp.hits || 3;
+    if (st < .3) pose = mixPose(POSE.guard, POSE.duck, st / .3 * .6);
+    else if (st < .35 + nv * .4){
+      var iv = Math.floor((st - .35) / .4), uv = (st - .35 - iv * .4) / .4;
+      pose = mixPose(POSE.shout, POSE.guard, Math.min(1, uv * 2));
+      if (st >= .35 && iv < nv && p.specialHits === iv){ p.specialHits++; fireSpines(p, iv); shake = Math.max(shake, 5); }
+    }
+    else { pose = mixPose(POSE.guard, POSE.guard, 0); if (st > .35 + nv * .4 + .15) p.state = 'idle'; }
+  }
   else if (kind === 'water'){
     // Abigail: arms out, and water flows from her fingertips — six jets' worth, each one soaking and shoving it back
     var nw = sp.hits || 6;
@@ -2430,6 +2448,73 @@ function mindKO(p, t){
     rhinoKO(t);
   }
   else hitFoe(t, p, at, Math.ceil(t.hp / Math.max(.1, p.def.power)) + 1, true, 'MIND BLOWN!');
+}
+// Sasha, the cactus: little pale spines along every limb and down the torso, ribs on the body, and a pink flower on
+// top of his head. When he puffs up for his special the spines stand out further
+function cactusBits(f, limbs, torso, hc, hr, fac){
+  var puff = (f.state === 'special' && f.def.special.kind === 'spikes') ? 1.7 : 1;
+  ctx.save(); ctx.strokeStyle = '#f4f0d8'; ctx.lineWidth = 1.6; ctx.lineCap = 'round';
+  limbs.forEach(function(l){
+    for (var sgm = 0; sgm < 2; sgm++){
+      var a = l[sgm], b = l[sgm + 1], dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L;
+      for (var i = 1; i <= 3; i++){ var u = i / 4, x = a[0] + dx * u, y = a[1] + dy * u, sd = (i % 2 ? 1 : -1), k = 9 * puff;
+        ctx.beginPath(); ctx.moveTo(x + nx * sd * 5, y + ny * sd * 5); ctx.lineTo(x + nx * sd * k, y + ny * sd * k); ctx.stroke(); }
+    }
+  });
+  // ribs and spines on the torso
+  var tl = torso[0], tr = torso[1], bl = torso[3], br = torso[2];
+  ctx.strokeStyle = 'rgba(30,70,34,.55)'; ctx.lineWidth = 2;
+  [.33, .66].forEach(function(u){ ctx.beginPath(); ctx.moveTo(lerp(tl[0], tr[0], u), lerp(tl[1], tr[1], u)); ctx.lineTo(lerp(bl[0], br[0], u), lerp(bl[1], br[1], u)); ctx.stroke(); });
+  ctx.strokeStyle = '#f4f0d8'; ctx.lineWidth = 1.6;
+  [[tl, bl, -1], [tr, br, 1]].forEach(function(e){ for (var i = 1; i <= 4; i++){ var u = i / 5, x = lerp(e[0][0], e[1][0], u), y = lerp(e[0][1], e[1][1], u);
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + e[2] * fac * 9 * puff, y - 3); ctx.stroke(); } });
+  ctx.restore();
+  f.flowerAt = [hc[0] + fac * hr * .3, hc[1] - hr * 1.35];
+}
+function drawCactusFlower(f){
+  var p = f.flowerAt; if (!p) return;
+  ctx.save(); ctx.translate(p[0], p[1]);
+  ctx.fillStyle = '#ff6fa8'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 1.5;
+  for (var i = 0; i < 5; i++){ var a = i / 5 * 6.283 - 1.57; ctx.beginPath(); ctx.ellipse(Math.cos(a) * 7, Math.sin(a) * 7, 6, 4, a, 0, 6.283); ctx.fill(); ctx.stroke(); }
+  ctx.fillStyle = '#ffd84a'; ctx.beginPath(); ctx.arc(0, 0, 4, 0, 6.283); ctx.fill();
+  ctx.restore();
+}
+// Sasha's spines in flight. They live on the host (the guest draws the snapshot's copy), fly straight, and each one
+// that meets a rhino (or a duel opponent) pricks it once and is gone. They never refund the meter they came from.
+var spikes = [];
+function fireSpines(p, volley){
+  var x0 = p.x + p.facing * 30 * (p.size || 1), y0 = GROUND - p.y - 95 * (p.size || 1);
+  for (var i = 0; i < 5; i++){
+    var a = (i - 2) * .09 + (volley - 1) * .03, v = 950;
+    spikes.push({x: x0, y: y0 + (i - 2) * 9, vx: p.facing * v * Math.cos(a), vy: -v * Math.sin(a), owner: p, z: p.z || 0, t: 0, n: volley * 5 + i});
+  }
+  sfx('whoosh'); sfx('laser');
+}
+function updateSpikes(dt){
+  for (var i = spikes.length - 1; i >= 0; i--){
+    var s0 = spikes[i]; s0.t += dt; s0.x += s0.vx * dt; s0.y += s0.vy * dt; s0.vy += 300 * dt;
+    var pt = [s0.x, s0.y], q = s0.owner, hit = (G.over || !q) ? null : foeAt(q, pt, 10);
+    if (hit && hit.isRhino && (hit.state === 'morph' || hit.state === 'graze' || hit.state === 'trot')) hit = null;
+    if (hit){
+      spikes.splice(i, 1);
+      var loud = s0.n % 5 === 2;   // one label per fan, not fifteen
+      if (hit.isRhino) hitRhino(hit, q, pt, q.def.special.dmg, false, loud ? 'PRICKED!' : '', {noMeter: true, quiet: !loud, move: q.def.special.name});
+      else hitFoe(hit, q, pt, q.def.special.dmg, false, loud ? 'PRICKED!' : 'OW!', {noMeter: true});
+      continue;
+    }
+    if (s0.t > 1.2 || s0.y > GROUND + 20) spikes.splice(i, 1);
+  }
+}
+function drawSpikes(){
+  spikes.forEach(function(s0){
+    fxAt(s0, function(){
+      var q = fxPt(s0.x, s0.y), a = Math.atan2(s0.vy, s0.vx);
+      ctx.save(); ctx.translate(q[0], q[1]); ctx.rotate(a);
+      ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-16, 0); ctx.lineTo(6, 0); ctx.stroke();
+      ctx.strokeStyle = '#f4f0d8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-15, 0); ctx.lineTo(7, 0); ctx.stroke();
+      ctx.restore();
+    });
+  });
 }
 // Abigail's special: water from her fingertips. The jet runs to the nearest rhino in front of her (it stops where it
 // hits) or WATER.reach, whichever is nearer; every WATER.tick it lands a hit and washes the rhino back a little
@@ -2723,6 +2808,7 @@ function update(dt){
     if (bo.x < -60 || bo.x > AW + 60 || bo.hit) bolts.splice(bi, 1);
   }
   if (G.buns) updateBuns(dt * ts);
+  if (spikes.length) updateSpikes(dt * ts);
   pressed = {}; pressed2 = {};
 }
 // the camera follows the fighters on a wide field (round 4); on the normal field it stays at 0
@@ -3069,6 +3155,7 @@ function draw(){
       if (q2.inv > 0 && q2.state !== 'ko' && q2.state !== 'special' && Math.floor(G.t * 20) % 2 === 0) ctx.globalAlpha = .4;
       inFrame(q2, function(){ fighterDraw(q2, t); }); ctx.globalAlpha = 1; }
     if (G.buns) drawBuns(false);
+    drawSpikes();
     // radiation burst rings
     for (var ri = 0; ri < rings.length; ri++){ var rn = rings[ri], ru = rn.t / .6; ctx.strokeStyle = (rn.grey ? 'rgba(200,205,215,' : 'rgba(160,255,110,') + (1 - ru) + ')'; ctx.lineWidth = 14 * (1 - ru) + 2; ctx.beginPath(); ctx.ellipse(rn.x, GROUND - 60, 40 + 420 * ru, 20 + 150 * ru, 0, 0, 6.283); ctx.stroke(); }
     if (G.square) ctx.restore();   // end of the room clip; the hit stars may reach over the walls
@@ -3499,6 +3586,7 @@ function sendSnap(){
     bo: bolts.map(function(b){ return [r1(b.x), b.dir, r2(b.t)]; }),
     sh: r1(shake), fl: r2(flashA), sm: r2(slowmo), imf: impactFrame, sx: Net.sfxQ, vw: G.vsWin, vt: G.vsTime ? 1 : 0,
     st: r2(G.stageT), sp: G.spawns, id: G.identified ? 1 : 0,
+    sk: spikes.map(function(k){ return [r1(k.x), r1(k.y), r1(k.vx), r1(k.vy), r1(k.z)]; }),
     bs: G.buns ? [G.bunStats.thrown, G.bunStats.hit, G.bunStats.eaten, G.bunStats.picked] : null, cr: Net.crumbQ.splice(0, Net.crumbQ.length),
     bu: G.buns ? G.bunsFly.map(function(b){ return [r1(b.x), r1(b.h), r2(b.spin)]; }) : null, gb: G.buns ? G.bunsGround.map(function(g){ return r1(g.x); }) : null,
     pu: G.push ? [r1(G.push.x), r2(G.push.pressure), G.players.map(function(q){ var u = q.pu; return [u.stage, u.pos, r2(u.lock), r2(u.slipT), r2(u.okT), u.slips, u.units, u.letters, u.ack | 0]; })] : null};
@@ -3507,6 +3595,7 @@ function sendSnap(){
 function applySnap(d){
   if (!G || !d.P) return;
   if (d.st != null){ G.stageT = d.st; G.spawns = d.sp; G.identified = !!d.id; }
+  spikes = (d.sk || []).map(function(a){ return {x: a[0], y: a[1], vx: a[2], vy: a[3], z: a[4]}; });
   G.t = d.T; G.elapsed = d.e; G.over = !!d.o; G.won = !!d.w; G.pacifist = !!d.pf; if (d.vw != null) G.vsWin = d.vw; if (d.vt != null) G.vsTime = !!d.vt;
   for (var i = 0; i < G.players.length && i < d.P.length; i++) unpackP(G.players[i], d.P[i]);
   for (var ri = 0; ri < G.rhinos.length && ri < d.R.length; ri++){
