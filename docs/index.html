@@ -203,7 +203,7 @@
       <p class="small" id="titleBest"></p>
       <p class="small">Sound on for the full kung-fu experience. Works on Safari, iPhone and iPad — tap ⛶ FULLSCREEN for a widescreen arena on your phone.</p>
       <p class="small" id="iosHint" hidden>iPhone: for a real full screen, tap Share → <b>Add to Home Screen</b> and open the game from there (no Safari bars at all).</p>
-      <p class="small ver" id="verLine">v2.4.0 · build c7c3adc</p>
+      <p class="small ver" id="verLine">v2.4.0 · build b7bfcad</p>
     </div></div>
 
     <div id="select" class="overlay" hidden><div class="panel">
@@ -324,8 +324,8 @@ var LOOK = {
   aswin: {skin:'#c08b62', hair:{type:'short', color:'#2b2320'}, beard:null, glasses:'big', mouth:'smile'},
   ake:   {skin:'#f3c8b0', hair:{type:'short', color:'#c9a266', receding:true}, beard:null, glasses:true, mouth:'smile'},
   abigail: {skin:'#f2d0b4', hair:{type:'long', color:'#8a6a48'}, beard:null, glasses:false, mouth:'smile'},
-  // Sasha looks like a cactus: green skin, a crew cut of spines and a flower on top (the flower is drawn in the rig), in his dark maroon hoodie
-  sasha: {skin:'#8fc47e', hair:{type:'buzz', color:'#2f6b36'}, beard:null, glasses:false, mouth:'smile'}
+  // Sasha looks like a cactus — a maroon one: maroon skin, a crew cut of spines and a flower on top (the flower is drawn in the rig), in a darker maroon hoodie
+  sasha: {skin:'#8a4550', hair:{type:'buzz', color:'#3e1a20'}, beard:null, glasses:false, mouth:'smile'}
 };
 function drawCutoutFace(c, cx, cy, S, look, fac, opt){
   // S = head width. Big round head, big oval eyes, thick paper-cut outline.
@@ -1185,7 +1185,7 @@ function fighterDrawInner(f, t){
     ctx.beginPath(); ctx.moveTo(bt[0], bt[1]); ctx.lineTo(bt[0] + 9, bt[1] - 6); ctx.lineTo(bt[0] + 9, bt[1] + 6); ctx.closePath(); ctx.fill();
   }
   // neck + head
-  ctx.strokeStyle = f.def.cactus ? '#8fc47e' : '#e8bea5'; ctx.lineWidth = hr * .8; ctx.beginPath(); ctx.moveTo(neck[0], neck[1]); ctx.lineTo(hc[0], hc[1] + hr * .5); ctx.stroke();
+  ctx.strokeStyle = f.def.cactus ? CACTUS_SKIN : '#e8bea5'; ctx.lineWidth = hr * .8; ctx.beginPath(); ctx.moveTo(neck[0], neck[1]); ctx.lineTo(hc[0], hc[1] + hr * .5); ctx.stroke();
   var mouthNow = f.state === 'hurt' ? 'open' : (f.state === 'special' && (f.def.special.kind === 'shout' || (f.def.special.kind === 'fancy' && f.st > .5))) ? 'open' : (f.state === 'special' || f.state === 'punch' || f.state === 'kick' || f.state === 'push') ? 'grr' : (f.state === 'win' ? 'open' : null);
   if (f.flash > 0) ctx.globalAlpha = .5;
   drawCutoutFace(ctx, hc[0], hc[1] - hr * .1, hr * 2.9, LOOK[f.def.face], fac, {mouth: mouthNow, angry: f.state === 'special'});
@@ -1253,7 +1253,7 @@ function fighterDrawInner(f, t){
     ctx.restore();
   }
   function foot(a, fc, col){ ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(a[0] - fc * 6, a[1] - 3); ctx.lineTo(a[0] + fc * 16, a[1] - 1); ctx.lineTo(a[0] + fc * 16, a[1] + 6); ctx.lineTo(a[0] - fc * 7, a[1] + 6); ctx.closePath(); ctx.fill(); }
-  function hand(a, watch){ if (watch){ ctx.fillStyle = '#141418'; ctx.beginPath(); ctx.arc(a[0], a[1], 7.5, 0, 6.283); ctx.fill(); } ctx.fillStyle = f.def.cactus ? '#8fc47e' : '#e8bea5'; ctx.beginPath(); ctx.arc(a[0], a[1], 6, 0, 6.283); ctx.fill(); }
+  function hand(a, watch){ if (watch){ ctx.fillStyle = '#141418'; ctx.beginPath(); ctx.arc(a[0], a[1], 7.5, 0, 6.283); ctx.fill(); } ctx.fillStyle = f.def.cactus ? CACTUS_SKIN : '#e8bea5'; ctx.beginPath(); ctx.arc(a[0], a[1], 6, 0, 6.283); ctx.fill(); }
   f.handPt = armNear[2]; f.farHandPt = armFar[2]; f.footPt = legNear[2]; f.headPt = hc;
 }
 function shade(hex, d){
@@ -2451,6 +2451,7 @@ function mindKO(p, t){
 }
 // Sasha, the cactus: little pale spines along every limb and down the torso, ribs on the body, and a pink flower on
 // top of his head. When he puffs up for his special the spines stand out further
+var CACTUS_SKIN = '#8a4550';   // Sasha is a maroon cactus (LOOK.sasha.skin matches)
 function cactusBits(f, limbs, torso, hc, hr, fac){
   var puff = (f.state === 'special' && f.def.special.kind === 'spikes') ? 1.7 : 1;
   ctx.save(); ctx.strokeStyle = '#f4f0d8'; ctx.lineWidth = 1.6; ctx.lineCap = 'round';
@@ -2463,7 +2464,7 @@ function cactusBits(f, limbs, torso, hc, hr, fac){
   });
   // ribs and spines on the torso
   var tl = torso[0], tr = torso[1], bl = torso[3], br = torso[2];
-  ctx.strokeStyle = 'rgba(30,70,34,.55)'; ctx.lineWidth = 2;
+  ctx.strokeStyle = 'rgba(20,6,10,.5)'; ctx.lineWidth = 2;
   [.33, .66].forEach(function(u){ ctx.beginPath(); ctx.moveTo(lerp(tl[0], tr[0], u), lerp(tl[1], tr[1], u)); ctx.lineTo(lerp(bl[0], br[0], u), lerp(bl[1], br[1], u)); ctx.stroke(); });
   ctx.strokeStyle = '#f4f0d8'; ctx.lineWidth = 1.6;
   [[tl, bl, -1], [tr, br, 1]].forEach(function(e){ for (var i = 1; i <= 4; i++){ var u = i / 5, x = lerp(e[0][0], e[1][0], u), y = lerp(e[0][1], e[1][1], u);
