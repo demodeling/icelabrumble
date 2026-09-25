@@ -74,7 +74,7 @@
   .tb.iso{display:none;}
   body[data-arena="island"] .tb.iso{display:flex;}
   body[data-arena="island"] .tb.flat{display:none;}
-  .roster{display:grid;grid-template-columns:repeat(4,minmax(0,200px));justify-content:center;gap:8px;width:min(100%,960px);}
+  .roster{display:grid;grid-template-columns:repeat(5,minmax(0,180px));justify-content:center;gap:8px;width:min(100%,960px);}
   @media (max-width:640px){.roster{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}}
   .fighter{background:var(--night2);border:3px solid transparent;border-radius:12px;padding:6px 4px 5px;min-width:0;cursor:pointer;
            display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--snow);transition:transform .1s,border-color .1s;}
@@ -203,7 +203,7 @@
       <p class="small" id="titleBest"></p>
       <p class="small">Sound on for the full kung-fu experience. Works on Safari, iPhone and iPad — tap ⛶ FULLSCREEN for a widescreen arena on your phone.</p>
       <p class="small" id="iosHint" hidden>iPhone: for a real full screen, tap Share → <b>Add to Home Screen</b> and open the game from there (no Safari bars at all).</p>
-      <p class="small ver" id="verLine">v2.1.0 · build 94875b1</p>
+      <p class="small ver" id="verLine">v2.2.0 · build 24fa0a6</p>
     </div></div>
 
     <div id="select" class="overlay" hidden><div class="panel">
@@ -269,7 +269,7 @@
       <p class="small">Every face is drawn by the game itself: a paper-cutout avatar, not a portrait, and no photograph of anyone is stored or shipped anywhere in this project.</p>
       <p class="small">Rounds 1–8 come from the sister game, <b>Swebits Rumble</b>; rounds 9–11 were IceLab’s own.</p>
       <p class="small">The rhino is a false positive. No rhinos were harmed; it was one short read that looked like a horse.</p>
-      <p class="small ver">Built with Claude · v2.1.0 · <a href="https://www.umu.se/en/icelab/" target="_blank" rel="noopener">umu.se/en/icelab</a></p>
+      <p class="small ver">Built with Claude · v2.2.0 · <a href="https://www.umu.se/en/icelab/" target="_blank" rel="noopener">umu.se/en/icelab</a></p>
       <div class="row"><button class="btn secondary" id="btnCreditsBack">BACK</button></div>
     </div></div>
 
@@ -298,7 +298,7 @@ var FACES = {};   // faces are drawn procedurally in this edition
 // A short bench for now: the full IceLab members roster (and the Swebits crew) are off while these three are built
 // out — both live in the git history (MEMBERS / THEMES / LOOK_FIX before the Swebits merge) and can come back.
 // Per-fighter traits: skate (Anton rides a skateboard: momentum instead of instant stops), highKick (June's kick
-// goes above her own head), glasses: 'big' (Aswin). Special kinds are in specialUpdate(): jujitsu, axe, shout and fancy are theirs.
+// goes above her own head), glasses: 'big' (Aswin). Special kinds are in specialUpdate(): jujitsu, axe, shout, fancy and mind are theirs.
 var ROSTER = [
   {id:'anton', name:'Anton', face:'anton', shirt:'#6e3a3a', pants:'#33384e', hp:100, speed:1.2, power:1.0, jump:1.1, skate:true,
    special:{name:'Skate-Jitsu Throw', kind:'jujitsu', dmg:44, desc:'Rolls in on the board, grips the horn and throws the rhino over his hip.'}},
@@ -307,7 +307,9 @@ var ROSTER = [
   {id:'sarah', name:'Sarah', face:'sarah', shirt:'#1f3d34', pants:'#3b3f55', hp:105, speed:1.0, power:1.05, jump:1.0,
    special:{name:'Strewth Barrage', kind:'shout', dmg:9, hits:5, desc:'Shouts mean Australian things at it. Every insult costs it health.'}},
   {id:'aswin', name:'Aswin', face:'aswin', shirt:'#3b5fa8', pants:'#2c3048', hp:100, speed:1.0, power:1.0, jump:1.0,
-   special:{name:'Black-Tie Boom', kind:'fancy', dmg:11, hits:3, desc:'Dresses up very fancy and talks very loud. The rhino is terrified.'}}
+   special:{name:'Black-Tie Boom', kind:'fancy', dmg:11, hits:3, desc:'Dresses up very fancy and talks very loud. The rhino is terrified.'}},
+  {id:'ake', name:'Åke', face:'ake', shirt:'#2d3346', pants:'#3b3f55', hp:100, speed:.95, power:1.0, jump:.95,
+   special:{name:'Claude Mind Spark', kind:'mind', dmg:0, desc:'Fingers to the temples, a spark of AI between the hands — and the rhino is simply gone.'}}
 ];
 var faceImgs = {};
 // ------------------------------------------------------------ cutout-style faces (construction-paper look)
@@ -315,7 +317,8 @@ var LOOK = {
   anton: {skin:'#f0c8ae', hair:{type:'short', color:'#5a3d26', messy:true}, beard:{type:'goatee', color:'#7a5236'}, mouth:'smile'},
   june:  {skin:'#f0cdb0', hair:{type:'bangs', color:'#2b2320'}, beard:null, mouth:'smile'},
   sarah: {skin:'#f2d0b4', hair:{type:'long', color:'#8a6a48'}, beard:null, mouth:'open', brow:true},
-  aswin: {skin:'#c08b62', hair:{type:'short', color:'#2b2320'}, beard:null, glasses:'big', mouth:'smile'}
+  aswin: {skin:'#c08b62', hair:{type:'short', color:'#2b2320'}, beard:null, glasses:'big', mouth:'smile'},
+  ake:   {skin:'#f3c8b0', hair:{type:'short', color:'#c9a266', receding:true}, beard:null, glasses:true, mouth:'smile'}
 };
 function drawCutoutFace(c, cx, cy, S, look, fac, opt){
   // S = head width. Big round head, big oval eyes, thick paper-cut outline.
@@ -1112,6 +1115,9 @@ var POSE = {
   highKick:{crouch:0, lean:-.7, lh:155, lk:0, rh:-8, rk:6, la:-70, le:40, ra:70, re:80},
   axeUp:  {crouch:0, lean:-.75, lh:178, lk:0, rh:-6, rk:4, la:-80, le:30, ra:60, re:70},
   axeDown:{crouch:.35, lean:.3, lh:78, lk:4, rh:-24, rk:30, la:40, le:60, ra:70, re:90},
+  // Åke: fingertips to the temples, then both palms out
+  mind:   {crouch:.08, lean:-.12, lh:14, lk:10, rh:-14, rk:10, la:168, le:150, ra:162, re:150},
+  mindPush:{crouch:.2, lean:.28, lh:30, lk:25, rh:-28, rk:22, la:94, le:2, ra:90, re:6},
   // Sarah: arms flung wide, letting it have it
   shout:  {crouch:.12, lean:-.18, lh:22, lk:22, rh:-20, rk:20, la:118, le:18, ra:104, re:26}
 };
@@ -1175,6 +1181,10 @@ function fighterDrawInner(f, t){
   if (f.flash > 0) ctx.globalAlpha = .5;
   drawCutoutFace(ctx, hc[0], hc[1] - hr * .1, hr * 2.9, LOOK[f.def.face], fac, {mouth: mouthNow, angry: f.state === 'special'});
   ctx.globalAlpha = 1;
+  if (f.state === 'special' && f.def.special.kind === 'mind' && f.st < 1.05){
+    var ms = f.st < .7 ? [hc[0], hc[1] - hr * 2.4] : [(armNear[2][0] + armFar[2][0]) / 2 + fac * 26, (armNear[2][1] + armFar[2][1]) / 2];
+    drawMindSpark(ms[0], ms[1], 10 + 22 * smooth(0, .7, f.st), f.st * 2);
+  }
   if (fancy){
     // …and a top hat
     var hx = hc[0], hy = hc[1] - hr * 1.25;
@@ -2030,7 +2040,7 @@ function rhinoKO(r){
 // pacifist ending: never land a hit and outlast the rhino (60 s in round 1, +30 s per round) and the read turns out to be something else
 var LOCAL_BUILD = /^(localhost|127\.0\.0\.1|)$/.test(location.hostname);   // file:// or a dev server: debug hooks allowed
 var PACIFIST_DEBUG = LOCAL_BUILD ? parseFloat((location.hash.match(/pacifist=([0-9]*\.?[0-9]+(?:e[+-]?[0-9]+)?)/i) || [])[1]) : NaN;
-if (LOCAL_BUILD){ window.__fight = function(){ return G; }; window.__pct100 = function(v){ return pct100(v); }; window.__sq = function(){ return {P: SQ.P, base: sqBase, pt: sqPt, wrap: wrapDelta}; }; window.__level = function(){ return LEVEL; }; window.__flash = function(){ return flashA; }; window.__push = function(){ return {win: PUSH.win, lose: pushLoseX()}; }; window.__levels = function(){ return LEVELS; }; window.__zoom = function(){ return isleZoom(); }; }   // tests peek at the fight state
+if (LOCAL_BUILD){ window.__fight = function(){ return G; }; window.__pct100 = function(v){ return pct100(v); }; window.__sq = function(){ return {P: SQ.P, base: sqBase, pt: sqPt, wrap: wrapDelta}; }; window.__level = function(){ return LEVEL; }; window.__flash = function(){ return flashA; }; window.__push = function(){ return {win: PUSH.win, lose: pushLoseX()}; }; window.__levels = function(){ return LEVELS; }; window.__zoom = function(){ return isleZoom(); }; window.__fx = function(){ return fx; }; }   // tests peek at the fight state
 function pacifistTime(){ return PACIFIST_DEBUG > 0 ? PACIFIST_DEBUG : (LEVELS[LEVEL].pacifist || 60 + 30 * LEVEL); }
 // Round 9 chains the reveal: every 30 s (G.stageT, per pass) the classifier reports again, and a species that does not
 // belong in a Kiruna sample means another pass (the level's `reruns` of them at most). #reveal=<kind> forces the species.
@@ -2310,7 +2320,7 @@ function specialUpdate(p, dt){
   } else if (kind === 'shout'){
     // Sarah: shouts mean Australian things at it, and every one of them costs it health. No contact needed —
     // just earshot (the direction she faces, and the same plane in rounds 10 and 11)
-    var per3 = .48, n3 = sp.hits || 5, i3 = Math.floor(st / per3);
+    var per3 = 1.0, n3 = sp.hits || 5, i3 = Math.floor(st / per3);
     if (i3 >= n3){ pose = mixPose(POSE.shout, POSE.guard, smooth(0, .25, st - n3 * per3)); if (st > n3 * per3 + .25) p.state = 'idle'; }
     else {
       var u5 = (st - i3 * per3) / per3;
@@ -2318,16 +2328,26 @@ function specialUpdate(p, dt){
       if (u5 > .1 && p.specialHits === i3){
         p.specialHits++; sfx('shout');
         var line = AUSSIE[Math.floor(Math.random() * AUSSIE.length)], last = i3 === n3 - 1;
-        fx.push({say: true, label: line, x: p.headPt[0] + p.facing * 30, y: p.headPt[1] - 46, z: p.z, dir: p.facing, t: 0, life: 1.15, r: 0});
+        sayLine(p, {say: true, label: line, x: p.headPt[0] + p.facing * 30, y: p.headPt[1] - 46, z: p.z, dir: p.facing, t: 0, life: 1.0, r: 0});
         var tgt = earshot(p);
         if (tgt) hitFoe(tgt, p, tgt.isRhino ? [tgt.x, GROUND - 1.6 * rs(tgt) - tgt.jump] : [tgt.x, GROUND - tgt.y - 110], sp.dmg, last, last ? 'STREWTH!' : (i3 % 2 ? 'OI!' : 'OUCH!'));
       }
     }
   }
+  else if (kind === 'mind'){
+    // Åke: fingers to the temples, a spark gathers over his head, both palms out — and the rhino is out
+    p.inv = Math.max(p.inv, .1);
+    if (st < .7){ pose = mixPose(POSE.guard, POSE.mind, smooth(0, .3, st)); if (!p.attackHit && st > .05){ p.attackHit = true; sfx('chime', {f: 1568}); sfx('chime', {f: 2349}); } }
+    else if (st < 1.05){
+      pose = mixPose(POSE.mind, POSE.mindPush, smooth(.7, .85, st));
+      if (p.specialHits === 0 && st > .85){ p.specialHits = 1; mindKO(p, mindTarget(p)); }
+    }
+    else { pose = mixPose(POSE.mindPush, POSE.guard, smooth(1.05, 1.4, st)); if (st > 1.4) p.state = 'idle'; }
+  }
   else if (kind === 'fancy'){
     // Aswin: a puff of smoke, out he comes in black tie, and then he talks — very loudly. Everything in earshot
     // (either side of him) takes it personally and runs
-    var n4 = sp.hits || 3, per4 = .6, t0 = .55, i4 = Math.floor((st - t0) / per4);
+    var n4 = sp.hits || 3, per4 = 1.2, t0 = .55, i4 = Math.floor((st - t0) / per4);
     if (st < t0){
       pose = mixPose(POSE.guard, POSE.win, smooth(0, .3, st));
       if (!p.attackHit){ p.attackHit = true; sfx('boom'); for (var fp = 0; fp < 18; fp++) puffs.push({x: p.x + rnd(-60, 60), y: GROUND - rnd(20, 170), t: rnd(0, .2), r: rnd(12, 26), z: p.z}); }
@@ -2337,7 +2357,7 @@ function specialUpdate(p, dt){
       pose = mixPose(POSE.guard, POSE.shout, Math.min(1, u6 * 5));
       if (p.specialHits === i4){
         p.specialHits++; sfx('shout'); sfx('gong', {f: 150 + 40 * i4, v: .5}); shake = Math.max(shake, 10);
-        fx.push({say: true, big: true, label: FANCY[(i4 + Math.floor(Math.random() * FANCY.length)) % FANCY.length], x: p.headPt[0] + p.facing * 40, y: p.headPt[1] - 56, z: p.z, dir: p.facing, t: 0, life: 1.1, r: 0});
+        sayLine(p, {say: true, big: true, label: FANCY[(i4 + Math.floor(Math.random() * FANCY.length)) % FANCY.length], x: p.headPt[0] + p.facing * 40, y: p.headPt[1] - 56, z: p.z, dir: p.facing, t: 0, life: 1.2, r: 0});
         rings.push({x: p.x, t: 0, grey: true});
         loudHits(p, sp.dmg, i4 === n4 - 1);
       }
@@ -2345,6 +2365,45 @@ function specialUpdate(p, dt){
     else { pose = mixPose(POSE.shout, POSE.guard, smooth(0, .3, st - t0 - n4 * per4)); if (st > t0 + n4 * per4 + .3) p.state = 'idle'; }
   }
   return pose;
+}
+// Åke's spark: an orange starburst of uneven tapered rays (drawn here in code, like everything else in the game)
+var SPARK_RAYS = [1, .72, .9, .64, .98, .7, .86, .6, 1, .76, .92, .66];
+function drawMindSpark(x, y, R, rot){
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot || 0);
+  var gl = ctx.createRadialGradient(0, 0, 0, 0, 0, R * 2.2); gl.addColorStop(0, 'rgba(255,190,150,.55)'); gl.addColorStop(1, 'rgba(255,190,150,0)');
+  ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(0, 0, R * 2.2, 0, 6.283); ctx.fill();
+  ctx.fillStyle = '#d97757';
+  SPARK_RAYS.forEach(function(k, i){
+    var a = i / SPARK_RAYS.length * 6.283, L = R * k, w = R * .16;
+    ctx.beginPath(); ctx.moveTo(Math.cos(a + 1.57) * w, Math.sin(a + 1.57) * w); ctx.lineTo(Math.cos(a) * L, Math.sin(a) * L); ctx.lineTo(Math.cos(a - 1.57) * w, Math.sin(a - 1.57) * w); ctx.closePath(); ctx.fill();
+  });
+  ctx.beginPath(); ctx.arc(0, 0, R * .2, 0, 6.283); ctx.fill();
+  ctx.restore();
+}
+// Åke's special: whatever rhino he points his mind at is out, there and then. The nearest one in front of him
+// (any distance on the screen; the same line or plane in rounds 10 and 11), or a duel opponent
+function mindTarget(p){
+  var best = null, bd = 1e9;
+  liveRhinos().forEach(function(r){
+    if (!inReach(r, p) || r.state === 'morph' || r.state === 'graze' || r.state === 'trot') return;
+    var d = G.square ? wrapDelta(r.x - p.x) : r.x - p.x;
+    if (d * p.facing < -60) return;
+    if (Math.abs(d) < bd){ bd = Math.abs(d); best = r; }
+  });
+  if (!best && G.vs){ var f = vsFoeOf(p); if (f && !f.isRhino && vsAlive(f)) best = f; }
+  return best;
+}
+function mindKO(p, t){
+  if (!t || G.over) return;
+  var at = t.isRhino ? [t.x, GROUND - 1.3 * rs(t) - t.jump] : [t.x, GROUND - t.y - 100];
+  fx.push({x: at[0], y: at[1], z: t.z, t: 0, life: 1.1, r: 120, label: 'MIND BLOWN!', big: true, spark: true});
+  flashA = .8; shake = 36; impactFrame = 3; sfx('chime', {f: 2093}); sfx('bighit'); sfx('boom');
+  if (t.isRhino){
+    p.hitsLanded++; p.lastMove = p.def.special.name; t.flash = .2;
+    if (G.comp) compHit(t, 1e6); else t.hp = 0;
+    rhinoKO(t);
+  }
+  else hitFoe(t, p, at, Math.ceil(t.hp / Math.max(.1, p.def.power)) + 1, true, 'MIND BLOWN!');
 }
 // Aswin's small talk, delivered at full volume
 var FANCY = ['GOOD EVENING, MR RHINO!!', 'MAY I OFFER YOU A CANAPÉ?!', 'I HAVE A POSTER SESSION AT FOUR!!', 'SPLENDID WEATHER FOR A SEMINAR!!', 'HAVE YOU READ MY PREPRINT?!', 'TERRIBLY SORRY — WRONG SAMPLE!!'];
@@ -2375,9 +2434,11 @@ function earshot(p){
   if (!best && G.vs){ var f = vsFoeOf(p); if (f && !f.isRhino && vsAlive(f) && Math.abs(f.x - p.x) < reach) best = f; }
   return best;
 }
+// one bubble per speaker at a time: a new line replaces the last one instead of piling on top of it
+function sayLine(p, e){ e.who = G.players.indexOf(p); for (var i = fx.length - 1; i >= 0; i--) if (fx[i].say && fx[i].who === e.who) fx.splice(i, 1); fx.push(e); }
 // a speech bubble (Sarah's shouts): drifts towards whoever it was aimed at and fades
 function drawSay(e, ep, al){
-  var u = e.t / e.life, x = ep[0] + (e.dir || 1) * 70 * u, y = ep[1] - 26 * u;
+  var u = e.t / e.life, x = ep[0] + (e.dir || 1) * 24 * u, y = ep[1] - 10 * u;   // drifts only a little: it has to stay readable
   ctx.font = '900 ' + (e.big ? 21 : 16) + 'px Nunito, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   var w = ctx.measureText(e.label).width + 22, h = e.big ? 36 : 30, sc = .7 + .3 * Math.min(1, e.t * 10);
   ctx.save(); ctx.translate(x, y); ctx.scale(sc, sc); ctx.globalAlpha = al;
@@ -2835,9 +2896,12 @@ function drawFX(){
     var u2 = e.t / e.life, R = e.r * (.6 + .4 * Math.min(1, e.t * 12)) * (1 + .5 * u2), al = 1 - u2 * u2, ep = fxPt(e.x, e.y);
     fxAt(e, function(){
       ctx.globalAlpha = al;
-      if (e.say){ drawSay(e, ep, al); return; }
+      if (e.say){ drawSay(e, ep, 1 - smooth(.8, 1, u2)); return; }
+      if (e.spark) drawMindSpark(ep[0], ep[1], R * 1.1, e.t * 2);   // Åke's KO: the spark instead of the comic star
+      else {
       star(ep[0], ep[1], R, 12, .55, e.t * 3); ctx.fillStyle = e.red ? '#ff6a4a' : '#ffe86e'; ctx.fill(); ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 3; ctx.stroke();
       star(ep[0], ep[1], R * .62, 12, .55, -e.t * 2); ctx.fillStyle = '#fffbe8'; ctx.fill();
+      }
       ctx.font = '400 ' + (e.big ? 44 : 28) + 'px Bangers, Impact, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.lineWidth = 6; ctx.strokeStyle = '#fff'; ctx.strokeText(e.label, ep[0], ep[1] - 4); ctx.fillStyle = e.red ? '#c8262c' : '#e3352b'; ctx.fillText(e.label, ep[0], ep[1] - 4);
       ctx.textAlign = 'left'; ctx.textBaseline = 'top';
@@ -3371,7 +3435,7 @@ function unpackR(r, a){ r.x = a[0]; r.facing = a[1]; r.hp = a[2]; r.state = a[3]
 function sendSnap(){
   var snap = {t:'s', T: r2(G.t), e: r2(G.elapsed), o: G.over ? 1 : 0, w: G.won ? 1 : 0, pf: G.pacifist ? 1 : 0,
     P: G.players.map(packP), R: G.rhinos.map(packR),
-    fx: fx.map(function(e){ return [r1(e.x), r1(e.y), r2(e.t), e.life, e.r, e.label, e.big ? 1 : 0, e.red ? 1 : 0, e.z == null ? null : r1(e.z), e.say ? (e.dir || 1) : 0]; }),
+    fx: fx.map(function(e){ return [r1(e.x), r1(e.y), r2(e.t), e.life, e.r, e.label, e.big ? 1 : 0, e.red ? 1 : 0, e.z == null ? null : r1(e.z), e.say ? (e.dir || 1) : 0, e.spark ? 1 : 0]; }),
     hot: hot.map(function(h){ return [r1(h.x), r1(h.r), r2(h.t), h.life]; }),
     rg: rings.map(function(g){ return [r1(g.x), r2(g.t), g.grey ? 1 : 0]; }),
     bo: bolts.map(function(b){ return [r1(b.x), b.dir, r2(b.t)]; }),
@@ -3391,7 +3455,7 @@ function applySnap(d){
     var r = G.rhinos[ri], wasGone = r.state === 'gone'; unpackR(r, d.R[ri]);
     if (r.state === 'gone' && !wasGone){ r.state = 'ko'; explodeRhino(r); }   // the DNA burst is local
   }
-  fx = d.fx.map(function(a){ return {x: a[0], y: a[1], t: a[2], life: a[3], r: a[4], label: a[5], big: !!a[6], red: !!a[7], z: a[8] == null ? undefined : a[8], say: !!a[9], dir: a[9] || 1}; });
+  fx = d.fx.map(function(a){ return {x: a[0], y: a[1], t: a[2], life: a[3], r: a[4], label: a[5], big: !!a[6], red: !!a[7], z: a[8] == null ? undefined : a[8], say: !!a[9], dir: a[9] || 1, spark: !!a[10]}; });
   hot = d.hot.map(function(a){ return {x: a[0], r: a[1], t: a[2], life: a[3]}; });
   rings = d.rg.map(function(a){ return {x: a[0], t: a[1], grey: !!a[2]}; });
   bolts = d.bo.map(function(a){ return {x: a[0], dir: a[1], t: a[2]}; });
