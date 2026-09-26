@@ -34,21 +34,21 @@ test('the bench: eight fighters, each with a move of their own and no per-fighte
   expect(errors).toEqual([]);
 });
 
-test('all eleven rounds start, each with its own rules switched on', async ({ page }) => {
+test('all twelve rounds start, each with its own rules switched on', async ({ page }) => {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(URL);
   await page.click('#btnStart');
-  expect(await page.locator('#startLevel option').count()).toBe(11);
-  for (const lvl of ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10']) {
+  expect(await page.locator('#startLevel option').count()).toBe(12);
+  for (const lvl of ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']) {
     await page.selectOption('#startLevel', lvl);
     await page.click('#btnFight');
     if (lvl !== '0') { await expect(page.locator('#btnLevelGo')).toBeVisible(); await page.click('#btnLevelGo'); }
     await page.waitForTimeout(1200);
     // a round that silently fell back to the normal rules would still start without an error: check the switch itself
     const mode = await page.evaluate(() => { const g = window.__fight(), lv = window.__levels()[window.__level()];
-      return { square: !!g.square, push: !!g.push, buns: !!g.buns, comp: !!g.comp, reruns: lv.reruns || 0, depth: !!lv.depth, island: !!lv.island, arena: document.body.getAttribute('data-arena') }; });
-    expect(mode).toEqual({ square: lvl === '5', push: lvl === '6', buns: lvl === '7', comp: lvl === '4', reruns: lvl === '8' ? 4 : 0, depth: lvl === '9', island: lvl === '10', arena: lvl === '10' ? 'island' : 'flat' });
+      return { square: !!g.square, push: !!g.push, buns: !!g.buns, comp: !!g.comp, reruns: lv.reruns || 0, depth: !!lv.depth, island: !!lv.island, paint: !!g.paint, arena: document.body.getAttribute('data-arena') }; });
+    expect(mode).toEqual({ square: lvl === '5', push: lvl === '6', buns: lvl === '7', comp: lvl === '4', reruns: lvl === '8' ? 4 : 0, depth: lvl === '9', island: lvl === '10', paint: lvl === '11', arena: lvl === '10' ? 'island' : 'flat' });
     await page.keyboard.press('ArrowUp'); await page.keyboard.press('j');
     if (lvl === '3' || lvl === '4') { for (let i = 0; i < 12; i++) { await page.keyboard.down('ArrowRight'); await page.waitForTimeout(80); await page.keyboard.up('ArrowRight'); } }   // round 4: walk right so the camera scrolls
     await page.waitForTimeout(400);
@@ -85,12 +85,20 @@ test('round 5: the shares always sum to one and a hit moves share to the others'
   expect(errors).toEqual([]);
 });
 
-test('versus (beta): a local duel runs, the rhino is playable and nothing reaches the leaderboard', async ({ page }) => {
+// a local fight without the menus (window.__vsLocal, LOCAL_BUILD only): the fight rules tested on one page, any number of sides
+async function vsLocal(page, ids, arena) {
+  await page.evaluate(([i, a]) => window.__vsLocal(i, a), [ids, arena || 0]);
+  await page.waitForTimeout(400);
+}
+
+test('versus (beta): the same-keyboard duel runs, the rhino is playable and nothing reaches the leaderboard', async ({ page }) => {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(URL);
   await page.click('#btnVersus');
   await expect(page.locator('#versus')).toBeVisible();
+  await expect(page.locator('#btnVsJoin')).toBeVisible();                  // online, two to four players
+  await expect(page.locator('#versus')).toContainText('two to four players');
   // player 2 defaults to the rhino; the roster plus the rhino are both offered
   expect(await page.locator('#vsP1 option').count()).toBe(await page.locator('#vsP2 option').count());
   await page.selectOption('#vsP1', 'anton');
@@ -121,11 +129,7 @@ test('versus (beta): a player-controlled rhino charges and hurts the other side'
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(URL);
-  await page.click('#btnVersus');
-  await page.selectOption('#vsP1', 'rhino');
-  await page.selectOption('#vsP2', 'anton');
-  await page.click('#btnVsFight');
-  await page.waitForTimeout(600);
+  await vsLocal(page, ['rhino', 'anton']);
   // P1 is the rhino on the arrow keys: kick paws the ground and charges
   await page.evaluate(() => { const g = window.__fight(); g.sides[1].x = g.sides[0].x + 260; });
   const hp0 = await page.evaluate(() => window.__fight().sides[1].hp);
@@ -335,12 +339,7 @@ test('versus: a duel decided on the clock says TIME and the verdict matches the 
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(URL);
-  await page.click('#btnVersus');
-  await page.selectOption('#vsP1', 'anton');
-  await page.selectOption('#vsP2', 'rhino');
-  await page.selectOption('#vsArena', '0');
-  await page.click('#btnVsFight');
-  await page.waitForTimeout(400);
+  await vsLocal(page, ['anton', 'rhino'], 0);
   // the fighter leads on its own bar (61 %) while holding fewer absolute points than the rhino (80 of 150)
   await page.evaluate(() => { const g = window.__fight(); g.sides[0].hp = 61; g.sides[1].hp = 80; g.elapsed = 98.4; });
   await page.waitForTimeout(1200);
@@ -358,14 +357,7 @@ test('versus: the five arenas are five different fights', async ({ page }) => {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(URL);
-  const start = async (arena) => {
-    await page.click('#btnVersus');
-    await page.selectOption('#vsP1', 'anton');
-    await page.selectOption('#vsP2', 'june');
-    await page.selectOption('#vsArena', arena);
-    await page.click('#btnVsFight');
-    await page.waitForTimeout(400);
-  };
+  const start = async (arena) => { await vsLocal(page, ['anton', 'june'], +arena); };
   const seen = [];
   for (const arena of ['0', '1', '2', '3', '4']) {
     await start(arena);
@@ -428,11 +420,7 @@ test('versus can never write a score, even if the save button is forced', async 
   page.on('pageerror', e => errors.push(e.message));
   await page.route(/\/rest\/v1\//, r => { if (r.request().method() === 'POST') posts++; return r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }); });
   await page.goto(URL);
-  await page.click('#btnVersus');
-  await page.selectOption('#vsP1', 'anton');
-  await page.selectOption('#vsP2', 'rhino');
-  await page.click('#btnVsFight');
-  await page.waitForTimeout(400);
+  await vsLocal(page, ['anton', 'rhino']);
   await page.evaluate(() => { const g = window.__fight(); g.sides[1].hp = 1; g.sides[1].x = g.sides[0].x + 90; g.sides[1].inv = 0; });
   for (let i = 0; i < 6 && await page.evaluate(() => !window.__fight().over); i++) { await page.keyboard.press('j'); await page.waitForTimeout(250); }
   await expect(page.locator('#result')).toBeVisible({ timeout: 12000 });
@@ -998,13 +986,17 @@ test('phone portrait: the result screen buttons are reachable without scrolling'
   await ctx.close();
 });
 
-test('co-op: a third player on the same code is told the room is full and never joins the round', async ({ browser }) => {
+// several pages on one code: like the real data channel, a targeted send reaches that one page only and an untargeted
+// one reaches everybody else. hub.meet(x, y) is the transport noticing each other (both ways).
+async function hubRoom(browser, ids, versus) {
   const ctx = await browser.newContext({ viewport: { width: 1100, height: 720 } });
-  const pages = { a: await ctx.newPage(), b: await ctx.newPage(), c: await ctx.newPage() };
-  const errors = []; Object.values(pages).forEach(p => p.on('pageerror', e => errors.push(e.message)));
+  const pages = {}, errors = [], sent = {};
+  for (const id of ids) { pages[id] = await ctx.newPage(); sent[id] = {}; pages[id].on('pageerror', e => errors.push(id + ': ' + e.message)); }
   for (const [id, p] of Object.entries(pages)) {
-    // like the real data channel, a targeted send reaches that one page only; an untargeted one reaches everybody else
-    await p.exposeFunction('__coopOut', async (json, target) => { for (const [oid, o] of Object.entries(pages)) if (oid !== id && (!target || target === oid)) await o.evaluate(([j, from]) => window.__coopIn(j, from), [json, id]).catch(() => {}); });
+    await p.exposeFunction('__coopOut', async (json, target) => {
+      const m = JSON.parse(json); sent[id][m.t] = (sent[id][m.t] || 0) + 1;
+      for (const [oid, o] of Object.entries(pages)) if (oid !== id && (!target || target === oid)) await o.evaluate(([j, from]) => window.__coopIn && window.__coopIn(j, from), [json, id]).catch(() => {});
+    });
     await p.addInitScript(([id]) => {
       window.__coopTransport = { join(code, h) {
         window.__coopIn = (json, from) => h.onData(JSON.parse(json), from);
@@ -1013,24 +1005,121 @@ test('co-op: a third player on the same code is told the room is full and never 
       }, noRelay: true };
     }, [id]);
     await p.route(/\/rest\/v1\//, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
-    await p.goto(URL); await p.click('#btnCoop'); await p.fill('#coopCode', 'kiruna'); await p.click('#btnCoopJoin');
+    await p.goto(URL);
+    if (versus) { await p.click('#btnVersus'); await p.fill('#vsCode', 'arena'); await p.click('#btnVsJoin'); }
+    else { await p.click('#btnCoop'); await p.fill('#coopCode', 'kiruna'); await p.click('#btnCoopJoin'); }
     await expect(p.locator('#select')).toBeVisible();
   }
-  const { a, b, c } = pages;
-  await a.evaluate(() => window.__coopPeer('b')); await b.evaluate(() => window.__coopPeer('a'));        // a and b pair up
-  await expect(a.locator('#selCoop')).toContainText('you are the host');
-  await a.evaluate(() => window.__coopPeer('c')); await b.evaluate(() => window.__coopPeer('c'));
-  await c.evaluate(() => window.__coopPeer('a')); await c.evaluate(() => window.__coopPeer('b'));      // c arrives late
-  await expect(c.locator('#selCoop')).toContainText('already has two players');
+  const meet = async (x, y) => { await pages[x].evaluate(pid => window.__coopPeer(pid), y); await pages[y].evaluate(pid => window.__coopPeer(pid), x); };
+  return { ctx, pages, errors, sent, meet };
+}
+
+test('co-op: four players share one room and fight the rhino together; a fifth is told the room is full', async ({ browser }) => {
+  const { ctx, pages, errors, meet } = await hubRoom(browser, ['a', 'b', 'c', 'd', 'e']);
+  const { a, b, c, d, e } = pages;
+  for (const [x, y] of [['a', 'b'], ['a', 'c'], ['b', 'c'], ['a', 'd'], ['b', 'd'], ['c', 'd']]) await meet(x, y);
+  for (const p of [a, b, c, d]) await expect(p.locator('#selCoop')).toContainText('4 players', { timeout: 8000 });
+  await expect(a.locator('#selCoop')).toContainText('you are the host');                   // 'a' is the lowest id
+  await expect(c.locator('#selCoop')).toContainText('the host picks the round');
+  // a fifth page on the same code is refused and never joins the round
+  for (const x of ['a', 'b', 'c', 'd']) await meet(x, 'e');
+  await expect(e.locator('#selCoop')).toContainText('already has 4 players');
+  // everybody picks and presses FIGHT; the round starts once the last one is ready
+  const picks = { a: 2, b: 3, c: 4, d: 5 };
+  for (const x of ['a', 'b', 'c']) { await pages[x].click(`.fighter:nth-child(${picks[x]})`); await pages[x].click('#btnFight'); }
+  await expect(a.locator('#selCoop')).toContainText('waiting for 1 more');
+  await expect(a.locator('#select')).toBeVisible();
+  await d.click(`.fighter:nth-child(${picks.d})`); await d.click('#btnFight');
+  for (const p of [a, b, c, d]) await expect(p.locator('#select')).toBeHidden();
+  await e.waitForTimeout(500); await expect(e.locator('#select')).toBeVisible();
+  const cast = await a.evaluate(() => window.__fight().players.map(q => q.def.id));
+  expect(cast).toEqual(['june', 'sarah', 'aswin', 'ake']);
+  expect(await c.evaluate(() => window.__fight().players.length)).toBe(4);
+  // the third player's keys drive the third fighter on the host
+  const x0 = await a.evaluate(() => { const g = window.__fight(); g.r.state = 'idle'; g.r.timer = 1e9; g.r.x = 900; return g.players[2].x; });
+  await c.keyboard.down('ArrowLeft');   // held until the host has walked it (five pages share one machine here)
+  await expect.poll(() => a.evaluate(() => window.__fight().players[2].x), { timeout: 8000 }).toBeLessThan(x0 - 40);
+  await c.keyboard.up('ArrowLeft');
+  // the fourth leaves mid-fight: out of the picture on every page, and the other three play on
+  await d.keyboard.press('Escape'); await expect(d.locator('#title')).toBeVisible();
+  await expect.poll(() => a.evaluate(() => window.__fight().players[3].gone)).toBe(true);
+  await expect.poll(() => b.evaluate(() => window.__fight().players[3].gone)).toBe(true);
+  await a.waitForTimeout(300);
+  for (const p of [a, b, c]) { await expect(p.locator('#select')).toBeHidden(); await expect(p.locator('#result')).toBeHidden(); }
+  expect(errors).toEqual([]);
+  await ctx.close();
+});
+
+test('co-op: a partner who pressed READY before the pair formed still gets the fighter it picked', async ({ browser }) => {
+  const { ctx, pages, errors } = await hubRoom(browser, ['a', 'b']);
+  const { a, b } = pages;
+  await b.click('.fighter:nth-child(3)'); await b.click('#btnFight');                  // Sarah, ready while still alone
+  await expect(b.locator('#selCoop')).toContainText('waiting for your friends');
+  // a's hello reaches b first: b pairs and sends its READY before a has counted it in
+  await a.evaluate(() => window.__coopPeer('b'));
+  await expect(a.locator('#selCoop')).toContainText('your friend is ready as SARAH');
   await a.click('.fighter:nth-child(2)'); await a.click('#btnFight');
-  await b.click('.fighter:nth-child(3)'); await b.click('#btnFight');
   await expect(a.locator('#select')).toBeHidden(); await expect(b.locator('#select')).toBeHidden();
-  await c.waitForTimeout(800);
-  await expect(c.locator('#select')).toBeVisible();                                                     // c never got a start
-  await a.evaluate(() => window.__coopPeerLeave('c')); await b.evaluate(() => window.__coopPeerLeave('c'));   // c leaves
-  await b.keyboard.press('ArrowRight'); await b.waitForTimeout(1500);
-  await expect(a.locator('#select')).toBeHidden(); await expect(b.locator('#select')).toBeHidden();     // the real pair keeps fighting
-  await expect(a.locator('#result')).toBeHidden(); await expect(b.locator('#result')).toBeHidden();
+  expect(await a.evaluate(() => window.__fight().players.map(q => q.def.id))).toEqual(['june', 'sarah']);
+  expect(errors).toEqual([]);
+  await ctx.close();
+});
+
+test('co-op: when the host leaves the lobby the next in line takes over, and the ones who are ready start without it', async ({ browser }) => {
+  const { ctx, pages, errors, meet } = await hubRoom(browser, ['a', 'b', 'c']);
+  const { a, b, c } = pages;
+  await meet('a', 'b'); await meet('a', 'c'); await meet('b', 'c');
+  for (const p of [a, b, c]) await expect(p.locator('#selCoop')).toContainText('3 players', { timeout: 8000 });
+  await b.click('.fighter:nth-child(3)'); await b.click('#btnFight');                  // Sarah
+  await c.click('.fighter:nth-child(4)'); await c.click('#btnFight');                  // Aswin
+  await expect(a.locator('#select')).toBeVisible();                                     // the host has not pressed FIGHT
+  await a.keyboard.press('Escape'); await expect(a.locator('#title')).toBeVisible();   // the host walks away
+  // b is next in line: it hosts now, hears c's READY again and starts the two of them
+  for (const p of [b, c]) await expect(p.locator('#select')).toBeHidden({ timeout: 10000 });
+  expect(await b.evaluate(() => window.__fight().players.map(q => q.def.id))).toEqual(['sarah', 'aswin']);
+  expect(await c.evaluate(() => window.__fight().players.length)).toBe(2);
+  expect(errors).toEqual([]);
+  await ctx.close();
+});
+
+test('co-op: two rooms that formed on one code at the same moment merge into one', async ({ browser }) => {
+  const { ctx, pages, errors, meet } = await hubRoom(browser, ['a', 'b', 'c', 'd']);
+  await meet('a', 'b'); await meet('c', 'd');                     // two pairs, each with its own host
+  await expect(pages.a.locator('#selCoop')).toContainText('you are the host');
+  await expect(pages.c.locator('#selCoop')).toContainText('you are the host');
+  for (const [x, y] of [['a', 'c'], ['a', 'd'], ['b', 'c'], ['b', 'd']]) await meet(x, y);
+  // the lower host takes the other room over, members and all (hosts say hello every 3 s)
+  for (const p of Object.values(pages)) await expect(p.locator('#selCoop')).toContainText('4 players', { timeout: 10000 });
+  await expect(pages.c.locator('#selCoop')).toContainText('the host picks the round');
+  expect(errors).toEqual([]);
+  await ctx.close();
+});
+
+test('versus: three players in one room fight all against all, and the last one standing wins', async ({ browser }) => {
+  const { ctx, pages, errors, meet } = await hubRoom(browser, ['a', 'b', 'c'], true);
+  const { a, b, c } = pages;
+  await meet('a', 'b'); await meet('a', 'c'); await meet('b', 'c');
+  for (const p of [a, b, c]) await expect(p.locator('#selCoop')).toContainText('3 players', { timeout: 8000 });
+  await b.click('.fighter:nth-child(9)'); await b.click('#btnFight');   // THE RHINO
+  await c.click('.fighter:nth-child(3)'); await c.click('#btnFight');   // Sarah
+  await a.click('.fighter:nth-child(2)'); await a.click('#btnFight');   // host: June
+  for (const p of [a, b, c]) await expect(p.locator('#select')).toBeHidden();
+  const shape = await a.evaluate(() => { const g = window.__fight(); return { sides: g.sides.map(s => s.isRhino ? 'rhino' : s.def.id), players: g.players.length, rhinos: g.rhinos.length }; });
+  expect(shape).toEqual({ sides: ['june', 'rhino', 'sarah'], players: 2, rhinos: 1 });
+  // one side down is not the end while two are standing
+  await a.evaluate(() => { const g = window.__fight(); g.sides[1].hp = 1; g.sides[1].x = g.sides[0].x + 150; g.sides[1].facing = -1; g.sides[2].x = g.sides[0].x + 600; g.sides[0].facing = 1; });
+  for (let i = 0; i < 8 && await a.evaluate(() => window.__fight().sides[1].state !== 'ko'); i++) { await a.keyboard.press('j'); await a.waitForTimeout(260); await a.evaluate(() => { const g = window.__fight(); if (g.sides[1].state !== 'ko'){ g.sides[1].x = g.sides[0].x + 150; g.sides[1].inv = 0; } }); }
+  expect(await a.evaluate(() => { const g = window.__fight(); return [g.sides[1].state, g.over]; })).toEqual(['ko', false]);
+  // the rhino's page sees itself out, and the fight goes on
+  await expect.poll(() => b.evaluate(() => window.__fight() && window.__fight().sides[1].state)).toBe('ko');
+  await a.evaluate(() => { const g = window.__fight(); g.sides[2].hp = 1; g.sides[2].inv = 0; g.sides[2].x = g.sides[0].x + 70; g.sides[0].facing = 1; });
+  for (let i = 0; i < 8 && await a.evaluate(() => !window.__fight().over); i++) { await a.keyboard.press('j'); await a.waitForTimeout(260); await a.evaluate(() => { const g = window.__fight(); if (!g.over){ g.sides[2].x = g.sides[0].x + 70; g.sides[2].inv = 0; } }); }
+  expect(await a.evaluate(() => { const g = window.__fight(); return [g.over, g.vsWin]; })).toEqual([true, 0]);
+  await expect(a.locator('#resBig')).toHaveText('YOU WIN', { timeout: 10000 });
+  await expect(c.locator('#resBig')).toHaveText('YOU LOSE', { timeout: 10000 });
+  await expect(a.locator('#resTitle')).toContainText('LAST ONE STANDING');
+  const read = await a.locator('#resReadout').innerText();
+  for (const who of ['JUNE', 'THE RHINO', 'SARAH']) expect(read).toContain(who);
   expect(errors).toEqual([]);
   await ctx.close();
 });
@@ -1637,7 +1726,7 @@ test('high scores per round: the picker filters the table, and a save shows the 
   await page.goto(URL);
   await page.click('#btnScores');
   await expect(page.locator('#scoresTable tbody tr')).toHaveCount(3);                    // all rounds
-  expect(await page.locator('#scoresRound option').count()).toBe(12);                     // all + eleven rounds
+  expect(await page.locator('#scoresRound option').count()).toBe(13);                     // all + twelve rounds
   await page.selectOption('#scoresRound', '11');
   await expect(page.locator('#scoresTable tbody tr')).toHaveCount(1);
   await expect(page.locator('#scoresTable tbody tr').first()).toContainText('Ella');
@@ -1686,5 +1775,46 @@ test('Suvam brings the Punjab desert, turns up behind the rhino and holds it in 
   expect(out.rs).not.toBe('choked');                            // and he lets go
   expect(out.meter).toBe(0);
   await expect.poll(() => page.evaluate(() => window.__desert()), { timeout: 3000 }).toBe(0);                  // back to Kiruna
+  expect(errors).toEqual([]);
+});
+
+test('round 12: every hit resprays one panel of the rhino, and the last one shows it was a fawn', async ({ page }) => {
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  await page.route(/\/rest\/v1\//, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+  await page.goto(URL);
+  await startRound(page, 11, 2);                             // June
+  const lv = await page.evaluate(() => { const g = window.__fight(); return { paint: g.paint, panels: g.r.paint, hp: g.r.hp, max: g.r.maxhp, theme: window.__levels()[11].theme }; });
+  expect(lv).toEqual({ paint: true, panels: 0, hp: 16, max: 16, theme: 'garage' });
+  // a punch and a kick: one panel each, however hard, and the bar is the part still unpainted
+  const hitOnce = async (key) => {
+    const n0 = await page.evaluate(() => { const g = window.__fight(); g.r.state = 'idle'; g.r.timer = 1e9; g.r.x = g.p.x + 250; g.r.facing = -1; g.p.facing = 1; g.p.inv = 99; return g.r.paint; });
+    for (let i = 0; i < 6 && await page.evaluate(n => window.__fight().r.paint === n, n0); i++) { await page.keyboard.press(key); await page.waitForTimeout(300); await page.evaluate(() => { const g = window.__fight(); if (!g.over){ g.r.state = 'idle'; g.r.x = g.p.x + 250; } }); }
+    return page.evaluate(() => { const g = window.__fight(); return { panels: g.r.paint, hp: g.r.hp }; });
+  };
+  await page.evaluate(() => { window.__labels = new Set(); (function t(){ window.__fx().forEach(f => { if (f.label) window.__labels.add(f.label); }); requestAnimationFrame(t); })(); });
+  expect(await hitOnce('j')).toEqual({ panels: 1, hp: 15 });
+  expect(await hitOnce('k')).toEqual({ panels: 2, hp: 14 });
+  const labels = await page.evaluate(() => [...window.__labels]);
+  expect(labels).toEqual(expect.arrayContaining(['NEW TAIL!', 'BACK LEG!']));   // each hit names the panel it did
+  // the sixteenth panel: no DNA burst, it turns into a fawn and the round is won
+  await page.evaluate(() => { const g = window.__fight(); g.r.paint = 15; g.r.hp = 1; });
+  expect(await hitOnce('j')).toEqual({ panels: 16, hp: 0 });
+  const end = await page.evaluate(() => { const g = window.__fight(); return { over: g.over, won: g.won, morph: g.r.morph, state: g.r.state, pacifist: g.pacifist }; });
+  expect(end).toEqual({ over: true, won: true, morph: 'fawn', state: 'morph', pacifist: false });
+  await expect(page.locator('#result')).toBeVisible({ timeout: 12000 });
+  await expect(page.locator('#resTitle')).toHaveText('IT WAS A FAWN ALL ALONG');
+  await expect(page.locator('#resReadout')).toContainText('panels resprayed: 16/16');
+  await expect(page.locator('#btnNext')).toBeHidden();       // the last round
+  expect(errors).toEqual([]);
+});
+
+test('round 12: Åke\'s spark resprays the whole rhino at once', async ({ page }) => {
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  await page.goto(URL);
+  await startRound(page, 11, 5);                             // Åke
+  await page.evaluate(() => { const g = window.__fight(); g.r.state = 'idle'; g.r.timer = 1e9; g.r.x = g.p.x + 400; g.p.facing = 1; g.p.inv = 99; g.p.meter = 100; });
+  await page.keyboard.press('l');
+  await expect.poll(() => page.evaluate(() => window.__fight().r.morph), { timeout: 6000 }).toBe('fawn');
+  expect(await page.evaluate(() => { const g = window.__fight(); return [g.r.paint, g.won, g.r.state === 'gone']; })).toEqual([16, true, false]);
   expect(errors).toEqual([]);
 });

@@ -155,6 +155,9 @@
   .term.lab{color:#dff1ff;border-color:#5f7890;background:#060b12;text-shadow:0 0 6px rgba(160,210,255,.4);}
   .term.lab b{color:#ffffff;}
   .btn.lab{background:#dff1ff;box-shadow:0 5px 0 #5f7890,0 10px 22px rgba(0,0,0,.4);}
+  .term.garage{color:#ffcf99;border-color:#b87942;background:#111418;text-shadow:0 0 6px rgba(233,168,96,.4);}
+  .term.garage b{color:#fff1de;}
+  .btn.garage{background:#f0b877;box-shadow:0 5px 0 #8e5a2e,0 10px 22px rgba(0,0,0,.4);}
   .term.cafe{color:#ffd9a0;border-color:#8a5a2a;background:#140b05;text-shadow:0 0 6px rgba(255,190,110,.4);}
   .term.cafe b{color:#fff4e0;}
   .btn.cafe{background:#ffc98a;box-shadow:0 5px 0 #8a5a2a,0 10px 22px rgba(0,0,0,.4);}
@@ -203,7 +206,7 @@
       <p class="small" id="titleBest"></p>
       <p class="small">Sound on for the full kung-fu experience. Works on Safari, iPhone and iPad — tap ⛶ FULLSCREEN for a widescreen arena on your phone.</p>
       <p class="small" id="iosHint" hidden>iPhone: for a real full screen, tap Share → <b>Add to Home Screen</b> and open the game from there (no Safari bars at all).</p>
-      <p class="small ver" id="verLine">v2.5.0 · build 9b31ed7</p>
+      <p class="small ver" id="verLine">v2.6.0 · build e9f129c</p>
     </div></div>
 
     <div id="select" class="overlay" hidden><div class="panel">
@@ -214,7 +217,7 @@
       <p class="small" id="selMove"></p>
       <p class="small">Tap a fighter to select — tap again to fight.</p>
       <p class="small coop" id="selCoop" hidden></p>
-      <label class="check">Start at <select id="startLevel"><option value="0">Round 1 — Kiruna</option><option value="1">Round 2 — The Wasteland</option><option value="2">Round 3 — The Asteroid</option><option value="3">Round 4 — The Duplicates</option><option value="4">Round 5 — Compositional</option><option value="5">Round 6 — The Square</option><option value="6">Round 7 — The Push</option><option value="7">Round 8 — Cinnamon Bun Day</option><option value="8">Round 9 — The Rerun</option><option value="9">Round 10 — The Third Dimension</option><option value="10">Round 11 — The Island</option></select></label>
+      <label class="check">Start at <select id="startLevel"><option value="0">Round 1 — Kiruna</option><option value="1">Round 2 — The Wasteland</option><option value="2">Round 3 — The Asteroid</option><option value="3">Round 4 — The Duplicates</option><option value="4">Round 5 — Compositional</option><option value="5">Round 6 — The Square</option><option value="6">Round 7 — The Push</option><option value="7">Round 8 — Cinnamon Bun Day</option><option value="8">Round 9 — The Rerun</option><option value="9">Round 10 — The Third Dimension</option><option value="10">Round 11 — The Island</option><option value="11">Round 12 — The Paint Shop</option></select></label>
       <div class="roster" id="roster"></div>
       <div class="controls" id="ctrlHelp"><kbd>←</kbd><kbd>→</kbd> move · <kbd>↑</kbd>/<kbd>space</kbd> jump · <kbd>↓</kbd> duck · <kbd>J</kbd> punch · <kbd>K</kbd> kick · <kbd>L</kbd> special (when the meter is full) · <kbd>Esc</kbd> menu · round 11: <kbd>↑</kbd><kbd>↓</kbd> walk in depth, <kbd>space</kbd> jump, <kbd>V</kbd> zoom</div>
     </div></div>
@@ -226,7 +229,7 @@
 
     <div id="coop" class="overlay" hidden><div class="panel">
       <h2>CO-OP</h2>
-      <p class="small">Two IceLab members, one rhino. Both of you type the <b>same room code</b> (for example <b>kiruna</b>), then pick a fighter. Peer-to-peer over WebRTC — nothing to host.</p>
+      <p class="small">Two to four IceLab members, one rhino. Everybody types the <b>same room code</b> (for example <b>kiruna</b>), then picks a fighter; the round starts when all of you have pressed FIGHT. Peer-to-peer over WebRTC — nothing to host.</p>
       <div class="namebox"><label for="coopCode" class="small">Room code</label><input id="coopCode" maxlength="24" autocomplete="off" autocapitalize="off" placeholder="kiruna"><button class="btn" id="btnCoopJoin">JOIN ROOM</button></div>
       <p class="small" id="coopStatus"></p>
       <div class="row"><button class="btn secondary" id="btnCoopBack">BACK</button></div>
@@ -234,7 +237,8 @@
 
     <div id="versus" class="overlay" hidden><div class="panel">
       <h2>VERSUS — BETA</h2>
-      <p class="small">One on one. Either side can play <b>THE RHINO</b>: the false positive fights back. Versus fights are never saved to the leaderboard.</p>
+      <p class="small">Everybody against everybody, and anyone can play <b>THE RHINO</b>: the false positive fights back. Versus fights are never saved to the leaderboard.</p>
+      <p class="small"><b>Two players, one keyboard</b> — the classic duel:</p>
       <div class="row" style="align-items:center">
         <label class="check">Player 1 <select id="vsP1"></select></label>
         <label class="check">Player 2 <select id="vsP2"></select></label>
@@ -243,8 +247,8 @@
       <div class="row"><button class="btn" id="btnVsFight">FIGHT — SAME KEYBOARD</button></div>
       <div class="controls">P1 <kbd>&larr;</kbd><kbd>&rarr;</kbd> move · <kbd>&uarr;</kbd> jump · <kbd>&darr;</kbd> duck · <kbd>J</kbd> punch · <kbd>K</kbd> kick · <kbd>L</kbd> special &nbsp;·&nbsp; P2 <kbd>A</kbd><kbd>D</kbd> move · <kbd>W</kbd> jump · <kbd>S</kbd> duck · <kbd>F</kbd> punch · <kbd>G</kbd> kick · <kbd>H</kbd> special</div>
       <p class="small">As the rhino: punch is the horn sweep, kick paws the ground and charges, the special is a jet stomp.</p>
-      <p class="small">On <b>Compositional</b> the two of you share one ring: your sizes always add up to one, every hit moves size from the one who takes it to the one who lands it, and a side below the <b>6 % detection limit</b> is out.</p>
-      <p class="small">Or fight someone on another device: both type the <b>same room code</b>, then pick on the fighter screen.</p>
+      <p class="small">On <b>Compositional</b> everybody shares one ring: your sizes always add up to one, every hit moves size from the one who takes it to everybody else, and a side below the <b>6 % detection limit</b> is out.</p>
+      <p class="small"><b>Online, two to four players</b>: everybody types the <b>same room code</b> on their own device, then picks on the fighter screen (the host picks the arena). Two is the duel again; three or four is a free-for-all, and the last one standing wins.</p>
       <div class="namebox"><label for="vsCode" class="small">Room code</label><input id="vsCode" maxlength="24" autocomplete="off" autocapitalize="off" placeholder="kiruna"><button class="btn secondary" id="btnVsJoin">PLAY ONLINE</button></div>
       <p class="small" id="vsStatus"></p>
       <div class="row"><button class="btn secondary" id="btnVsBack">BACK</button></div>
@@ -270,7 +274,7 @@
       <p class="small">Every face is drawn by the game itself: a paper-cutout avatar, not a portrait, and no photograph of anyone is stored or shipped anywhere in this project.</p>
       <p class="small">Rounds 1–8 come from the sister game, <b>Swebits Rumble</b>; rounds 9–11 were IceLab’s own.</p>
       <p class="small">The rhino is a false positive. No rhinos were harmed; it was one short read that looked like a horse.</p>
-      <p class="small ver">Built with Claude · v2.5.0 · <a href="https://www.umu.se/en/icelab/" target="_blank" rel="noopener">umu.se/en/icelab</a></p>
+      <p class="small ver">Built with Claude · v2.6.0 · <a href="https://www.umu.se/en/icelab/" target="_blank" rel="noopener">umu.se/en/icelab</a></p>
       <div class="row"><button class="btn secondary" id="btnCreditsBack">BACK</button></div>
     </div></div>
 
@@ -748,6 +752,7 @@ function drawBackground(t){
   if (LEVELS[LEVEL].theme === 'museum'){ drawMuseum(t); return; }
   if (LEVELS[LEVEL].theme === 'lab'){ drawLab(t); return; }
   if (LEVELS[LEVEL].theme === 'cafe'){ drawCafe(t); return; }
+  if (LEVELS[LEVEL].theme === 'garage'){ drawGarage(t); return; }
   if (LEVELS[LEVEL].theme === 'space'){ drawSpace(t); return; }
   if (LEVELS[LEVEL].theme === 'wasteland'){ drawWasteland(t); return; }
   if (!skyGrad){ skyGrad = ctx.createLinearGradient(0, 0, 0, 360); skyGrad.addColorStop(0, '#0c1434'); skyGrad.addColorStop(.6, '#425a96'); skyGrad.addColorStop(1, '#f0b282'); }
@@ -935,6 +940,54 @@ function drawLab(t){
   ctx.strokeStyle = 'rgba(80,95,115,.25)'; ctx.lineWidth = 1; ctx.beginPath(); for (var fl = 0; fl < 12; fl++){ var fy = 430 + fl * 16; ctx.moveTo(0, fy); ctx.lineTo(LW, fy); } for (var fx0 = -200; fx0 < LW + 200; fx0 += 90){ ctx.moveTo(fx0, 412); ctx.lineTo(fx0 + (fx0 - LW / 2) * .5, LH); } ctx.stroke();
   [[0, 28], [LW - 28, 28]].forEach(function(h){ for (var hy = 412; hy < LH; hy += 16){ ctx.fillStyle = ((hy - 412) / 16) % 2 ? '#1a141e' : '#f2c21b'; ctx.fillRect(h[0], hy, h[1], 16); } });
 }
+// round 12: a body shop. A car on the lift half-way through a respray (every panel a different colour, masking tape on
+// the door), the booth lights, the colour-match fan and a stack of tins
+function drawGarage(t){
+  var wg = ctx.createLinearGradient(0, 0, 0, 412); wg.addColorStop(0, '#262b33'); wg.addColorStop(1, '#4a525d');
+  ctx.fillStyle = wg; ctx.fillRect(0, 0, LW, 412);
+  ctx.fillStyle = 'rgba(0,0,0,.13)'; for (var cw = 0; cw < LW; cw += 24) ctx.fillRect(cw, 0, 3, 412);   // corrugated wall
+  // booth strip lights
+  [180, 500, 810].forEach(function(lx){ var lg = ctx.createRadialGradient(lx, 16, 8, lx, 80, 250); lg.addColorStop(0, 'rgba(255,248,230,.5)'); lg.addColorStop(1, 'rgba(255,248,230,0)'); ctx.fillStyle = lg; ctx.fillRect(lx - 260, 0, 520, 320); ctx.fillStyle = '#fff9ec'; ctx.fillRect(lx - 110, 10, 220, 7); ctx.fillStyle = '#6b7280'; ctx.fillRect(lx - 110, 17, 220, 2); });
+  // the sign over the lift, flickering now and then (below the HUD bars)
+  ctx.fillStyle = '#15181d'; roundRect(590, 168, 290, 40, 8); ctx.fill(); ctx.strokeStyle = '#e9a860'; ctx.lineWidth = 3; ctx.stroke();
+  var sf = 26; ctx.font = '400 ' + sf + 'px Bangers, Impact, sans-serif'; while (sf > 12 && ctx.measureText('RESPRAY & BODYWORK').width > 270){ sf--; ctx.font = '400 ' + sf + 'px Bangers, Impact, sans-serif'; }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = Math.floor(t * 1.3) % 9 === 0 ? '#7a4c26' : '#ffb766'; ctx.fillText('RESPRAY & BODYWORK', 735, 189); ctx.textBaseline = 'alphabetic';
+  // the roller door, half up, daylight underneath
+  ctx.fillStyle = '#a9bccd'; ctx.fillRect(28, 250, 220, 106);
+  ctx.fillStyle = '#7d8590'; ctx.fillRect(28, 120, 220, 130); ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 2; ctx.beginPath(); for (var sy = 128; sy < 250; sy += 12){ ctx.moveTo(28, sy); ctx.lineTo(248, sy); } ctx.stroke();
+  ctx.fillStyle = '#1f2329'; ctx.fillRect(20, 112, 236, 10); ctx.fillRect(20, 112, 8, 244); ctx.fillRect(248, 112, 8, 244);
+  // the colour-match fan: one blade is the fawn
+  ctx.save(); ctx.translate(318, 236);
+  ['#c8262c', '#2f6fb0', '#e0c020', '#2bb24c', '#b87942', '#f1e2c6'].forEach(function(c, i){ ctx.save(); ctx.rotate(-.75 + i * .26); ctx.fillStyle = '#1a141e'; ctx.fillRect(-9, -92, 18, 92); ctx.fillStyle = c; ctx.fillRect(-7, -90, 14, 72); ctx.fillStyle = '#f4f1ea'; ctx.fillRect(-7, -18, 14, 16); ctx.restore(); });
+  ctx.fillStyle = '#1a141e'; ctx.beginPath(); ctx.arc(0, 0, 6, 0, 6.283); ctx.fill(); ctx.restore();
+  ctx.fillStyle = '#d7dbe2'; ctx.font = '900 10px Nunito, sans-serif'; ctx.fillText('COLOUR MATCH', 318, 256);
+  // the car on the lift: four panels, four colours; the door is masked up for its turn
+  var cx = 560, cy = 300;
+  ctx.fillStyle = '#c9a227'; ctx.fillRect(cx + 20, cy + 40, 12, 72); ctx.fillRect(cx + 300, cy + 40, 12, 72); ctx.fillStyle = '#8a7018'; ctx.fillRect(cx + 10, cy + 36, 312, 8);
+  ctx.fillStyle = '#1a141e'; roundRect(cx - 4, cy - 4, 340, 44, 14); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(cx + 64, cy + 2); ctx.lineTo(cx + 108, cy - 50); ctx.lineTo(cx + 236, cy - 50); ctx.lineTo(cx + 282, cy + 2); ctx.closePath(); ctx.fill();
+  [['#2f6fb0', 0, 90], ['#9aa0a6', 90, 150], ['#c8262c', 240, 92]].forEach(function(pn){ ctx.fillStyle = pn[0]; ctx.fillRect(cx + pn[1], cy, pn[2], 36); });
+  ctx.fillStyle = '#b87942'; ctx.beginPath(); ctx.moveTo(cx + 70, cy); ctx.lineTo(cx + 110, cy - 46); ctx.lineTo(cx + 234, cy - 46); ctx.lineTo(cx + 276, cy); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#e9e1c8'; ctx.beginPath(); ctx.moveTo(cx + 96, cy - 4); ctx.lineTo(cx + 118, cy - 38); ctx.lineTo(cx + 166, cy - 38); ctx.lineTo(cx + 166, cy - 4); ctx.closePath(); ctx.fill();   // paper over the glass
+  ctx.fillStyle = '#2a3440'; ctx.beginPath(); ctx.moveTo(cx + 176, cy - 4); ctx.lineTo(cx + 176, cy - 38); ctx.lineTo(cx + 228, cy - 38); ctx.lineTo(cx + 252, cy - 4); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#e8d9a0'; ctx.fillRect(cx + 90, cy + 2, 150, 5); ctx.fillRect(cx + 90, cy + 29, 150, 5); ctx.fillRect(cx + 150, cy + 2, 5, 32);   // masking tape
+  [cx + 62, cx + 272].forEach(function(wx){ ctx.fillStyle = '#1a141e'; ctx.beginPath(); ctx.arc(wx, cy + 40, 22, 0, 6.283); ctx.fill(); ctx.fillStyle = '#8a8f98'; ctx.beginPath(); ctx.arc(wx, cy + 40, 9, 0, 6.283); ctx.fill(); });
+  // a spray gun on its hose, swinging a little
+  var sw = Math.sin(t * .9) * .06; ctx.save(); ctx.translate(912, 0); ctx.rotate(sw);
+  ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(-18, 120, 0, 206); ctx.stroke();
+  ctx.fillStyle = '#c9ced6'; ctx.fillRect(-12, 204, 26, 12); ctx.fillStyle = '#e9a860'; ctx.fillRect(-8, 216, 14, 26); ctx.fillStyle = '#1a141e'; ctx.fillRect(12, 206, 14, 5); ctx.restore();
+  // tins by the wall
+  [['FAWN', '#b87942', 372], ['SPOT WHITE', '#f1e2c6', 420], ['PRIMER', '#9aa0a6', 468]].forEach(function(tn, i){ var tx = tn[2], ty = 364 - (i === 1 ? 0 : 0);
+    ctx.fillStyle = '#1a141e'; ctx.fillRect(tx - 2, ty - 2, 44, 50); ctx.fillStyle = '#c9ced6'; ctx.fillRect(tx, ty, 40, 46); ctx.fillStyle = tn[1]; ctx.fillRect(tx, ty + 12, 40, 20);
+    ctx.fillStyle = '#1a141e'; ctx.font = '900 7px Nunito, sans-serif'; ctx.textAlign = 'center'; ctx.fillText(tn[0], tx + 20, ty + 25); });
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#1b1f25'; ctx.fillRect(0, 404, LW, 8);
+  // the floor: sealed concrete, the yellow bay line, old overspray
+  var fg = ctx.createLinearGradient(0, 412, 0, LH); fg.addColorStop(0, '#9a9ea5'); fg.addColorStop(1, '#5d6169'); ctx.fillStyle = fg; ctx.fillRect(0, 412, LW, LH - 412);
+  ctx.strokeStyle = 'rgba(40,44,52,.22)'; ctx.lineWidth = 1; ctx.beginPath(); for (var fx0 = -200; fx0 < LW + 200; fx0 += 120){ ctx.moveTo(fx0, 412); ctx.lineTo(fx0 + (fx0 - LW / 2) * .5, LH); } ctx.stroke();
+  ctx.fillStyle = '#e8c21b'; ctx.fillRect(0, 430, LW, 5); ctx.fillRect(0, 572, LW, 6);
+  [[140, 520, 60, 14, '#b87942'], [610, 548, 80, 16, '#c8262c'], [820, 500, 50, 10, '#2f6fb0'], [360, 590, 70, 12, '#b87942']].forEach(function(o){ ctx.fillStyle = o[4]; ctx.globalAlpha = .22; ctx.beginPath(); ctx.ellipse(o[0], o[1], o[2], o[3], 0, 0, 6.283); ctx.fill(); ctx.globalAlpha = 1; });
+}
 // round 8: a cinnamon bun, drawn once into a sprite (no per-bun gradients at 30 buns a second)
 function drawBun(g, cx, cy, R){
   g.fillStyle = '#1a141e'; g.beginPath(); g.arc(cx, cy, R + 2.5, 0, 6.283); g.fill();
@@ -1026,6 +1079,20 @@ var ANIMALS = {
   warthog: {name: 'warthog', label: 'THE WARTHOG · reclassified', pal: {body: '#6e6a62', dark: '#524f49', light: '#807b72', horn: '#e8e2d2', hoof: '#2a2724', eye: '#1e1c20', eyeAngry: '#1e1c20', nose: '#2a2724'}, mane: '#3a3630', ear: 'point'}
 };
 ANIMALS.moose.belongs = true;
+// round 12: what the rhino turns out to be under the paint (drawn by the same per-panel colours as the respray)
+ANIMALS.fawn = {name: 'fawn', label: 'THE FAWN · resprayed', fawn: true, pal: {body: '#b87942', dark: '#8e5a2e', light: '#d39a5c', horn: null, hoof: '#2e2420', eye: '#1e1c20', eyeAngry: '#1e1c20', nose: '#1e1a1e'}, ear: 'fawn'};
+// Round 12, the paint shop: every hit resprays the next panel of the rig, in this order, and the 16th makes it a fawn
+var PAINT_PARTS = ['tail', 'legNB', 'ear', 'rump', 'legNF', 'belly', 'shoulder', 'legFB', 'back', 'head', 'legFF', 'jaw', 'flank', 'eye', 'spots', 'horn'];
+var PAINT_N = PAINT_PARTS.length;
+var PAINT_LABEL = {tail: 'NEW TAIL!', legNB: 'BACK LEG!', ear: 'BIG EARS!', rump: 'RUMP!', legNF: 'FRONT LEG!', belly: 'CREAM BELLY!', shoulder: 'SHOULDERS!', legFB: 'BACK LEG!', back: 'NEW BACK!', head: 'NEW HEAD!', legFF: 'FRONT LEG!', jaw: 'SOFT NOSE!', flank: 'FLANKS!', eye: 'BIG EYES!', spots: 'SPOTS!', horn: 'HORN OFF!'};
+var FAWN = {body: '#b87942', dark: '#8e5a2e', light: '#d39a5c', belly: '#f1e2c6', muzzle: '#ead4b0', hoof: '#2e2420', eye: '#1e1c20', nose: '#1e1a1e', spot: '#fbf5e6', earIn: '#e8b6a0'};
+var FAWN_SPOTS = [[-0.95,-1.62],[-0.62,-1.74],[-0.3,-1.66],[0.02,-1.76],[0.34,-1.64],[0.64,-1.72],[0.9,-1.55],[-0.5,-1.45],[0.12,-1.47],[0.5,-1.42],[-0.8,-1.38],[0.78,-1.32],[-0.15,-1.3]];
+// which panels are done: the fawn itself (revealed, or the pacifist ending) is all of them
+function paintedSet(p){
+  var an = rhinoLook(p), o = {}, n = (an && an.fawn) ? PAINT_N : Math.min(PAINT_N, p.paint | 0);
+  for (var i = 0; i < n; i++) o[PAINT_PARTS[i]] = true;
+  return o;
+}
 // the HUD label: in the rerun round a species either belongs in the sample or is another false positive
 function animalLabel(kind){ var a = ANIMALS[kind]; if (!LEVELS[LEVEL].reruns) return a.label; return 'THE ' + a.name.toUpperCase() + (a.belongs ? ' · true positive' : ' · false positive'); }
 function ell(cx, cy, rx, ry){ var p = []; for (var k = 0; k < 28; k++){ var a = 6.283 * k / 28; p.push([cx + rx * Math.cos(a), cy + ry * Math.sin(a)]); } return p; }
@@ -1038,35 +1105,47 @@ function rhinoWorld(p, pts){
 function rhinoLook(p){ return (p.morph && p.revealed) ? ANIMALS[p.morph] : (p.skin ? ANIMALS[p.skin] : null); }
 function rhinoParts(p){
   var A = 0.49 * (p.run || 0), ph = p.phase || 0, hd = p.head || 0, parts = [];
-  var an = rhinoLook(p), C = an ? an.pal : RPAL;
-  function leg(lx, ang, col){
+  var an = rhinoLook(p), pk = paintedSet(p), C = (an && !an.fawn) ? an.pal : RPAL;
+  function P(k){ return pk[k] ? FAWN : C; }   // round 12: a resprayed panel takes the fawn's colours
+  function leg(lx, ang, k, dark){
     var w = 0.18, pts = [[lx-w,-0.95],[lx+w,-0.95],[lx+w+0.04,-0.02],[lx-w-0.06,-0.02]];
     var hoof = [[lx-w-0.06,-0.14],[lx+w+0.04,-0.14],[lx+w+0.04,-0.02],[lx-w-0.06,-0.02]];
-    parts.push([rot(pts, lx, -0.9, ang), col]); parts.push([rot(hoof, lx, -0.9, ang), C.hoof]);
+    if (pk[k]){ w = 0.12; pts = [[lx-w,-0.95],[lx+w,-0.95],[lx+w,-0.02],[lx-w-0.02,-0.02]]; hoof = [[lx-w-0.03,-0.12],[lx+w+0.02,-0.12],[lx+w+0.02,-0.02],[lx-w-0.03,-0.02]]; }   // a fawn's leg is slim
+    parts.push([rot(pts, lx, -0.9, ang), dark ? P(k).dark : P(k).body]); parts.push([rot(hoof, lx, -0.9, ang), P(k).hoof]);
   }
-  leg(0.62, A * Math.sin(ph + 1.57), C.dark); leg(-0.62, A * Math.sin(ph + 4.71), C.dark);
-  parts.push([ell(-0.025,-1.175,1.325,0.675), C.body, 'body']); parts.push([ell(-0.8,-1.59,0.5,0.39), C.body, 'body']); parts.push([ell(0.885,-1.45,0.435,0.45), C.body, 'body']);
-  parts.push([ell(0.025,-0.8,1.125,0.3), C.dark]); parts.push([ell(-0.075,-1.31,1.175,0.41), C.body, 'body']); parts.push([ell(-0.1,-1.675,1.0,0.225), C.light, 'body']); parts.push([ell(-0.05,-1.465,1.0,0.315), C.body, 'body']);
+  leg(0.62, A * Math.sin(ph + 1.57), 'legFB', true); leg(-0.62, A * Math.sin(ph + 4.71), 'legFF', true);
+  parts.push([ell(-0.025,-1.175,1.325,0.675), P('flank').body, 'body']); parts.push([ell(-0.8,-1.59,0.5,0.39), P('shoulder').body, 'body']); parts.push([ell(0.885,-1.45,0.435,0.45), P('rump').body, 'body']);
+  parts.push([ell(0.025,-0.8,1.125,0.3), pk.belly ? FAWN.belly : C.dark]); parts.push([ell(-0.075,-1.31,1.175,0.41), P('flank').body, 'body']); parts.push([ell(-0.1,-1.675,1.0,0.225), P('back').light, 'body']); parts.push([ell(-0.05,-1.465,1.0,0.315), P('flank').body, 'body']);
   if (an && an.saddle) parts.push([ell(0.55,-1.2,0.78,0.6), an.saddle]);   // tapir: pale rear half
   if (an && an.mane) parts.push([[[-1.15,-1.86],[-0.95,-2.08],[-0.6,-2.12],[-0.25,-2.06],[0.05,-1.9],[-0.3,-1.9],[-0.7,-1.92],[-1.0,-1.86]], an.mane]);
-  leg(0.92, A * Math.sin(ph + 3.14), C.body); leg(-0.9, A * Math.sin(ph), C.body);
+  leg(0.92, A * Math.sin(ph + 3.14), 'legNB'); leg(-0.9, A * Math.sin(ph), 'legNF');
   var head = [[-0.85,-1.95],[-1.25,-1.9],[-1.7,-1.7],[-2.05,-1.35],[-2.3,-1.0],[-2.5,-0.72],[-2.42,-0.5],[-2.1,-0.42],[-1.75,-0.5],[-1.45,-0.72],[-1.1,-1.0],[-0.9,-1.3]];
   var jaw = [[-1.55,-0.62],[-2.1,-0.45],[-2.42,-0.5],[-2.38,-0.66],[-1.9,-0.72]];
+  if (pk.head){   // round 12: a fawn's head is slimmer and carried higher, the muzzle a neat point
+    head = [[-0.85,-1.97],[-1.25,-2.0],[-1.62,-1.86],[-1.95,-1.55],[-2.25,-1.18],[-2.44,-0.95],[-2.42,-0.8],[-2.2,-0.74],[-1.88,-0.84],[-1.52,-1.02],[-1.18,-1.22],[-0.92,-1.45]];
+    jaw = [[-1.9,-0.84],[-2.2,-0.76],[-2.4,-0.8],[-2.38,-0.9],[-2.1,-0.92]];
+  }
   var horn1 = [[-2.47,-0.88],[-2.05,-0.95],[-2.62,-1.7],[-2.6,-1.5]], horn2 = [[-2.02,-1.02],[-1.75,-1.15],[-2.0,-1.45]];
   var ear = [[-1.25,-1.88],[-1.32,-2.2],[-1.12,-2.12],[-1.05,-1.9]];
   if (an && an.ear === 'point') ear = [[-1.22,-1.9],[-1.34,-2.32],[-1.06,-2.18],[-1.0,-1.9]];
   if (an && an.ear === 'round') ear = ell(-1.2,-2.05,0.13,0.16);
   if (an && an.ear === 'bear') ear = ell(-1.22,-2.02,0.19,0.2);
-  var eye = ell(-1.77,-1.27,0.055,0.055), nos = ell(-2.385,-0.585,0.035,0.035);
-  var hp = [[head,C.body,'head'],[jaw,C.dark]];
-  if (C.horn){ hp.push([horn1,C.horn]); hp.push([horn2,C.horn]); }
+  if (pk.ear) ear = [[-1.18,-1.9],[-1.02,-2.12],[-0.72,-2.42],[-0.62,-2.3],[-0.78,-2.02],[-0.98,-1.86]];   // a fawn's big ear, swept back
+  var eye = pk.eye ? ell(-1.8,-1.34,0.11,0.1) : ell(-1.77,-1.27,0.055,0.055), nos = pk.head ? ell(-2.4,-0.88,0.04,0.035) : ell(-2.385,-0.585,0.035,0.035);
+  var hp = [[head,P('head').body,'head'],[jaw,pk.jaw ? FAWN.muzzle : C.dark]];
+  if (C.horn && !pk.horn){ hp.push([horn1,C.horn]); hp.push([horn2,C.horn]); }
   if (an && an.antlers){ hp.push([[[-1.35,-1.92],[-1.5,-2.25],[-1.9,-2.45],[-2.2,-2.4],[-2.05,-2.6],[-1.75,-2.75],[-1.4,-2.85],[-1.1,-2.8],[-0.85,-2.6],[-0.95,-2.45],[-1.2,-2.5],[-1.3,-2.3],[-1.2,-2.05],[-1.55,-1.95]], an.antlers]); }   // moose: one palmate antler (side view)
   if (an && an.bell){ hp.push([[[-1.7,-0.55],[-1.55,-0.62],[-1.45,-0.35],[-1.55,-0.2],[-1.75,-0.28]], C.dark]); }   // moose: dewlap under the chin
   if (an && an.trunk){ hp.push([[[-2.3,-1.0],[-2.5,-0.72],[-2.8,-0.62],[-2.92,-0.42],[-2.78,-0.34],[-2.58,-0.44],[-2.42,-0.5]], C.body]); nos = ell(-2.84,-0.4,0.035,0.035); }
-  hp.push([ear,C.body]); hp.push([eye,p.angry ? C.eyeAngry : C.eye]); hp.push([nos,C.nose]);
+  hp.push([ear,P('ear').body]);
+  if (pk.ear) hp.push([[[-1.12,-1.93],[-0.98,-2.1],[-0.78,-2.3],[-0.84,-2.06],[-0.98,-1.92]], FAWN.earIn]);
+  hp.push([eye,(p.angry && !pk.eye) ? C.eyeAngry : C.eye]);
+  if (pk.eye) hp.push([ell(-1.84,-1.38,0.035,0.03), '#ffffff']);   // the catchlight that makes it a fawn's eye
+  hp.push([nos,pk.jaw ? FAWN.nose : C.nose]);
   hp.forEach(function(q){ parts.push([rot(q[0], -1.0, -1.55, -hd), q[1], q[2]]); });
   var sw = p.tail || 0;
-  if (an && an.stub){ parts.push([ell(1.28,-1.5,0.13,0.11), C.dark]); }   // bear: stub tail
+  if (pk.tail){ parts.push([[[1.18,-1.66],[1.36,-1.62],[1.5+sw,-1.42],[1.44+sw,-1.3],[1.22,-1.44]], FAWN.body]); parts.push([[[1.3,-1.52],[1.46+sw,-1.4],[1.42+sw,-1.33],[1.26,-1.42]], FAWN.spot]); }   // a short tail, white underneath
+  else if (an && an.stub){ parts.push([ell(1.28,-1.5,0.13,0.11), C.dark]); }   // bear: stub tail
   else if (an && an.tail){ parts.push([[[1.2,-1.65],[1.36,-1.58],[1.52+sw,-1.25],[1.66+sw*2,-0.75],[1.5+sw*2,-0.6],[1.32+sw,-1.05],[1.2,-1.45]], an.tail]); }
   else { parts.push([[[1.2,-1.65],[1.32,-1.55],[1.45+sw,-1.2],[1.55+sw*2,-0.85],[1.48+sw*2,-0.82],[1.36+sw,-1.18],[1.22,-1.5]], C.body]); parts.push([ell(1.51+sw*2,-0.85,0.09,0.13), C.dark]); }
   return parts.map(function(q){ return [rhinoWorld(p, q[0]), q[1], q[2]]; });
@@ -1095,6 +1174,14 @@ function drawRhino(p){
       for (var b = 0; b < grp[1].length; b++) drawPoly(rhinoWorld(p, grp[1][b]), an.stripes, null, 0);
       ctx.restore();
     });
+  }
+  if (paintedSet(p).spots && p.flash <= 0){
+    // round 12: the fawn's white spots, clipped to the body panels
+    ctx.save(); ctx.beginPath();
+    for (var c2 = 0; c2 < parts.length; c2++){ if (parts[c2][2] !== 'body') continue; var cp2 = parts[c2][0]; ctx.moveTo(cp2[0][0], cp2[0][1]); for (var cj = 1; cj < cp2.length; cj++) ctx.lineTo(cp2[cj][0], cp2[cj][1]); ctx.closePath(); }
+    ctx.clip();
+    for (var fs2 = 0; fs2 < FAWN_SPOTS.length; fs2++) drawPoly(rhinoWorld(p, ell(FAWN_SPOTS[fs2][0], FAWN_SPOTS[fs2][1], .075, .055)), FAWN.spot, null, 0);
+    ctx.restore();
   }
   if (mut && p.state !== 'gone'){
     // glowing veins / drips
@@ -1323,8 +1410,16 @@ var LEVELS = [
    lose: {title: 'STILL ON THE ISLAND'},
    win: {big: 'K.O.!', title: 'THE SITE IS CLEAN', status: 'SURVEYED',
          lesson: 'an air filter samples a place, not a line. Cover the place and the stray read has nowhere left to be.',
+         next: 'one read, two sources, glued together: the rhino is booked into a <b>body shop</b>. Round 12.'},
+   card: "> ROUND 11 — THE ISLAND\n> sampling site: <b>the whole island</b>\n\nOne air filter on a post never sampled a line — it sampled a place. So here is the place: an island five times the size of every arena so far, and the two of you somewhere on it.\n\nYou both move on the <b>plane</b> now, not the line. It can only hurt you from your own line of the island, and you can only reach it from its.\n\n> ← → across, ↑ ↓ into and out of the screen\n> <b>space</b> jumps (the JUMP pad on a phone), <b>V</b> zooms\n> get onto its line before you swing"},
+  {name: 'ROUND 12', theme: 'garage', paint: true, rhino: {hp: 16, mutant: false}, pacifist: 90, reveal: {rhino: 'fawn'}, hud: 'THE RHINO · chimeric read', read: 'Rhinoceros (PCR chimera)',
+   next: 'NEXT ROUND: THE PAINT SHOP', cardStyle: 'garage', puff: '#c98a4e', start: 'RESPRAY!', rules: ['EVERY HIT RESPRAYS ONE PANEL · ALL 16 AND YOU SEE WHAT IT REALLY IS', 'EVERY HIT RESPRAYS ONE PANEL · ALL 16 AND YOU SEE WHAT IT REALLY IS'],
+   tip: 'every hit resprays one panel, however hard — a quick jab counts as much as a special. Jump the charge, duck the horn and keep painting: sixteen panels.',
+   lose: {title: 'STILL HALF RHINO'},
+   win: {big: 'RESPRAYED', title: 'IT WAS A FAWN ALL ALONG', status: 'CHIMERA SPLIT',
+         lesson: 'a PCR chimera is one read built from two templates. Classify it whole and you can get a rhino out of a deer; classify it piece by piece, the way a chimera check does, and every piece says fawn.',
          next: ''},
-   card: "> ROUND 11 — THE ISLAND\n> sampling site: <b>the whole island</b>\n\nOne air filter on a post never sampled a line — it sampled a place. So here is the place: an island five times the size of every arena so far, and the two of you somewhere on it.\n\nYou both move on the <b>plane</b> now, not the line. It can only hurt you from your own line of the island, and you can only reach it from its.\n\n> ← → across, ↑ ↓ into and out of the screen\n> <b>space</b> jumps (the JUMP pad on a phone), <b>V</b> zooms\n> get onto its line before you swing"}
+   card: "> ROUND 12 — THE PAINT SHOP\n> read: <b>CHIMERA</b>\n\nIn a PCR cycle a half-copied strand can come loose and finish on a different template. The product is a <b>chimera</b>: one read, two sources, glued together — and classified whole it can match something that was never in the sample.\n\nA chimera check takes the read apart and classifies it piece by piece. So this is a body shop: every hit resprays one panel of the rhino in its true colours.\n\n> every hit resprays one panel, big or small\n> sixteen panels\n> respray all of it and see what it really was"}
 ];
 // ------------------------------------------------------------ round 6: the square
 // The four sides of the room are one flat track, unrolled. Every entity keeps its logical x (distance along the track)
@@ -1678,7 +1773,7 @@ function applyIsleZoom(){
   // magnify the projected image around the fighter, so the whole scene (sea, island, everyone) stays consistent
   var z = isleZoom();
   if (z === 1){ isleCam = null; return false; }
-  var me = (G.players[(Net.on && Net.peer) ? Net.me : 0] || G.p), c = isleAt(me.x, me.z);
+  var me = (G.players[myIdx()] || G.p), c = isleAt(me.x, me.z);
   if (!isleCam) isleCam = [c[0], c[1]];
   isleCam[0] += (c[0] - isleCam[0]) * .12; isleCam[1] += (c[1] - isleCam[1]) * .12;
   ctx.save(); ctx.translate(LW / 2, LH * .58); ctx.scale(z, z); ctx.translate(-isleCam[0], -isleCam[1]);
@@ -1696,6 +1791,7 @@ function drawIsleWorld(t){
     }); }});
   });
   G.players.forEach(function(q){
+    if (q.gone) return;
     items.push({z: q.z, d: function(){ drawIsleActor(q, function(){
       if (q.inv > 0 && q.state !== 'ko' && q.state !== 'special' && Math.floor(G.t * 20) % 2 === 0) ctx.globalAlpha = .4;
       fighterDraw(q, t); ctx.globalAlpha = 1;
@@ -1705,7 +1801,7 @@ function drawIsleWorld(t){
   for (var i = 0; i < items.length; i++) items[i].d();
   drawSpikes();
   G.players.forEach(function(q){
-    if (q.state === 'ko') return;
+    if (q.state === 'ko' || q.gone) return;
     var pr = isleAt(q.x, q.z), cy = pr[1] - (2.35 * RS + q.y) * pr[2] - 14 - 3 * Math.sin(G.t * 4);
     ctx.fillStyle = '#f2c56b'; ctx.strokeStyle = '#1a141e'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(pr[0], cy + 10); ctx.lineTo(pr[0] - 7, cy); ctx.lineTo(pr[0] + 7, cy); ctx.closePath(); ctx.fill(); ctx.stroke();
@@ -1722,22 +1818,40 @@ var bolts = [];
 var LEVEL = 0, hot = [], rings = [];
 
 // ------------------------------------------------------------ versus (beta)
-// Two humans, one arena. A side is a fighter from the ROSTER or THE RHINO itself.
-// Sides are stored in the same arrays a round uses (G.players / G.rhinos), so drawing,
-// the hit code and the co-op snapshots all work unchanged; G.sides[i] is side i's entity.
+// Two humans on one keyboard, or two to four in an online room: one arena, everybody against everybody. A side is a
+// fighter from the ROSTER or THE RHINO itself. Sides are stored in the same arrays a round uses (G.players / G.rhinos),
+// so drawing, the hit code and the co-op snapshots all work unchanged; G.sides[i] is side i's entity.
 var VS_TIME = 99;
 var RHINO_DEF = {id:'rhino', name:'The Rhino', hp:150, power:1, speed:.85, jump:1, special:{name:'JET STOMP'}};
 var vsLocal = false, pickRhino = false, vsPicks = ['anton', 'rhino'];
 function myPickId(){ return pickRhino ? 'rhino' : ROSTER[selected].id; }
 function sideDefById(id){ return id === 'rhino' ? RHINO_DEF : defById(id); }
-function vsFoeOf(e){ if (!G || !G.sides) return null; var i = G.sides.indexOf(e); return i < 0 ? null : G.sides[1 - i]; }
-function vsAlive(e){ return !!e && e.state !== 'ko' && e.state !== 'gone'; }
+function vsAlive(e){ return !!e && e.state !== 'ko' && e.state !== 'gone' && !e.gone; }
+// every side still standing except e
+function vsFoesOf(e){ if (!G || !G.sides) return []; return G.sides.filter(function(o){ return o !== e && vsAlive(o); }); }
+// the opponent that matters right now: the nearest one standing (in a duel, simply the other side)
+function vsFoeOf(e){
+  if (!G || !G.sides || G.sides.indexOf(e) < 0) return null;
+  var best = null, bd = 1e9;
+  vsFoesOf(e).forEach(function(o){ var d = Math.abs(o.x - e.x); if (d < bd){ bd = d; best = o; } });
+  if (best) return best;
+  for (var i = 0; i < G.sides.length; i++) if (G.sides[i] !== e) return G.sides[i];
+  return null;
+}
+// the fighters (not rhinos: rhinoAt / liveRhinos already reach those) that p's attacks can land on
+function vsFighterFoes(p){ return G.vs ? vsFoesOf(p).filter(function(o){ return !o.isRhino; }) : []; }
+// the nearest of them within reach (and, with front, not behind p)
+function vsNearFighter(p, reach, front){
+  var best = null, bd = 1e9;
+  vsFighterFoes(p).forEach(function(f){ var d = f.x - p.x; if (Math.abs(d) > reach || (front && d * p.facing < -60)) return; if (Math.abs(d) < bd){ bd = Math.abs(d); best = f; } });
+  return best;
+}
 function vsName(e){ return e ? (e.isRhino ? 'THE RHINO' : e.def.name.toUpperCase()) : ''; }
-// two of the same pick in one duel: say which side is which
+// the same pick twice in one fight: say which side is which
 function vsLabel(e){
   if (!e || !G.sides) return '';
-  var i = G.sides.indexOf(e), other = G.sides[1 - i];
-  return (other && vsName(other) === vsName(e)) ? ('P' + (i + 1) + '\u2019S ' + vsName(e).replace(/^THE /, '')) : vsName(e);
+  var i = G.sides.indexOf(e), twin = G.sides.some(function(o){ return o !== e && vsName(o) === vsName(e); });
+  return twin ? ('P' + (i + 1) + '\u2019S ' + vsName(e).replace(/^THE /, '')) : vsName(e);
 }
 function mkVsRhino(x, facing){
   return {def: RHINO_DEF, isRhino: true, human: true, x: x, facing: facing, hp: RHINO_DEF.hp, maxhp: RHINO_DEF.hp, meter: 0, hitsLanded: 0,
@@ -1745,28 +1859,46 @@ function mkVsRhino(x, facing){
           tilt: 0, head: 0, jump: 0, vj: 0, squash: 0, tail: 0, flash: 0, angry: false, rage: 0, dir: facing, chargeHit: false,
           cx0: 0, vx: 0, trampled: {}, skin: null, size: 1, inp: {keys: {}, pressed: {}}};
 }
-function newVsFight(idA, idB){
-  vsPicks = [idA, idB]; setPadLabels(null);
-  var lv = LEVELS[LEVEL];
-  AW = lv.width || LW;                                   // a duel arena can be wider than the screen; the camera follows both sides
+// where the sides start: a duel at a quarter from each end; three or four spaced by their bodies (a rhino is ~350 px
+// long), rhinos at the outside of the line so nobody starts inside one
+function vsSpawns(ids){
+  var n = ids.length, xs = [];
+  if (n === 2) return [AW * .26, AW * .74];
+  var isR = function(i){ return sideDefById(ids[i]) === RHINO_DEF; }, rh = [], fi = [], left = [], right = [];
+  ids.forEach(function(id, i){ (isR(i) ? rh : fi).push(i); });
+  rh.forEach(function(i, k){ (k % 2 ? right : left).push(i); });
+  var order = left.concat(fi, right.reverse()), wOf = function(i){ return isR(i) ? 370 : 130; }, W = 0;
+  order.forEach(function(i){ W += wOf(i); });
+  if (W > AW - 40){ order.forEach(function(i, k){ xs[i] = AW * (.12 + .76 * k / (n - 1)); }); return xs; }   // three or four rhinos on a small arena: as far apart as it goes
+  var gap = (AW - W) / (n + 1), x = gap;
+  order.forEach(function(i){ xs[i] = x + wOf(i) / 2; x += wOf(i) + gap; });
+  return xs;
+}
+// ids: one pick per side (a ROSTER id or 'rhino'), two to four of them
+function newVsFight(ids){
+  vsPicks = ids.slice(); setPadLabels(null);
+  var lv = LEVELS[LEVEL], n = ids.length;
+  AW = lv.width || LW;                                   // a duel arena can be wider than the screen; the camera follows every side
   var players = [], rhinos = [], sides = [];
-  [[sideDefById(idA), AW * .26, 1], [sideDefById(idB), AW * .74, -1]].forEach(function(spec, i){
-    var ent;
-    if (spec[0] === RHINO_DEF){ ent = mkVsRhino(spec[1], spec[2]); rhinos.push(ent); }
-    else { ent = mkPlayer(spec[0], spec[1]); ent.facing = spec[2]; players.push(ent); }
+  var xs = vsSpawns(ids);
+  ids.forEach(function(id, i){
+    var def = sideDefById(id), x = xs[i], facing = x < AW / 2 ? 1 : -1, ent;
+    if (def === RHINO_DEF){ x -= facing * 40; ent = mkVsRhino(x, facing); rhinos.push(ent); }   // its body reaches further forward than back
+    else { ent = mkPlayer(def, x); ent.facing = facing; players.push(ent); }
     ent.vsSide = i; sides.push(ent);
   });
   G = {fid: ++fightSeq, vs: true, sides: sides, p: players[0] || null, p2: null, players: players, r: rhinos[0] || null, rhinos: rhinos,
        t: 0, over: false, won: false, elapsed: 0, koT: 0, pacifist: false, comp: !!lv.comp, compN: 0, vsWin: -2, vsTime: false};
-  // the compositional arena: one ring shared between the two of you, sizes summing to one
+  // the compositional arena: one ring shared between all of you, sizes summing to one
   if (G.comp){ G.compN = sides.length; sides.forEach(function(c){ c.share = 1 / sides.length; c.size = 1; }); compSync(); }
-  camX = clamp((sides[0].x + sides[1].x) / 2 - LW / 2, 0, Math.max(0, AW - LW));
+  camX = clamp(AW / 2 - LW / 2, 0, Math.max(0, AW - LW));
   particles = []; fx = []; dna = []; puffs = []; hot = []; rings = []; bolts = []; spikes = []; shake = 0; flashA = 0; slowmo = 0; impactFrame = 0;
   clearKeys(); blurFocus();
 }
-function beginVsLocal(){
-  vsLocal = true; LEVEL = clampLevel($('vsArena').value);
-  newVsFight($('vsP1').value, $('vsP2').value); scene = 'fight'; show(null);
+// the same-keyboard duel: arrows + J K L against W A S D + F G H (also window.__vsLocal for tests)
+function beginVsLocal(ids, arena){
+  vsLocal = true; LEVEL = clampVsLevel(arena);
+  newVsFight(ids); scene = 'fight'; show(null);
   unlockAudio(); sfx('gong', {f: 96, v: .6}); fightTimeout(function(){ sfx('drum'); }, 800);
 }
 // a fighter's body box, so two fighters can hit each other (rounds only ever hit the rhino)
@@ -1778,10 +1910,15 @@ function fighterRect(p){
 function foeAt(p, pt, pad){
   var r = rhinoAt(pt, pad, p ? (p.size || 1) * ((p.state === 'special' && p.scale) ? p.scale : 1) : 1, p); if (r) return r;
   if (G.square && p && !p.isRhino){ r = sqRoomHit(p, pt, pad); if (r) return r; }
-  if (G.vs){ var q = vsFoeOf(p); if (q && !q.isRhino && vsAlive(q)){
-    var fr = fighterRect(q), fk = Math.max(1, p ? (p.size || 1) * ((p.state === 'special' && p.scale) ? p.scale : 1) : 1);
-    fr.y0 -= Math.max(0, 150 * fk - (fr.y1 - fr.y0));   // a short target counts further down from a tall attacker's fist
-    if (inRect(pt, fr, pad)) return q; } }
+  if (G.vs){
+    var fk = Math.max(1, p ? (p.size || 1) * ((p.state === 'special' && p.scale) ? p.scale : 1) : 1), best = null, bd = 1e9;
+    vsFighterFoes(p).forEach(function(q){
+      var fr = fighterRect(q);
+      fr.y0 -= Math.max(0, 150 * fk - (fr.y1 - fr.y0));   // a short target counts further down from a tall attacker's fist
+      if (inRect(pt, fr, pad) && Math.abs(q.x - pt[0]) < bd){ bd = Math.abs(q.x - pt[0]); best = q; }
+    });
+    return best;
+  }
   return null;
 }
 function hitFoe(t, p, pt, dmg, big, label, o){
@@ -1793,11 +1930,10 @@ function hitFoe(t, p, pt, dmg, big, label, o){
   shake = Math.max(shake, big ? 16 : 7); impactFrame = big ? 3 : 1;
   hitPlayer(t, Math.round(dmg * p.def.power), label || (big ? 'WHAM!' : 'POW!'), (t.x > p.x ? 1 : -1) * (big ? 420 : 210));
 }
-// what a rhino's own attacks reach: the crew in a round, the other side in a duel
+// what a rhino's own attacks reach: the crew in a round, every other side in versus
 function rhinoFoes(r){
-  if (!G.vs) return G.players;
-  var f = vsFoeOf(r);
-  return vsAlive(f) ? [f] : [];
+  if (!G.vs) return G.players.filter(function(q){ return !q.gone; });
+  return vsFoesOf(r);
 }
 function hitEnt(t, atk, dmg, label, knock){
   if (!t || G.over) return;
@@ -1832,18 +1968,30 @@ function vsRhinoJump(r, dt){
 }
 function vsEnd(winSide){
   if (G.over) return;
+  if (winSide < 0){ G.over = true; G.won = true; G.vsWin = -1; G.koT = 0; sfx('gong', {f: 90, v: .6}); fightTimeout(showResult, 2600); return; }
   G.over = true; G.won = true; G.vsWin = winSide; G.koT = 0;
   var w = G.sides[winSide];
   if (w && !w.isRhino){ w.state = 'win'; w.st = 0; }
   sfx('gong', {f: 70, v: .7});
   fightTimeout(showResult, 3000);
 }
+// a side went down (knocked out, or its player left the room): the last one standing wins
+function vsCheck(){
+  if (G.over) return;
+  var up = G.sides.filter(vsAlive);
+  if (up.length <= 1) vsEnd(up.length ? up[0].vsSide : -1);
+}
+function vsSideOut(e){
+  if (G.over) return;
+  if (e.state !== 'ko'){ e.state = 'ko'; e.st = 0; if (G.comp) compDrop(e); }
+  vsCheck();
+}
+function vsFrac(e){ return vsAlive(e) ? Math.max(0, e.hp) / e.maxhp : 0; }
 function vsTimeUp(){
-  var a = G.sides[0], b = G.sides[1];
-  var fa = Math.max(0, a.hp) / a.maxhp, fb = Math.max(0, b.hp) / b.maxhp;
+  var fr = G.sides.map(vsFrac), top = Math.max.apply(null, fr), lead = [];
+  fr.forEach(function(f, i){ if (top - f < .005) lead.push(i); });
   G.vsTime = true;   // decided on the clock, not by a knockout — the banner and the result both have to say so
-  if (Math.abs(fa - fb) < .005){ G.over = true; G.won = true; G.vsWin = -1; G.koT = 0; sfx('gong', {f: 90, v: .6}); fightTimeout(showResult, 2600); return; }
-  vsEnd(fa > fb ? 0 : 1);
+  vsEnd(lead.length === 1 ? lead[0] : -1);   // level at the top: a draw
 }
 function vsPct(e){
   if (G.comp){ var pp = pct100(G.sides.map(function(c){ return c.share || 0; })); return pp[G.sides.indexOf(e)]; }
@@ -1851,21 +1999,24 @@ function vsPct(e){
 }
 function drawVsHUD(){
   ctx.font = '700 15px Nunito, sans-serif'; ctx.textBaseline = 'top';
-  var cols = ['#6fe3a0', '#ffb44d'], compact = hudCompact(), y = hudRightTop(), yEnd = y;   // below the MENU / FULLSCREEN buttons
-  var pcts = G.comp ? pct100(G.sides.map(function(e){ return e.share || 0; })) : null;
+  var cols = ['#6fe3a0', '#ffb44d', '#7cc8ff', '#ff8fd0'], compact = hudCompact(), y = hudRightTop(), yEnd = y, colY = [y, y];   // below the MENU / FULLSCREEN buttons
+  var pcts = G.comp ? pct100(G.sides.map(function(e){ return e.share || 0; })) : null, many = G.sides.length > 2;
+  // side 1 top left, side 2 top right, sides 3 and 4 under them
   G.sides.forEach(function(e, i){
-    var w = 330, x = i ? LW - 24 - w : 24, al = i ? 'right' : 'left';
+    var c = i % 2, yy = colY[c], w = 330, x = c ? LW - 24 - w : 24, al = c ? 'right' : 'left';
     var mine = (!Net.on || !Net.peer) ? (vsLocal ? false : i === 0) : i === Net.me;
-    var used = bar(x, y, w, 20, Math.max(0, e.hp) / e.maxhp, e.state === 'ko' ? '#8a8fa3' : cols[i], '#c8262c',
-        (vsLocal ? 'P' + (i + 1) + ' · ' : (mine ? 'YOU · ' : '')) + vsName(e) + (pcts ? ' · ' + pcts[i] + ' %' : ''), al, G.comp ? COMP_LIMIT : 0);
-    var mx = i ? LW - 24 - 200 : 24, my = compact ? y + used + 5 : y + 44, mh = compact ? hudPx(6) : 10;
+    var tag = vsLocal ? 'P' + (i + 1) + ' · ' : (mine ? 'YOU · ' : (many ? 'P' + (i + 1) + ' · ' : ''));
+    var used = bar(x, yy, w, 20, Math.max(0, e.hp) / e.maxhp, e.state === 'ko' ? '#8a8fa3' : cols[i % cols.length], '#c8262c',
+        tag + vsName(e) + (e.gone ? ' · LEFT' : '') + (pcts ? ' · ' + pcts[i] + ' %' : ''), al, G.comp ? COMP_LIMIT : 0);
+    var mx = c ? LW - 24 - 200 : 24, my = compact ? yy + used + 5 : yy + 44, mh = compact ? hudPx(6) : 10;
     meterBar(mx, my, 200, mh, e.meter, al, e.meter >= 100 ? 'SPECIAL READY — ' + e.def.special.name : 'SPECIAL ' + Math.floor(e.meter) + '%', compact, true);
+    colY[c] = my + mh + (compact ? hudPx(8) : 28);   // room for the caption under the meter
     yEnd = Math.max(yEnd, my + mh);
   });
-  if (Net.on && Net.lost){ ctx.font = '900 ' + (compact ? hudPx(10) : 13) + 'px Nunito, sans-serif'; ctx.fillStyle = '#ffd166'; ctx.textAlign = 'center'; ctx.fillText('OPPONENT RECONNECTING…', LW / 2, compact ? yEnd + hudPx(22) : 140); ctx.textAlign = 'left'; }
+  if (Net.on && Net.lost){ ctx.font = '900 ' + (compact ? hudPx(10) : 13) + 'px Nunito, sans-serif'; ctx.fillStyle = '#ffd166'; ctx.textAlign = 'center'; ctx.fillText(many ? 'A PLAYER IS RECONNECTING…' : 'OPPONENT RECONNECTING…', LW / 2, compact || many ? yEnd + (compact ? hudPx(22) : 26) : 140); ctx.textAlign = 'left'; }
   if (G.comp){
     ctx.fillStyle = '#c9d3e6'; ctx.font = '900 ' + (compact ? hudPx(9) : 11) + 'px Nunito, sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText(compact ? 'SUM = 1 · LIMIT ' + Math.round(COMP_LIMIT * 100) + ' %' : 'ONE RING · SUMS TO 1 · LIMIT ' + Math.round(COMP_LIMIT * 100) + ' %', LW / 2, compact ? yEnd + hudPx(8) : 130); ctx.textAlign = 'left';
+    ctx.fillText(compact ? 'SUM = 1 · LIMIT ' + Math.round(COMP_LIMIT * 100) + ' %' : 'ONE RING · SUMS TO 1 · LIMIT ' + Math.round(COMP_LIMIT * 100) + ' %', LW / 2, compact ? yEnd + hudPx(8) : (many ? yEnd + 8 : 130)); ctx.textAlign = 'left';
   }
   hudTimer(Math.max(0, Math.ceil(VS_TIME - G.elapsed)));
 }
@@ -1881,20 +2032,23 @@ function mkPlayer(def, x){
 var fightSeq = 0;
 // a timer that only fires if the fight that armed it is still the one on screen (Esc + new fight must not inherit it)
 function fightTimeout(fn, ms){ var id = G.fid; setTimeout(function(){ if (G && G.fid === id && scene === 'fight') fn(); }, ms); }
-function newFight(def, def2){
-  var p = mkPlayer(def, def2 ? 150 : 200), p2 = def2 ? mkPlayer(def2, 290) : null;
+// one fighter (solo) or an array of up to four (a co-op room, host first)
+function newFight(def){
+  var defs = Array.isArray(def) ? def : [def], np = defs.length;
+  var players = defs.map(function(d, i){ return mkPlayer(d, np === 1 ? 200 : 150 + i * (np > 2 ? 100 : 140)); }), p = players[0], p2 = players[1] || null;
   var lv = LEVELS[LEVEL];
   AW = lv.width || LW;
   var rhinos = [], n = lv.rhinos || 1;
   for (var ri = 0; ri < n; ri++) rhinos.push({x: 720 + ri * (AW - 1140) / Math.max(1, n - 1), facing:-1, hp:lv.rhino.hp, maxhp:lv.rhino.hp, mutant:lv.rhino.mutant, space:!!lv.rhino.space, glow:0, willFeint:false, targetX:0, state:'idle', st:0, timer:1.4 + ri * .9, run:0, phase:0, tilt:0, head:0, jump:0, squash:0, tail:0, flash:0, angry:false, rage:0, dir:-1, chargeHit:false, cx0:0, vx:0, trampled:{}, skin: lv.skins ? lv.skins[ri] : null, size: 1, isRhino: true, z:0, zTarget:0});
-  G = {fid: ++fightSeq, p:p, p2:p2, players: p2 ? [p, p2] : [p], r:rhinos[0], rhinos:rhinos, t:0, over:false, won:false, elapsed:0, stageT:0, spawns:0, identified:false, koT:0, pacifist:false, comp: !!lv.comp, compN: 0,
+  G = {fid: ++fightSeq, p:p, p2:p2, players: players, r:rhinos[0], rhinos:rhinos, t:0, over:false, won:false, elapsed:0, stageT:0, spawns:0, identified:false, koT:0, pacifist:false, comp: !!lv.comp, compN: 0,
        square: !!lv.square};
   if (lv.island){   // round 11: everyone starts on the plane, the rhino further up the island
-    G.players.forEach(function(q, qi){ q.x = -200 + qi * 400; q.z = 420; });
+    G.players.forEach(function(q, qi){ q.x = (np > 2 ? -300 + qi * 200 : -200 + qi * 400); q.z = 420; });
     rhinos.forEach(function(r0, ri2){ r0.x = -300 + ri2 * 600; r0.z = ISLE.d - 700; r0.facing = -1; });
   }
   // both co-op pages run this, so both draw the room and the smaller rigs; nothing else may switch the square on
   if (G.square) G.players.concat(rhinos).forEach(function(c){ c.size = SQ.size; });
+  if (lv.paint){ G.paint = true; rhinos.forEach(function(r0){ r0.paint = 0; }); }   // round 12: both co-op pages know the panels are what counts
   if (lv.buns){ G.buns = true; G.bunsFly = []; G.bunsGround = []; G.bunStats = {thrown: 0, hit: 0, eaten: 0, picked: 0}; }
   if (lv.push){ G.push = {x: PUSH.start, pressure: 0, endT: 0, pred: null}; G.players.forEach(function(q){ q.pu = mkPushState(); q.state = 'push'; }); rhinos[0].state = 'shove'; }
   setPadLabels(G.push ? 'push' : (G.buns ? 'buns' : (G.square ? 'square' : null)));
@@ -1995,7 +2149,12 @@ function hitRhino(r, p, pt, dmg, big, label, o){
   if (G.buns && !(o && o.bun)) return;   // round 8: a fist, a kick, a special, a stomp — none of it reaches the rhino
   var vuln = (r.state === 'skid' || r.state === 'sleep') ? 1.6 : 1;
   dmg = Math.round(dmg * p.def.power * vuln);
-  if (G.comp) compHit(r, dmg); else r.hp = Math.max(0, r.hp - dmg);
+  var coat = null;
+  if (G.paint){   // round 12: whatever the hit, it resprays the next panel (health is the part still unpainted)
+    coat = PAINT_PARTS[Math.min(PAINT_N - 1, r.paint | 0)]; r.paint = Math.min(PAINT_N, (r.paint | 0) + 1); r.hp = Math.round(r.maxhp * (1 - r.paint / PAINT_N));
+    paintSpray(r, pt); label = PAINT_LABEL[coat];   // the panel's name beats the move's own shout
+  }
+  else if (G.comp) compHit(r, dmg); else r.hp = Math.max(0, r.hp - dmg);
   r.flash = 0.12; r.rage += 1;
   p.hitsLanded++;
   // a special costs the whole meter; its own hits must not refund it (nor may a tray's five buns)
@@ -2019,16 +2178,22 @@ function hitRhino(r, p, pt, dmg, big, label, o){
   if (r.state === 'sleep'){ r.x -= r.facing * 6; }
   if (G.comp ? r.share < COMP_LIMIT : r.hp <= 0) rhinoKO(r);
 }
-function alivePlayers(){ return G.players.filter(function(q){ return q.state !== 'ko'; }); }
+// a co-op player who has left the room (gone) is out of the fight: never a target, never waited for
+// fawn-coloured overspray where a panel was just done (the guest makes its own when a snapshot shows a new panel)
+function paintSpray(r, pt){
+  var x = pt ? pt[0] : r.x, y = pt ? pt[1] : GROUND - 1.3 * rs(r) - (r.jump || 0);
+  for (var i = 0; i < 16; i++) puffs.push({x: x + rnd(-40, 40), y: y + rnd(-34, 30), t: rnd(0, .18), r: rnd(5, 13), col: i % 3 ? '#c98a4e' : (i % 2 ? '#f1e2c6' : '#8e5a2e')});
+}
+function alivePlayers(){ return G.players.filter(function(q){ return q.state !== 'ko' && !q.gone; }); }
 function rhinoTarget(r){
   // a rhino goes for the nearest fighter still standing
   if (G.vs){ var f = vsFoeOf(r); return f || r; }
   var best = null, bd = 1e9;
-  G.players.forEach(function(q){ if (q.state === 'ko') return; var d = Math.abs(q.x - r.x) + (isleOn() ? Math.abs((q.z || 0) - (r.z || 0)) : 0); if (d < bd){ bd = d; best = q; } });
+  G.players.forEach(function(q){ if (q.state === 'ko' || q.gone) return; var d = Math.abs(q.x - r.x) + (isleOn() ? Math.abs((q.z || 0) - (r.z || 0)) : 0); if (d < bd){ bd = d; best = q; } });
   return best || G.p;
 }
 function hitPlayer(p, dmg, label, knock){
-  if (p.inv > 0 || G.over || p.state === 'ko') return;
+  if (p.inv > 0 || G.over || p.state === 'ko' || p.gone) return;
   if (isleOn() && curR && Math.abs((p.z || 0) - (curR.z || 0)) > ISLE.reach) return;   // round 11: it only hurts you from your own line
   if (G.comp) compHit(p, dmg); else p.hp = Math.max(0, p.hp - dmg);
   if (p.hp <= 0 || (G.comp && p.share < COMP_LIMIT)) p.killedBy = label;
@@ -2041,13 +2206,14 @@ function playerKO(p){
   if (G.over || p.state === 'ko') return;
   p.state = 'ko'; p.st = 0; sfx('gong', {f: 70, v: .6});
   if (G.comp) compDrop(p);
-  if (G.vs){ vsEnd(p.vsSide === 0 ? 1 : 0); return; }
+  if (G.vs){ vsCheck(); return; }
   if (!alivePlayers().length){ G.over = true; G.won = false; fightTimeout(showResult, 1800); }
 }
 function rhinoKO(r){
   if (r.state === 'ko' || r.state === 'gone') return;
+  if (G.paint){ if (!G.over) paintDone(r); return; }   // round 12: no explosion — the last coat shows what it was
   r.state = 'ko'; r.st = 0; sfx('bighit');
-  if (G.vs){ vsEnd(r.vsSide === 0 ? 1 : 0); return; }
+  if (G.vs){ if (G.comp) compDrop(r); vsCheck(); return; }
   if (G.comp){ compDrop(r); fx.push({x: r.x, y: GROUND - 120 * (r.size || 1), t: 0, life: .9, r: 70, label: 'BELOW DETECTION LIMIT', big: false}); }
   fightTimeout(function(){ explodeRhino(r); }, 1500);
   if (liveRhinos().length){ fx.push({x: r.x, y: GROUND - 200, t: 0, life: .8, r: 80, label: 'ONE DOWN!', big: true}); return; }
@@ -2056,10 +2222,24 @@ function rhinoKO(r){
   sfx('gong', {f: 70, v: .7});
   fightTimeout(showResult, 5200);
 }
+// round 12: every panel resprayed (or Åke's spark, which does the lot at once): it was a fawn all along
+function paintDone(r){
+  var lb = rhinoBounds(r); r.x = clamp(r.x, lb[0], lb[1]);   // a throw can land it past the edge: reveal it where you can see it
+  r.paint = PAINT_N; r.hp = 0; r.flash = .15;
+  r.morph = 'fawn'; r.revealed = false; r.rerun = false;
+  r.state = 'morph'; r.st = 0; r.run = 0; r.jump = 0; r.glow = 0; r.angry = false; r.chargeHit = true;
+  bolts = []; hot = [];
+  G.over = true; G.won = true; G.koT = 0;
+  alivePlayers().forEach(function(q){ q.state = 'win'; q.st = 0; });
+  sfx('gong', {f: 70, v: .7});
+  fightTimeout(showResult, 5200);
+}
 // pacifist ending: never land a hit and outlast the rhino (60 s in round 1, +30 s per round) and the read turns out to be something else
 var LOCAL_BUILD = /^(localhost|127\.0\.0\.1|)$/.test(location.hostname);   // file:// or a dev server: debug hooks allowed
 var PACIFIST_DEBUG = LOCAL_BUILD ? parseFloat((location.hash.match(/pacifist=([0-9]*\.?[0-9]+(?:e[+-]?[0-9]+)?)/i) || [])[1]) : NaN;
-if (LOCAL_BUILD){ window.__fight = function(){ return G; }; window.__pct100 = function(v){ return pct100(v); }; window.__sq = function(){ return {P: SQ.P, base: sqBase, pt: sqPt, wrap: wrapDelta}; }; window.__level = function(){ return LEVEL; }; window.__flash = function(){ return flashA; }; window.__push = function(){ return {win: PUSH.win, lose: pushLoseX()}; }; window.__levels = function(){ return LEVELS; }; window.__zoom = function(){ return isleZoom(); }; window.__fx = function(){ return fx; }; window.__spikes = function(){ return spikes; }; window.__desert = function(){ return desertAmount(); }; }   // tests peek at the fight state
+if (LOCAL_BUILD){ window.__fight = function(){ return G; }; window.__pct100 = function(v){ return pct100(v); }; window.__sq = function(){ return {P: SQ.P, base: sqBase, pt: sqPt, wrap: wrapDelta}; }; window.__level = function(){ return LEVEL; }; window.__flash = function(){ return flashA; }; window.__push = function(){ return {win: PUSH.win, lose: pushLoseX()}; }; window.__levels = function(){ return LEVELS; }; window.__zoom = function(){ return isleZoom(); }; window.__fx = function(){ return fx; }; window.__spikes = function(){ return spikes; }; window.__desert = function(){ return desertAmount(); };
+  window.__vsLocal = function(ids, arena){ clearKeys(); beginVsLocal(ids, arena || 0); };   // a local fight with any sides (the UI offers two), for tests
+}   // tests peek at the fight state
 function pacifistTime(){ return PACIFIST_DEBUG > 0 ? PACIFIST_DEBUG : (LEVELS[LEVEL].pacifist || 60 + 30 * LEVEL); }
 // Round 9 chains the reveal: every 30 s (G.stageT, per pass) the classifier reports again, and a species that does not
 // belong in a Kiruna sample means another pass (the level's `reruns` of them at most). #reveal=<kind> forces the species.
@@ -2116,7 +2296,7 @@ function explodeRhino(r){
 // ------------------------------------------------------------ update
 function updatePlayer(p, dt){
   var def = p.def, keys = p.inp.keys, pressed = p.inp.pressed;
-  var r = nearestRhino(p.x) || G.r || vsFoeOf(p) || p;
+  var r = G.vs ? (vsFoeOf(p) || p) : (nearestRhino(p.x) || G.r || p);
   p.st += dt; if (p.inv > 0) p.inv -= dt; if (p.flash > 0) p.flash -= dt;
   if (G.push){ p.ducking = false; p.pose = p.state === 'ko' ? POSE.ko : (p.state === 'win' ? mixPose(POSE.stand, POSE.win, smooth(0, .4, p.st)) : pushPose(p)); return; }
   var busy = p.state === 'punch' || p.state === 'kick' || p.state === 'special' || p.state === 'throw' || p.state === 'hurt' || p.state === 'ko' || p.state === 'win';
@@ -2256,7 +2436,7 @@ function specialUpdate(p, dt){
         for (var gi = 0; gi < 30; gi++) puffs.push({x: p.x + rnd(-460, 460) * ak, y: GROUND - rnd(0, 30), t: 0, r: rnd(12, 30)});
         liveRhinos().forEach(function(r){ var rc2 = rhinoRect(r), rcx = (rc2.x0 + rc2.x1) / 2;
           if (inReach(r, p) && Math.abs(p.x - rcx) < 620 * ak){ hitRhino(r, p, [rcx, GROUND - 90], sp.dmg, true, 'PER-ZILLA!'); r.jump = G.square ? 70 : 110; r.tilt = -.5; if (r.state === 'charge' || r.state === 'paw' || r.state === 'horn'){ r.state = 'stagger'; r.st = 0; } } });
-        var gz = G.vs ? vsFoeOf(p) : null; if (gz && !gz.isRhino && vsAlive(gz) && Math.abs(p.x - gz.x) < 620) hitFoe(gz, p, [gz.x, GROUND - 90], sp.dmg, true, 'PER-ZILLA!');
+        vsFighterFoes(p).forEach(function(gz){ if (Math.abs(p.x - gz.x) < 620) hitFoe(gz, p, [gz.x, GROUND - 90], sp.dmg, true, 'PER-ZILLA!'); });
       }
     }
     else pose = mixPose(POSE.slam, POSE.guard, smooth(1.9, 2.5, st));
@@ -2271,8 +2451,8 @@ function specialUpdate(p, dt){
         var r = nearestRhino(p.x), rc3 = r ? rhinoRect(r) : null, rcx3 = r ? (rc3.x0 + rc3.x1) / 2 : 1e9;
         if (r && inReach(r, p) && Math.abs(p.x - rcx3) < 420 * (G.square ? SQ.size : 1)){
           hitRhino(r, p, [rcx3, GROUND - 120], sp.dmg, true, 'NAP TIME!');
-          if (r.state !== 'ko' && r.state !== 'gone'){ r.state = 'sleep'; r.st = 0; r.run = 0; r.facing = p.x > r.x ? 1 : -1; }
-        } else if (G.vs && vsFoeOf(p) && !vsFoeOf(p).isRhino && vsAlive(vsFoeOf(p)) && Math.abs(p.x - vsFoeOf(p).x) < 200){ var bz = vsFoeOf(p); hitFoe(bz, p, [bz.x, GROUND - 120], sp.dmg, true, 'NAP TIME!'); }
+          if (r.state !== 'ko' && r.state !== 'gone' && !G.over){ r.state = 'sleep'; r.st = 0; r.run = 0; r.facing = p.x > r.x ? 1 : -1; }
+        } else if (vsNearFighter(p, 200)){ var bz = vsNearFighter(p, 200); hitFoe(bz, p, [bz.x, GROUND - 120], sp.dmg, true, 'NAP TIME!'); }
         else { fx.push({x: p.headPt[0], y: p.headPt[1] - 30, t: 0, life: .7, r: 40, label: 'too far…', big: false}); }
       }
     }
@@ -2312,7 +2492,7 @@ function specialUpdate(p, dt){
         for (var jp = 0; jp < 16; jp++) puffs.push({x: land + rnd(-160, 160), y: GROUND - rnd(0, 24), t: 0, r: rnd(8, 20), z: p.z});
         if (g.isRhino){ g.jump = 0; g.tilt = 0; g.x = land; if (g.state === 'thrown'){ g.state = 'idle'; g.st = 0; } }
         hitFoe(g, p, [land, GROUND - 90], sp.dmg, true, 'JIU-JITSU!');
-        if (g.isRhino && g.state !== 'ko' && g.state !== 'gone'){ g.state = 'stagger'; g.st = -.5; g.facing = p.x > g.x ? 1 : -1; }
+        if (g.isRhino && !G.over && g.state !== 'ko' && g.state !== 'gone'){ g.state = 'stagger'; g.st = -.5; g.facing = p.x > g.x ? 1 : -1; }
       }
       if (u >= 1 && st > p.grabT + .85){ p.state = 'idle'; p.grabbed = null; p.throwDone = false; }
     }
@@ -2383,7 +2563,7 @@ function specialUpdate(p, dt){
         var at = g2.isRhino ? [g2.x + g2.facing * 1.4 * rs(g2), GROUND - 1.6 * rs(g2) - (g2.jump || 0)] : [g2.x, GROUND - g2.y - 110];
         if (g2.isRhino) g2.state = 'idle';            // hitRhino staggers an idle rhino; put it straight back in the hold
         hitFoe(g2, p, at, sp.dmg, last, last ? 'TAP OUT!' : (ih % 2 ? 'SQUEEZE!' : 'GRRK!'));
-        if (g2.isRhino && g2.state !== 'ko' && g2.state !== 'gone') { g2.state = 'choked'; g2.st = 0; }
+        if (g2.isRhino && !G.over && g2.state !== 'ko' && g2.state !== 'gone') { g2.state = 'choked'; g2.st = 0; }   // not after the bell: round 12's last panel makes it a fawn
       }
       if (!alive || hold > S.appear + (sp.hits || 5) * S.tick + .1){
         // let go and hop off behind it
@@ -2416,7 +2596,7 @@ function specialUpdate(p, dt){
         if (wt){
           var tr = wt.t, last = iw === nw - 1, at = tr.isRhino ? [tr.x - p.facing * 1.2 * rs(tr), GROUND - 1.1 * rs(tr) - tr.jump] : [tr.x, GROUND - tr.y - 100];
           hitFoe(tr, p, at, sp.dmg, last, last ? 'DRENCHED!' : (iw % 2 ? 'SPLASH!' : 'SPLOSH!'));
-          if (tr.isRhino && tr.state !== 'ko' && tr.state !== 'gone' && tr.state !== 'thrown') tr.x += p.facing * WATER.push;
+          if (tr.isRhino && tr.state !== 'ko' && tr.state !== 'gone' && tr.state !== 'thrown' && tr.state !== 'morph' && tr.state !== 'graze' && tr.state !== 'trot') tr.x += p.facing * WATER.push;
           for (var wp = 0; wp < 5; wp++) puffs.push({x: at[0] + rnd(-30, 30), y: at[1] + rnd(-30, 30), t: rnd(0, .15), r: rnd(6, 13), col: wp % 2 ? '#8fd3ff' : '#d6f0ff', z: tr.z});
         }
       }
@@ -2479,7 +2659,7 @@ function mindTarget(p){
     if (d * p.facing < -60) return;
     if (Math.abs(d) < bd){ bd = Math.abs(d); best = r; }
   });
-  if (!best && G.vs){ var f = vsFoeOf(p); if (f && !f.isRhino && vsAlive(f)) best = f; }
+  var f = vsNearFighter(p, 1e9); if (f && (!best || Math.abs(f.x - p.x) < bd)) best = f;   // versus: whoever is nearest
   return best;
 }
 function mindKO(p, t){
@@ -2504,13 +2684,13 @@ function sneakTarget(p){
     var d = Math.abs(G.square ? wrapDelta(r.x - p.x) : r.x - p.x);
     if (d < bd){ bd = d; best = r; }
   });
-  if (!best && G.vs){ var f = vsFoeOf(p); if (f && !f.isRhino && vsAlive(f)) best = f; }
+  var f = vsNearFighter(p, 1e9); if (f && (!best || Math.abs(f.x - p.x) < bd)) best = f;   // versus: whoever is nearest
   return best;
 }
 function desertAmount(){
   if (!G) return 0;
   var a = 0;
-  G.players.forEach(function(q){ if (q.state === 'special' && q.def.special.kind === 'sneak') a = Math.max(a, smooth(0, .4, q.st)); });
+  G.players.forEach(function(q){ if (!q.gone && q.state === 'special' && q.def.special.kind === 'sneak') a = Math.max(a, smooth(0, .4, q.st)); });
   return a;
 }
 function drawDesert(t, a){
@@ -2615,7 +2795,7 @@ function waterTarget(p){
     if (d < -40 || d > WATER.reach) return;
     if (d < bd){ bd = d; best = r; }
   });
-  if (!best && G.vs){ var f = vsFoeOf(p); if (f && !f.isRhino && vsAlive(f)){ var fd = (f.x - p.x) * p.facing - 40; if (fd > -40 && fd < WATER.reach){ best = f; bd = fd; } } }
+  vsFighterFoes(p).forEach(function(f){ var fd = (f.x - p.x) * p.facing - 40; if (fd > -40 && fd < WATER.reach && fd < bd){ best = f; bd = fd; } });
   return best ? {t: best, d: Math.max(20, bd)} : null;
 }
 function drawWaterJet(f, h1, h2, fac){
@@ -2646,7 +2826,7 @@ function loudHits(p, dmg, last){
     hitFoe(r, p, [r.x, GROUND - 1.6 * rs(r) - r.jump], dmg, last, last ? 'EEK!' : (Math.random() < .5 ? 'YIKES!' : 'EEP!'));
     if (r.state !== 'ko' && r.state !== 'gone' && !G.over){ r.state = 'scared'; r.st = 0; r.dir = d >= 0 ? 1 : -1; r.facing = r.dir; r.chargeHit = true; }
   });
-  if (G.vs){ var f = vsFoeOf(p); if (f && !f.isRhino && vsAlive(f) && Math.abs(f.x - p.x) < reach) hitFoe(f, p, [f.x, GROUND - f.y - 110], dmg, last, 'EEK!'); }
+  vsFighterFoes(p).forEach(function(f){ if (Math.abs(f.x - p.x) < reach) hitFoe(f, p, [f.x, GROUND - f.y - 110], dmg, last, 'EEK!'); });
 }
 // Sarah's material. Mean, Australian, and all aimed at a rhino that should not be in a Kiruna sample
 var AUSSIE = ['RACK OFF, YA DRONGO!', 'YA FLAMIN\' GALAH!', 'GET STUFFED, YA DROPKICK!', 'PULL YA HEAD IN!', 'DEAD SET MUPPET!',
@@ -2661,7 +2841,7 @@ function earshot(p){
     if (d * p.facing < -60 || Math.abs(d) > reach) return;
     if (Math.abs(d) < bd){ bd = Math.abs(d); best = r; }
   });
-  if (!best && G.vs){ var f = vsFoeOf(p); if (f && !f.isRhino && vsAlive(f) && Math.abs(f.x - p.x) < reach) best = f; }
+  var f = vsNearFighter(p, reach, true); if (f && (!best || Math.abs(f.x - p.x) < bd)) best = f;
   return best;
 }
 // one bubble per speaker at a time: a new line replaces the last one instead of piling on top of it
@@ -2825,7 +3005,7 @@ function updateRhino(r, dt){
     r.x += r.dir * sp * dt; r.run = 1; r.phase += dt * 20; r.tilt = .06 + .03 * Math.sin(r.phase); r.head = -.15;
     if (Math.random() < .6) puffs.push({x: r.x - r.dir * rnd(60, 150), y: GROUND - rnd(0, 30), t: 0, r: rnd(6, 14)});
     // hit the player?
-    var ts = Math.min(1.4, r.size || 1), ran = Math.abs(r.x - (r.cx0 == null ? r.x : r.cx0)) > 40; rhinoFoes(r).forEach(function(q, qi){ if (ran && !r.trampled[qi] && Math.abs(q.x - (r.x + r.dir * 120 * ts)) < 110 * ts && (q.isRhino ? q.jump < 60 : (q.y < 84 * ts && q.inv <= 0 && !(q.state === 'special' && (q.def.special.kind === 'dash'))))){ r.trampled[qi] = true; hitEnt(q, r, r.angry ? 26 : 20, 'TRAMPLED!', r.dir * 520); } });
+    var ts = Math.min(1.4, r.size || 1), ran = Math.abs(r.x - (r.cx0 == null ? r.x : r.cx0)) > 40; rhinoFoes(r).forEach(function(q){ var qi = G.vs ? 's' + q.vsSide : 'p' + G.players.indexOf(q); if (ran && !r.trampled[qi] && Math.abs(q.x - (r.x + r.dir * 120 * ts)) < 110 * ts && (q.isRhino ? q.jump < 60 : (q.y < 84 * ts && q.inv <= 0 && !(q.state === 'special' && (q.def.special.kind === 'dash'))))){ r.trampled[qi] = true; hitEnt(q, r, r.angry ? 26 : 20, 'TRAMPLED!', r.dir * 520); } });
     var rb = rhinoBounds(r);
     if ((G.square || isleOn()) && !r.human && ((r.st > .4 && dist * r.dir < -200 * (isleOn() ? ISLE.spd : 1)) || r.st > 2.5)){ r.state = 'skid'; r.st = 0; sfx('whoosh'); for (var sq2 = 0; sq2 < 8; sq2++) puffs.push({x: r.x + r.dir * rnd(-40, 90), y: GROUND - rnd(0, 26), t: 0, r: rnd(8, 18)}); }
     else if (r.human && r.st > 1.05){ r.state = 'skid'; r.st = 0; sfx('whoosh'); for (var hk2 = 0; hk2 < 8; hk2++) puffs.push({x: r.x + r.dir * rnd(-40, 90), y: GROUND - rnd(0, 26), t: 0, r: rnd(8, 18)}); }
@@ -2874,10 +3054,10 @@ function update(dt){
   if (slowmo > 0) slowmo -= dt;
   if (G.vs){
     G.sides[0].inp.keys = keys; G.sides[0].inp.pressed = pressed;                       // side 1 is this keyboard / the touch pads
-    if (!Net.on || !Net.peer){ G.sides[1].inp.keys = keys2; G.sides[1].inp.pressed = pressed2; }   // side 2 is the other half of the keyboard
+    if (vsLocal && G.sides[1]){ G.sides[1].inp.keys = keys2; G.sides[1].inp.pressed = pressed2; }   // the test-only local duel: side 2 is the other half of the keyboard
   }
   else { G.p.inp.keys = keys; G.p.inp.pressed = pressed; G.p.inp.typed = typedQ; }   // player 1 is always the local keyboard / touch pads
-  G.players.forEach(function(q){ updatePlayer(q, dt * ts); }); G.rhinos.forEach(function(r){ if (!G.push || r.state === 'ko' || r.state === 'gone') updateRhino(r, dt * ts); });
+  G.players.forEach(function(q){ if (!q.gone || G.vs) updatePlayer(q, dt * ts); }); G.rhinos.forEach(function(r){ if (!G.push || r.state === 'ko' || r.state === 'gone') updateRhino(r, dt * ts); });
   if (G.push) updatePush(dt * ts);
   if (G.square && G.r) G.players.forEach(function(q){ q.x = G.r.x + wrapDelta(q.x - G.r.x); });
   updateCamera(dt);
@@ -2892,7 +3072,7 @@ function update(dt){
   for (var rg = rings.length - 1; rg >= 0; rg--){ rings[rg].t += dt; if (rings[rg].t > .6) rings.splice(rg, 1); }
   for (var bi = bolts.length - 1; bi >= 0; bi--){
     var bo = bolts[bi]; bo.t += dt; bo.x += bo.dir * 720 * dt;
-    if (!G.over && !bo.hit){ G.players.forEach(function(q){ if (!bo.hit && Math.abs(bo.x - q.x) < 34 && q.y < 60 && !q.ducking && q.inv <= 0){ bo.hit = true; hitPlayer(q, 14, 'ZAPPED!', bo.dir * 300); } }); }
+    if (!G.over && !bo.hit){ G.players.forEach(function(q){ if (!bo.hit && !q.gone && Math.abs(bo.x - q.x) < 34 && q.y < 60 && !q.ducking && q.inv <= 0){ bo.hit = true; hitPlayer(q, 14, 'ZAPPED!', bo.dir * 300); } }); }
     if (bo.x < -60 || bo.x > AW + 60 || bo.hit) bolts.splice(bi, 1);
   }
   if (G.buns) updateBuns(dt * ts);
@@ -2903,7 +3083,10 @@ function update(dt){
 function updateCamera(dt){
   if (!G || AW <= LW){ camX = 0; return; }
   var list = (G.vs && G.sides) ? G.sides : G.players;
-  var sx = 0, n = 0; list.forEach(function(q){ if (q){ sx += q.x; n++; } });
+  // the ones still standing (a knocked-out partner must not hold the survivor back); everybody if nobody is
+  var up = list.filter(function(q){ return q && !q.gone && q.state !== 'ko'; });
+  if (!up.length) up = list.filter(function(q){ return q && !q.gone; });
+  var sx = 0, n = 0; up.forEach(function(q){ sx += q.x; n++; });
   var target = clamp(sx / Math.max(1, n) - LW / 2, 0, AW - LW);
   camX += (target - camX) * Math.min(1, dt * 6);
 }
@@ -2920,7 +3103,7 @@ function tickAmbient(dt){
   else if (th === 'cafe'){
     for (var f5 = 0; f5 < flakes.length; f5++){ var fl5 = flakes[f5]; fl5.y += fl5.v * .9 * dt; fl5.x += (Math.sin(G.t * 1.1 + fl5.p) * 30 - 10) * dt; if (fl5.y > LH) { fl5.y = -8; fl5.x = Math.random() * (LW + 80); } }
   }
-  else if (th === 'museum'){
+  else if (th === 'museum' || th === 'garage'){   // dust in the hall, overspray in the booth: both hang in the air
     for (var f4 = 0; f4 < flakes.length; f4++){ var fl4 = flakes[f4]; fl4.y += fl4.v * .12 * dt; fl4.x += Math.sin(G.t * .5 + fl4.p) * 5 * dt; if (fl4.y > LH) { fl4.y = -5; fl4.x = Math.random() * LW; } }
   } else if (th === 'space'){
     for (var f3 = 0; f3 < flakes.length; f3++){ var fl3 = flakes[f3]; fl3.x -= (20 + fl3.v) * dt; if (fl3.x < -5) { fl3.x = LW + 5; fl3.y = Math.random() * LH; } }
@@ -2938,28 +3121,32 @@ function drawHUD(){
   var lv = LEVELS[LEVEL], compact = hudCompact();
   var chars = G.players.concat(G.rhinos), pcts = G.comp ? pct100(chars.map(function(c){ return c.share || 0; })) : null;
   ctx.font = '700 15px Nunito, sans-serif'; ctx.textBaseline = 'top';
-  // one bar + special meter per fighter (the second one below the first)
-  var yP = 22;
+  // one bar + special meter per fighter (the others below the first; a player who left the room drops off)
+  var yP = 22, many = G.players.length > 2, topEnd = 0;
   G.players.forEach(function(q, i){
-    var mine = !Net.on || !Net.peer || i === Net.me, w = i ? 260 : 330;
+    if (q.gone) return;
+    if (G.square && many && !compact && i === 2){ topEnd = yP; yP = SQ.y1 + 14; }   // round 6: the ceiling runs just under two rows, so the rest go below the room
+    var mine = !Net.on || !Net.peer || i === myIdx(), w = i ? 260 : 330;
     var lab = q.def.name.toUpperCase() + (G.players.length > 1 && mine ? ' (YOU)' : '') + (pcts ? ' · ' + pcts[chars.indexOf(q)] + ' %' : '');
     var used = bar(24, yP, w, i ? 16 : 20, q.hp / q.maxhp, q.state === 'ko' ? '#8a8fa3' : '#6fe3a0', '#c8262c', lab, 'left', G.comp ? COMP_LIMIT : 0);
     var my = compact ? yP + used + 5 : yP + 44, mh = compact ? hudPx(6) : 10;
     meterBar(24, my, 200, mh, q.meter, 'left', G.buns ? (q.meter >= 100 ? (isTouch ? 'TRAY READY — TAP TRAY' : 'TRAY READY — 5 BUNS (L)') : 'TRAY ' + Math.floor(q.meter) + '%') : (q.meter >= 100 ? 'SPECIAL READY — ' + q.def.special.name.toUpperCase() : 'SPECIAL ' + Math.floor(q.meter) + '%'), compact);
-    yP = compact ? my + mh + hudPx(8) : yP + 72;
+    yP = compact ? my + mh + hudPx(8) : yP + (many ? 58 : 72);
   });
+  G.hudBottom = topEnd || yP;   // where the rows at the top end (the co-op rules banner goes below them)
   var yR = hudRightTop();   // below the MENU / FULLSCREEN buttons in the corner
   G.rhinos.forEach(function(r, i){
     var w = i ? 260 : 330, h = i ? 16 : 20, revealed = r.morph && r.revealed;
     var base = revealed ? animalLabel(r.morph) : (lv.huds ? lv.huds[i] : lv.hud + (i ? ' #' + (i + 1) : ''));
     if (compact) base = base.split(' · ')[0] + (!revealed && !lv.huds && i ? ' #' + (i + 1) : '');   // the name, not the lesson, on a phone
+    if (G.paint && !revealed) base = compact ? 'RESPRAY ' + (r.paint | 0) + '/' + PAINT_N : 'THE RHINO · ' + (r.paint | 0) + '/' + PAINT_N + ' PANELS RESPRAYED';
     var used = bar(LW - 24 - w, yR, w, h, r.hp / r.maxhp, r.space ? (r.angry ? '#ff8ad0' : '#7fe7ff') : r.mutant ? (r.angry ? '#ccff66' : '#8dff5a') : (r.angry ? '#ff5a3c' : '#f2c56b'), '#c8262c',
       base + (pcts ? ' · ' + pcts[chars.indexOf(r)] + ' %' : ''), 'right', G.comp ? COMP_LIMIT : 0);
     yR += compact ? used + hudPx(6) : 42;
   });
   if (G.comp){
     // the whole ring as one stacked bar: it always fills up, whoever holds the pieces
-    var cw = compact ? 220 : 260, cx0 = LW / 2 - cw / 2, cy0 = compact ? 22 + hudPx(34) : 100, cx = cx0, sh = compact ? hudPx(7) : 12;
+    var cw = compact ? 220 : 260, cx0 = LW / 2 - cw / 2, cy0 = compact ? 22 + hudPx(34) : (many ? LH - 40 : 100), cx = cx0, sh = compact ? hudPx(7) : 12;   // 3+ players: their captions reach the middle
     ctx.fillStyle = 'rgba(10,14,30,.6)'; roundRect(cx0 - 3, cy0 - 3, cw + 6, sh + 6, 6); ctx.fill();
     chars.forEach(function(c){ var w = cw * (c.share || 0); if (w <= 0) return; ctx.fillStyle = c.def && !c.isRhino ? '#6fe3a0' : (c.skin === 'zebra' ? '#f4f0ea' : '#b0a89c'); ctx.fillRect(cx, cy0, w, sh); ctx.fillStyle = '#1a141e'; ctx.fillRect(cx, cy0, 1, sh); cx += w; });
     ctx.fillStyle = '#c9d3e6'; ctx.font = '900 ' + (compact ? hudPx(9) : 11) + 'px Nunito, sans-serif'; ctx.textAlign = 'center';
@@ -2987,7 +3174,7 @@ function drawHUD(){
     ctx.beginPath(); ctx.ellipse(mx, my, mw / 2, mh / 2, 0, 0, 6.283); ctx.fill(); ctx.stroke();
     var mapAt = function(e){ return [mx + (e.x / ISLE.rx) * (mw / 2 - 4), my - (((e.z || 0) - ISLE.d / 2) / ISLE.rz) * (mh / 2 - 4)]; };   // up the map = further up the screen
     G.rhinos.forEach(function(r0){ if (r0.state === 'gone') return; var m = mapAt(r0); ctx.fillStyle = '#ff5a3c'; ctx.beginPath(); ctx.arc(m[0], m[1], 4, 0, 6.283); ctx.fill(); });
-    G.players.forEach(function(q){ if (q.state === 'ko') return; var m = mapAt(q); ctx.fillStyle = '#f2c56b'; ctx.beginPath(); ctx.arc(m[0], m[1], 3.5, 0, 6.283); ctx.fill(); });
+    G.players.forEach(function(q){ if (q.state === 'ko' || q.gone) return; var m = mapAt(q); ctx.fillStyle = '#f2c56b'; ctx.beginPath(); ctx.arc(m[0], m[1], 3.5, 0, 6.283); ctx.fill(); });
     ctx.font = '900 10px Nunito, sans-serif'; ctx.fillStyle = 'rgba(201,211,230,.75)'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     ctx.fillText('THE ISLAND', mx, my + mh / 2 + 4); ctx.textAlign = 'left';
   }
@@ -3011,12 +3198,13 @@ function drawRepeat(u, cx, y, fs, small){
   ctx.textAlign = 'left'; ctx.textBaseline = 'top';
 }
 function drawPushHUD(){
-  var pu = G.push, compact = hudCompact(), me = (Net.on && Net.peer) ? Net.me : 0, mine = G.players[me] || G.p;
+  var pu = G.push, compact = hudCompact(), me = myIdx(), mine = G.players[me] || G.p;
   var bx = 200, bw = LW - 400, by = compact ? hudRightTop() + 6 : 70, bh = compact ? hudPx(8) : 12;
   var lo = pushLoseX(), f = clamp((pu.x - lo) / (PUSH.win - lo), 0, 1);
   // who is pushing, top left
   ctx.font = '900 ' + (compact ? hudPx(11) : 15) + 'px Nunito, sans-serif'; ctx.textBaseline = 'top'; ctx.lineJoin = 'round';
   var names = G.players.filter(function(q){ return !q.gone; }).map(function(q){ return q.def.name.toUpperCase() + (pushers().length > 1 && q === mine ? ' (YOU)' : ''); }).join(' + ');
+  if (pushers().length > 2) names = mine.def.name.toUpperCase() + ' (YOU) + ' + (pushers().length - 1) + ' MORE';   // four names would run into the clock
   ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(10,14,30,.85)'; ctx.strokeText(names, 24, 22); ctx.fillStyle = '#ffffff'; ctx.fillText(names, 24, 22);
   var tot = {slips: 0, units: 0}; G.players.forEach(function(q){ tot.slips += q.pu.slips; tot.units += q.pu.units; });
   var sub = 'units ' + tot.units + ' · slips ' + tot.slips; ctx.font = '900 ' + (compact ? hudPx(9) : 12) + 'px Nunito, sans-serif';
@@ -3034,18 +3222,19 @@ function drawPushHUD(){
   var note = function(y){ if (!(Net.on && Net.lost)) return; ctx.font = '900 ' + (compact ? hudPx(10) : 13) + 'px Nunito, sans-serif'; ctx.textAlign = 'center'; ctx.lineJoin = 'round'; ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(10,14,30,.9)'; ctx.strokeText('FRIEND RECONNECTING…', LW / 2, y); ctx.fillStyle = '#ffd166'; ctx.fillText('FRIEND RECONNECTING…', LW / 2, y); ctx.textAlign = 'left'; };
   if (G.over || G.elapsed < 1.6){ note(by + bh + (compact ? hudPx(24) : 26)); return; }   // the banner owns the middle of the screen then
   // your repeat, big, one arrow under each letter; a partner's progress small underneath
-  var mu = (Net.on && Net.peer && !Net.host && pu.pred) ? pu.pred : mine.pu, fs = compact ? hudPx(24) : 44, ly = by + bh + (compact ? hudPx(34) : 56);
+  var mu = (guestFight() && pu.pred) ? pu.pred : mine.pu, fs = compact ? hudPx(24) : 44, ly = by + bh + (compact ? hudPx(34) : 56);
   var q = pushSeq(mu.stage);
   ctx.font = '900 ' + (compact ? hudPx(9) : 12) + 'px Nunito, sans-serif'; ctx.textAlign = 'center'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(10,14,30,.85)';
   var cap = 'REPEAT ' + (mu.stage + 1) + ' · (' + q.unit + ')×' + (q.seq.length / q.unit.length) + (mu.lock > 0 ? ' · SLIP!' : '');
   ctx.strokeText(cap, LW / 2, ly - fs * .6 - (compact ? hudPx(12) : 16)); ctx.fillStyle = mu.lock > 0 ? '#ff8a6a' : '#eef2f8'; ctx.fillText(cap, LW / 2, ly - fs * .6 - (compact ? hudPx(12) : 16)); ctx.textAlign = 'left';
   drawRepeat(mu, LW / 2, ly, fs, false);
-  var rows = 0;
-  G.players.forEach(function(q2, i){ if (i === me || q2.gone) return; rows++;
-    var sy = ly + fs * (compact ? 1.95 : 1.75);
-    ctx.font = '900 ' + (compact ? hudPx(9) : 11) + 'px Nunito, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#c9d3e6'; ctx.strokeText(q2.def.name.toUpperCase(), LW / 2, sy - fs * .55); ctx.fillText(q2.def.name.toUpperCase(), LW / 2, sy - fs * .55); ctx.textAlign = 'left';
-    drawRepeat(q2.pu, LW / 2, sy, Math.round(fs * .45), true); });
-  note(ly + fs * (rows ? 2.45 : 1.6));   // under the letters (and the partner's row), never beneath them
+  // the partners' progress, small, side by side in one row under yours
+  var part = G.players.filter(function(q2, i){ return i !== me && !q2.gone; }), rows = part.length ? 1 : 0;
+  part.forEach(function(q2, k){
+    var sy = ly + fs * (compact ? 1.95 : 1.75), sx = LW * (k + 1) / (part.length + 1), sf = Math.round(fs * (part.length > 1 ? .36 : .45));
+    ctx.font = '900 ' + (compact ? hudPx(9) : 11) + 'px Nunito, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#c9d3e6'; ctx.strokeText(q2.def.name.toUpperCase(), sx, sy - fs * .55); ctx.fillText(q2.def.name.toUpperCase(), sx, sy - fs * .55); ctx.textAlign = 'left';
+    drawRepeat(q2.pu, sx, sy, sf, true); });
+  note(ly + fs * (rows ? 2.45 : 1.6));   // under the letters (and the partners' row), never beneath them
 }
 function hudTimer(s){
   var fz = Math.round(30 * (hudCompact() ? Math.min(HUD_K, 1.5) : 1));
@@ -3168,7 +3357,7 @@ function drawFX(){
 }
 // letterbox colour and the colour of the ground below the arena on a tall phone, per theme
 var LEAF_COL = ['#d9822b', '#c0392b', '#e6b422'];
-var THEME_COL = {kiruna: ['#0c1434', '#c6d0e6'], wasteland: ['#2a1a14', '#6f5238'], space: ['#02030c', '#3c4048'], museum: ['#1b1612', '#211b17'], lab: ['#1b2330', '#98a2ae'], cafe: ['#2a1c14', '#5d544c'], island: ['#0a1230', '#0d1a33']};
+var THEME_COL = {kiruna: ['#0c1434', '#c6d0e6'], wasteland: ['#2a1a14', '#6f5238'], space: ['#02030c', '#3c4048'], museum: ['#1b1612', '#211b17'], lab: ['#1b2330', '#98a2ae'], cafe: ['#2a1c14', '#5d544c'], garage: ['#1d2229', '#5d6169'], island: ['#0a1230', '#0d1a33']};
 function draw(){
   var sc = Math.min(canvas.width / LW, canvas.height / LH), offx = (canvas.width - LW * sc) / 2, offy = (canvas.height - LH * sc) / 2;
   // a touch phone held upright has spare height: put the arena at the top and leave the band below it to the pads,
@@ -3200,7 +3389,7 @@ function draw(){
     // shadows (in the square each one in its owner's frame, on the wall it stands on)
     ctx.fillStyle = mu ? 'rgba(10,6,2,.35)' : 'rgba(70,80,120,.28)';
     G.rhinos.forEach(function(r0){ if (r0.state !== 'gone') withZ(r0.z, function(){ inFrame(r0, function(){ var rc = rhinoRect(r0); ctx.beginPath(); ctx.ellipse((rc.x0 + rc.x1) / 2, GROUND, (rc.x1 - rc.x0) / 2, 12 * (r0.size || 1), 0, 0, 6.283); ctx.fill(); }); }); });
-    G.players.forEach(function(q){ inFrame(q, function(){ var js = 1 - Math.min(1, q.y / 220), pscl = ((q.state === 'special' && q.scale) ? q.scale : 1) * (q.size || 1); ctx.beginPath(); ctx.ellipse(q.x, GROUND, (40 * js + 8) * pscl, 8 * pscl, 0, 0, 6.283); ctx.fill(); }); });
+    G.players.forEach(function(q){ if (q.gone && !G.vs) return; inFrame(q, function(){ var js = 1 - Math.min(1, q.y / 220), pscl = ((q.state === 'special' && q.scale) ? q.scale : 1) * (q.size || 1); ctx.beginPath(); ctx.ellipse(q.x, GROUND, (40 * js + 8) * pscl, 8 * pscl, 0, 0, 6.283); ctx.fill(); }); });
     if (G.buns) drawBuns(true);
     // radioactive hot spots
     for (var hh = 0; hh < hot.length; hh++){
@@ -3240,7 +3429,7 @@ function draw(){
       for (var zi = 0; zi < 3; zi++){ var zt = (G.t * .7 + zi * .33) % 1; var zx = rr.x + rr.facing * 1.6 * rs(rr) + zi * 12 + zt * 30, zy = gy - 2.0 * rs(rr) - zt * 80; ctx.globalAlpha = 1 - zt; ctx.strokeText('z', zx, zy); ctx.fillText('z', zx, zy); }
       ctx.globalAlpha = 1;
     }); }); });
-    for (var pi = G.players.length - 1; pi >= 0; pi--){ var q2 = G.players[pi];
+    for (var pi = G.players.length - 1; pi >= 0; pi--){ var q2 = G.players[pi]; if (q2.gone && !G.vs) continue;
       if (q2.inv > 0 && q2.state !== 'ko' && q2.state !== 'special' && Math.floor(G.t * 20) % 2 === 0) ctx.globalAlpha = .4;
       inFrame(q2, function(){ fighterDraw(q2, t); }); ctx.globalAlpha = 1; }
     if (G.buns) drawBuns(false);
@@ -3261,9 +3450,10 @@ function draw(){
     }
   }
   // snowflakes (round 1), rising embers (round 2) or space dust streaming past (round 3)
-  ctx.fillStyle = mu ? 'rgba(255,236,196,.32)' : (sp ? 'rgba(200,220,255,.5)' : (wl ? 'rgba(255,170,80,.75)' : '#f6f9ff'));
+  var ga = th === 'garage';
+  ctx.fillStyle = ga ? 'rgba(233,168,96,.3)' : mu ? 'rgba(255,236,196,.32)' : (sp ? 'rgba(200,220,255,.5)' : (wl ? 'rgba(255,170,80,.75)' : '#f6f9ff'));
   if (th === 'cafe') for (var lf = 0; lf < flakes.length; lf++){ var fk = flakes[lf]; ctx.fillStyle = LEAF_COL[lf % 3]; ctx.beginPath(); ctx.ellipse(fk.x, fk.y, fk.r * 2.4, fk.r * 1.2, fk.p + t * (1 + fk.v / 30), 0, 6.283); ctx.fill(); }
-  else if (th !== 'lab') for (var f = 0; f < flakes.length; f++){ var fl = flakes[f]; ctx.beginPath(); ctx.arc(fl.x, fl.y, mu ? fl.r * .55 : (wl ? fl.r * .8 : fl.r), 0, 6.283); ctx.fill(); }
+  else if (th !== 'lab') for (var f = 0; f < flakes.length; f++){ var fl = flakes[f]; ctx.beginPath(); ctx.arc(fl.x, fl.y, (mu || ga) ? fl.r * .55 : (wl ? fl.r * .8 : fl.r), 0, 6.283); ctx.fill(); }
   ctx.restore();
   // vignette
   var vg = ctx.createRadialGradient(LW / 2, LH / 2, LH * .45, LW / 2, LH / 2, LH * .95); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.42)');
@@ -3275,7 +3465,8 @@ function draw(){
     if (flashA > 0){ ctx.fillStyle = 'rgba(255,255,255,' + flashA + ')'; ctx.fillRect(0, 0, LW, LH); }
     var allGone = G.rhinos.every(function(r0){ return r0.state === 'gone'; });
     if (G.vs){
-      if (G.over) bigText(G.vsTime ? 'TIME!' : 'K.O.!', LW / 2, 200, 120);
+      var walkover = G.vsWin >= 0 && G.sides.every(function(e, i){ return i === G.vsWin || e.leftEarly; });
+      if (G.over) bigText(G.vsTime ? 'TIME!' : (walkover ? (G.sides.length > 2 ? 'THEY ALL LEFT' : 'OPPONENT LEFT') : 'K.O.!'), LW / 2, 200, walkover ? 80 : 120);
       if (!G.over && G.elapsed < 1.6){ var va = 1 - smooth(1.1, 1.6, G.elapsed); ctx.globalAlpha = va; bigText(G.elapsed < .8 ? 'VERSUS' : 'FIGHT!', LW / 2, 220, 96); ctx.globalAlpha = 1; }
     }
     else if (!G.over && G.rhinos.some(function(r0){ return r0.morph && (r0.state === 'morph' || r0.state === 'graze'); })){
@@ -3288,9 +3479,10 @@ function draw(){
       else if (!allGone){ var just = (G.identified ? 'IT IS A ' : 'JUST A ') + G.rhinos.filter(function(r0){ return r0.morph; }).map(function(r0){ return ANIMALS[r0.morph].name.toUpperCase(); }).join(' & A '); bigText(just, LW / 2, 200, Math.min(90, Math.floor(1500 / just.length))); }
       else bigText('FALSE POSITIVE', LW / 2, 190, 78);
     }
+    else if (G.over && G.won && G.paint){ bigText(G.rhinos.some(function(r0){ return r0.state === 'morph' && !r0.revealed; }) ? 'RESPRAYED!' : 'IT IS A FAWN!', LW / 2, 200, 96); }
     else if (G.over && G.won && !allGone){ bigText(G.push ? 'PUSHED OFF!' : 'K.O.!', LW / 2, 200, G.push ? 96 : 120); }
     else if (G.over && G.won && allGone){ bigText('FALSE POSITIVE', LW / 2, 190, 78); }
-    if (!G.vs && G.over && !G.won){ var lw = lossWord(G.players[(Net.on && Net.peer) ? Net.me : 0] || G.p); bigText(lw, LW / 2, 200, lw.length > 9 ? 84 : 100); }
+    if (!G.vs && G.over && !G.won){ var lw = lossWord(G.players[myIdx()] || G.p); bigText(lw, LW / 2, 200, lw.length > 9 ? 84 : 100); }
     // co-op starts straight into the fight (no level card), so a round that changes the controls says so for a few seconds
     var rl = LEVELS[LEVEL].rules;
     if (rl && !G.vs && !G.over && Net.on && Net.peer && !Net.lost && G.elapsed > 1.4 && G.elapsed < 7){
@@ -3298,7 +3490,7 @@ function draw(){
       var rfs = hudCompact() ? hudPx(11) : 17; ctx.font = '900 ' + rfs + 'px Nunito, sans-serif';
       var rt = isTouch ? rl[1] : rl[0]; while (rfs > 10 && ctx.measureText(rt).width > LW - 60){ rfs--; ctx.font = '900 ' + rfs + 'px Nunito, sans-serif'; }
       ctx.globalAlpha = smooth(1.4, 1.8, G.elapsed) * (1 - smooth(6.3, 7, G.elapsed)); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      var rw = ctx.measureText(rt).width + 36, ry = G.push ? 520 : 232;
+      var rw = ctx.measureText(rt).width + 36, ry = G.push ? 520 : Math.max(232, (G.hudBottom || 0) + rfs + 6);   // under a 3rd / 4th player's bar
       ctx.fillStyle = 'rgba(10,14,30,.78)'; roundRect(LW / 2 - rw / 2, ry - rfs, rw, rfs * 2, 10); ctx.fill(); ctx.fillStyle = '#ffd166'; ctx.fillText(rt, LW / 2, ry + 1);
       ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.globalAlpha = 1;
     }
@@ -3364,7 +3556,8 @@ var Scores = (function(){
   }
   return {load: load, add: add, report: report, mode: function(){ return mode; }, savedRemote: function(){ return lastRemote; }};
 })();
-function scoreFor(g){ var hp = 0, hits = 0; g.players.forEach(function(q){ hp += q.hp; hits += q.hitsLanded; }); hp /= g.players.length;
+// over the players who stayed to the end (the same ones teamName names)
+function scoreFor(g){ var hp = 0, hits = 0, st = g.players.filter(function(q){ return !q.gone; }); if (!st.length) st = g.players; st.forEach(function(q){ hp += q.hp; hits += q.hitsLanded; }); hp /= st.length;
   // the push: nobody loses health and letters are cheap, so accuracy stands in for health and repeat units for hits
   if (g.push){ var L = 0, S = 0, U = 0; g.players.forEach(function(q){ L += q.pu.letters; S += q.pu.slips; U += q.pu.units; }); hp = 100 * L / Math.max(1, L + S); hits = Math.min(U, 16) * 5; } return Math.round(1000 + hp * 10 + Math.max(0, 120 - g.elapsed) * 20 + hits * 5 + LEVEL * 1500 + (g.pacifist ? 2500 : 0)); }
 function teamName(g){ return g.players.filter(function(q){ return !q.gone; }).map(function(q){ return q.def.name; }).join(' + '); }
@@ -3420,8 +3613,8 @@ function openScores(lvl){
 }
 
 // ------------------------------------------------------------ co-op over WebRTC
-// Two players in one room. The peer with the lower id hosts: it runs the whole simulation (both fighters + the rhino)
-// and streams a compact snapshot; the guest sends its inputs and draws the snapshot. Two paths: Trystero (WebRTC data
+// Two to four players in one room. The room's host runs the whole simulation (every fighter + the rhino) and streams a
+// compact snapshot; each guest sends its inputs and draws the snapshot. Two paths: Trystero (WebRTC data
 // channel, Nostr signalling; vendor/trystero.js, imported only when CO-OP is used) and a Supabase Realtime relay
 // (relayTransport). A test can inject window.__coopTransport with the {join(code, handlers) -> {send, selfId, leave}}
 // shape (noRelay: true skips the relay).
@@ -3429,7 +3622,8 @@ var TRYSTERO_URL = './vendor/trystero.js';
 var TURN_SERVERS = [];            // optional TURN servers [{urls, username, credential}] for strict NATs
 var TURN_CREDENTIALS_URL = '';    // optional: a URL returning a JSON array of ICE servers (e.g. Metered's turn/credentials), fetched before joining
 var RELAY_URL = SUPA.url.replace(/^http/, 'ws') + '/realtime/v1/websocket?apikey=' + SUPA.key + '&vsn=1.0.0';
-var Net = {crumbQ: [], on:false, host:false, me:0, code:'', peer:null, rtc:null, rtcUp:false, rtcPeer:null, relay:null, relayPeer:false, id:'', ready:false, peerReady:null, f:null, guestInp:{keys:{}, pressed:{}}, sfxQ:[], frame:0, lastKeys:'', err:'', timer:null, joining:false, full:false, lost:false, lostTimer:null};
+var NET_MAX = 4;   // players in one room: two is the classic pair, three or four fight together (or all against all in versus)
+var Net = {crumbQ: [], on:false, host:false, me:0, code:'', room:[], peer:null, rtc:null, rtcIds:{}, relay:null, relayIds:{}, id:'', ready:false, picks:{}, ids:null, f:null, inputs:{}, sfxQ:[], frame:0, lastKeys:'', err:'', timer:null, joining:false, full:false, lost:false, lostIds:{}, lostTimers:{}, benched:false, hostSeen:0, seq:0, hostSeq:0, seen:{}, fightG:null, fightNo:0, left:{}, mode:'coop'};
 function iceServers(){
   if (!TURN_CREDENTIALS_URL) return Promise.resolve(TURN_SERVERS);
   return fetch(TURN_CREDENTIALS_URL).then(function(r){ return r.json(); }).then(function(list){ return TURN_SERVERS.concat(list || []); }).catch(function(){ return TURN_SERVERS; });
@@ -3490,9 +3684,12 @@ function relayTransport(code, h){
   open();
   return {send: function(d){ if (joined) msg('broadcast', {type: 'broadcast', event: 'g', payload: {from: Net.id, d: d}}); }, ok: function(){ return joined; }, leave: function(){ closed = true; if (hb) clearInterval(hb); if (dropT){ clearTimeout(dropT); dropT = null; } try { if (ws) ws.close(); } catch (e) {} }};
 }
-// Wire rules: every message carries from = own id and to = the partner's id; anything addressed to someone else is
-// dropped. hello (unaddressed, sent to one transport peer) introduces you; a page that already has a partner answers
-// a stranger's hello with busy, so a third player on the same code is told the room is full and never joins the round.
+// Wire rules: every message carries from = own id and to = the id (or the list of ids) it is meant for; anything
+// addressed to somebody else is dropped. A room holds up to NET_MAX pages and its host is room[0], who decides who is
+// in it and says so with `room` (again every 2 s). hello (unaddressed, or sent to one transport peer) introduces you
+// and your room: two pages on their own pair up (the lower id hosts), a host takes a newcomer in while there is space
+// and no fight on (else busy / mid), and a host that hears of a room with a lower host is taken over by it, members
+// and all, when everybody fits. Only a host answers strangers.
 function sendVia(m, via, target){
   m.from = Net.id;
   try {
@@ -3500,15 +3697,36 @@ function sendVia(m, via, target){
     else if (Net.relay && Net.relay.ok()) Net.relay.send(m);
   } catch (e) {}
 }
-function sendNet(m){
-  if (!Net.peer) return;
-  m.to = Net.peer;
-  sendVia(m, (Net.rtc && Net.rtcUp) ? 'rtc' : 'relay', Net.rtcPeer);
+function netOthers(){ return Net.room.filter(function(id){ return id !== Net.id; }); }
+function netHostId(){ return Net.room.length ? Net.room[0] : Net.id; }
+function netRtcAll(){ var o = netOthers(); return o.length > 0 && o.every(function(id){ return !!Net.rtcIds[id]; }); }
+function netVia(){ var o = netOthers(), n = o.filter(function(id){ return !!Net.rtcIds[id]; }).length; return n === 0 ? 'relay' : (n === o.length ? 'P2P' : 'P2P + relay'); }
+// P2P to every listed page whose data channel is up, one relay broadcast (addressed to the rest) for everybody else
+function sendTo(m, ids){
+  var relay = [];
+  ids.forEach(function(id){
+    if (Net.rtc && Net.rtcIds[id]){ var c = {}; for (var k in m) c[k] = m[k]; c.to = id; sendVia(c, 'rtc', Net.rtcIds[id]); }
+    else relay.push(id);
+  });
+  if (relay.length){ m.to = relay.length === 1 ? relay[0] : relay; sendVia(m, 'relay'); }
 }
+// to the rest of the room, or to the members listed
+function sendNet(m, ids){
+  var to = (ids || netOthers()).filter(function(id){ return id !== Net.id && Net.room.indexOf(id) >= 0; });
+  if (to.length) sendTo(m, to);
+}
+// seq numbers every change of a page's room: a hello or room older than the last one heard from your host (it can
+// come late over the other transport) is ignored
+// fn / on: the number of the host's latest fight and whether it is still in it, so a guest that missed a start or
+// the result can tell its fight is over
+// rd: whom the host has a READY from, so a lost ready / unready heals itself on the next restatement
+function sendRoom(ids){ if (Net.host) sendNet({t:'room', ids: Net.room.slice(), seq: Net.seq, fn: Net.fightNo, on: (scene === 'fight' && G && Net.fightG === G) ? 1 : 0, rd: Object.keys(Net.picks)}, ids); }
+function helloMsg(){ return {t:'hello', room: Net.room.length > 1 ? Net.room.slice() : null, fight: scene === 'fight' ? 1 : 0, seq: Net.seq}; }
+function sayHello(){ sendVia(helloMsg(), 'relay'); if (Net.rtc) sendVia(helloMsg(), 'rtc'); }
 function coopStatus(t){ $(Net.mode === 'vs' ? 'vsStatus' : 'coopStatus').textContent = t; }
 function coopJoin(){
   var code = ($(Net.mode === 'vs' ? 'vsCode' : 'coopCode').value || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 24);
-  if (!code){ coopStatus('Type a room code first — any word you both agree on.'); return; }
+  if (!code){ coopStatus('Type a room code first — any word you all agree on.'); return; }
   if (Net.joining) return;                          // a double-click must not open a second room
   try { localStorage.setItem('swebits_room', code); } catch (e) {}
   var mode = Net.mode; netLeave(); Net.mode = mode;   // leaving resets the mode; this join keeps co-op or versus
@@ -3516,7 +3734,7 @@ function coopJoin(){
   coopStatus('Connecting to room ' + code.toUpperCase() + '…');
   netTransport().then(function(tr){
     var conn = tr.join(code, {onPeerJoin: rtcPeerJoin, onPeerLeave: rtcPeerLeave, onData: function(d, id){ netData(d, id, 'rtc'); }, onError: function(msg){ Net.err = /could not connect to peer/i.test(msg) ? 'direct P2P blocked on this network — using the relay' : msg; updateCoopLine(); }});
-    Net.on = true; Net.code = code; Net.rtc = conn; Net.rtcUp = false; Net.rtcPeer = null; Net.id = String(conn.selfId); Net.peer = null; Net.relayPeer = false; Net.ready = false; Net.peerReady = null; Net.host = false; Net.me = 0; Net.err = ''; Net.full = false; Net.lost = false;
+    Net.on = true; Net.code = code; Net.rtc = conn; Net.rtcIds = {}; Net.relayIds = {}; Net.id = String(conn.selfId); Net.room = [Net.id]; Net.peer = null; Net.ready = false; Net.picks = {}; Net.host = false; Net.me = 0; Net.ids = null; Net.f = null; Net.err = ''; Net.full = false; Net.lost = false; Net.lostIds = {}; Net.benched = false; Net.hostSeen = Date.now();
     Net.relay = (window.__coopTransport && window.__coopTransport.noRelay) ? null : relayTransport(code, {onPeerJoin: relayPeerJoin, onPeerLeave: relayPeerLeave, onData: function(d, id){ netData(d, id, 'relay'); }, onRelay: updateCoopLine});
     Net.joining = false; $('btnCoopJoin').disabled = false; $('btnVsJoin').disabled = false;
     buildRoster(); show('select'); scene = 'select'; updateCoopLine();
@@ -3524,8 +3742,20 @@ function coopJoin(){
     Net.timer = setInterval(function(){
       if (!Net.on){ clearInterval(Net.timer); Net.timer = null; return; }
       if (scene === 'select') updateCoopLine();
-      // unpaired: say hello again every few seconds, so a partner who was mid-fight pairs once they are free
-      if (!Net.peer && !Net.full && (Net.helloTick = (Net.helloTick || 0) + 1) % 3 === 0){ sendVia({t:'hello', paired: null}, 'relay'); if (Net.rtc) sendVia({t:'hello', paired: null}, 'rtc'); }
+      var tick = (Net.helloTick = (Net.helloTick || 0) + 1);
+      // on your own, say hello again every few seconds (a friend who was mid-fight pairs once they are free); a host
+      // in the lobby does too, so two rooms that formed on one code at the same moment find each other and merge
+      if (tick % 3 === 0 && !Net.full && (Net.room.length <= 1 || (Net.host && scene !== 'fight'))) sayHello();
+      // the host restates the room: a member that missed a change catches up
+      if (Net.host && tick % 2 === 0) sendRoom();
+      // members tell the host they are still there; outside a fight the host lets go of one that has gone quiet
+      if (!Net.host && Net.room.length > 1 && tick % 3 === 0) sendNet({t:'here'}, [netHostId()]);
+      if (Net.host && scene !== 'fight') netOthers().forEach(function(id){ if (Date.now() - (Net.seen[id] || 0) > 12000) memberGone(id); });
+      // a member whose host went quiet without any transport saying goodbye is on its own again (never mid-fight)
+      if (!Net.host && Net.room.length > 1 && scene !== 'fight' && Date.now() - Net.hostSeen > 12000) leftRoom();
+      // a guest whose fight host has sent nothing at all for 12 s (no snapshot, no room: a backgrounded host still sends
+      // those) is not in a fight any more; the relay can list a dead page for a while, so no transport has to say so
+      if (guestFight() && Date.now() - Net.hostSeen > 12000){ if (Net.room.indexOf(Net.ids[0]) >= 0) memberGone(Net.ids[0]); else fightLost(); }
     }, 1000);
   }).catch(function(e){ Net.on = false; Net.joining = false; $('btnCoopJoin').disabled = false; $('btnVsJoin').disabled = false; coopStatus('Could not start the multiplayer module: ' + ((e && e.message) || e) + '. Reload the page and try again.'); });
 }
@@ -3533,123 +3763,286 @@ function netLeave(){
   if (Net.on) sendNet({t:'bye'});
   if (Net.rtc){ try { Net.rtc.leave(); } catch (e) {} }
   if (Net.relay){ try { Net.relay.leave(); } catch (e) {} }
-  if (Net.lostTimer){ clearTimeout(Net.lostTimer); Net.lostTimer = null; }
+  for (var k in Net.lostTimers) clearTimeout(Net.lostTimers[k]);
   if (Net.timer){ clearInterval(Net.timer); Net.timer = null; }
-  Net.on = false; Net.rtc = null; Net.rtcUp = false; Net.rtcPeer = null; Net.relay = null; Net.relayPeer = false; Net.peer = null; Net.ready = false; Net.peerReady = null; Net.host = false; Net.me = 0; Net.f = null; Net.err = ''; Net.full = false; Net.lost = false; Net.joining = false;
-  Net.guestInp = {keys:{}, pressed:{}};
+  Net.on = false; Net.rtc = null; Net.rtcIds = {}; Net.relay = null; Net.relayIds = {}; Net.room = []; Net.peer = null; Net.ready = false; Net.picks = {}; Net.host = false; Net.me = 0; Net.ids = null; Net.f = null; Net.err = ''; Net.full = false;
+  Net.lost = false; Net.lostIds = {}; Net.lostTimers = {}; Net.joining = false; Net.benched = false; Net.inputs = {}; Net.seen = {}; Net.hostSeq = 0; Net.fightG = null; Net.left = {};
   Net.mode = 'coop';
   $('selCoop').hidden = true; $('fightVerb').textContent = 'FIGHT AS'; $('startLevel').disabled = false; $('startLevel').title = '';
 }
-function setPeer(id){
+// the room as its host says it is (host first); Net.peer stays "somebody else is here" for the rest of the game
+function setRoom(ids){
+  var was = Net.room, wasHost = netHostId();
+  Net.room = ids.slice(0, NET_MAX);
+  if (Net.room.indexOf(Net.id) < 0) Net.room = [Net.id];
+  if (Net.room.join(',') !== was.join(',')) Net.seq++;
+  var newHost = netHostId() !== wasHost;
+  if (newHost) Net.hostSeq = 0;
+  if (newHost && Net.room[0] === Net.id) Net.picks = {};   // took over: only READYs sent to me count, so a member that has not noticed the hand-over is not started without it
+  var others = netOthers(), fresh = others.filter(function(id){ return was.indexOf(id) < 0; });
+  // everybody counts as just heard from when they arrive, and when the host changes (they were talking to the old one)
+  (newHost ? others : fresh).forEach(function(id){ Net.seen[id] = Date.now(); });
+  if (newHost) Net.hostSeen = Date.now();
+  Net.peer = others[0] || null;
+  Net.host = others.length > 0 && Net.room[0] === Net.id;
+  for (var k in Net.picks) if (Net.room.indexOf(k) < 0) delete Net.picks[k];
+  for (var l in Net.lostIds) if (Net.room.indexOf(l) < 0) clearLost(l);
+  if (others.length){ Net.full = false; Net.hostSeen = Date.now(); }
+  if (fresh.length){ Net.err = ''; sfx('chime', {f: 1318}); }
+  if (Net.ready && (fresh.length || newHost)) sendNet({t:'ready', f: myPickId()}, newHost ? others : fresh);   // newcomers (or a new host) hear who is ready
+  updateCoopLine();
+  if (scene === 'result') resultNetBits();   // a host who left the result screen hands the REMATCH button on
+  maybeStart();   // somebody who was not ready left, or this page just took over as host
+}
+// dropped from the room, or the room fell apart: on your own again, and say so
+function leftRoom(){
+  if (scene === 'fight' && guestFight()) fightLost();   // the host ran that fight
+  setRoom([Net.id]); sayHello();
+}
+// is the fight on screen one this page only draws (a guest in somebody else's fight)?
+// this page's own fighter in the fight on screen (0 = the local keyboard: solo, or the host)
+function myIdx(){ return (G && Net.on && Net.fightG === G && Net.ids) ? Net.me : 0; }
+function guestFight(){ return !!(G && scene === 'fight' && Net.on && Net.fightG === G && Net.ids && Net.ids[0] !== Net.id); }
+// the fight's host is gone: back to the fighter screen, and nobody is ready any more (no surprise restart)
+function fightLost(){
+  G = null; show('select'); scene = 'select'; Net.ready = false; Net.benched = false;
+  for (var k in Net.picks) if (Net.ids && Net.ids.indexOf(k) >= 0) delete Net.picks[k];   // a benched member's READY still stands
+}
+function helloFrom(d, from, tid, via){
+  var xs = (Array.isArray(d.room) && d.room.length) ? d.room.map(String) : [from];
+  if (xs.indexOf(from) < 0) xs = [from];
+  var fight = scene === 'fight';
+  if (Net.room.length <= 1){
+    if (fight){ sendVia({t:'mid', to: from}, via, tid); return; }          // playing on alone: never pair mid-fight, but say so
+    if (d.fight){ Net.err = 'your friend is mid-fight — you pair as soon as it ends'; updateCoopLine(); return; }
+    if (xs.length <= 1){   // two on their own: the lower id hosts (and has to hear about it, if it spoke first)
+      setRoom(Net.id < from ? [Net.id, from] : [from, Net.id]);
+      if (Net.host) sendRoom(); else { Net.hostSeq = (d.seq | 0) + 1; sendVia({t:'hello', room: null, fight: 0, seq: Net.seq, to: from}, via, tid); }   // its older hellos are stale now
+      return;
+    }
+    if (xs.length >= NET_MAX){ Net.full = true; Net.err = 'that room already has ' + NET_MAX + ' players — try another code'; updateCoopLine(); }
+    else if (Net.full){ Net.full = false; Net.err = ''; sayHello(); updateCoopLine(); }   // a place came free: say hello again
+    return;                                                                  // a room with space: its host takes you in when it hears you
+  }
+  if (!Net.host) return;                                                     // only the host answers strangers
+  if (xs.length > 1 && xs[0] < Net.id) return;                               // a room with a lower host: that host takes this one in
+  if (fight){ sendVia({t:'mid', to: from}, via, tid); return; }
+  if (d.fight) return;                                                       // they are busy; they say hello again afterwards
+  var add = xs.filter(function(id){ return Net.room.indexOf(id) < 0; });
+  if (Net.room.length + add.length > NET_MAX){ if (xs.length <= 1) sendVia({t:'busy', to: from}, via, tid); return; }
+  setRoom(Net.room.concat(add)); sendRoom();
+}
+function roomFrom(d, from){
+  var ids = Array.isArray(d.ids) ? d.ids.map(String).slice(0, NET_MAX) : null;
+  if (!ids || ids[0] !== from) return;                                       // only a host speaks for its room
+  var mine = ids.indexOf(Net.id) >= 0, cur = netHostId(), seq = d.seq | 0;
+  if (from === cur && from !== Net.id){                                      // my own host
+    if (seq < Net.hostSeq) return;                                           // overtaken by a newer word from it
+    Net.hostSeq = seq; Net.hostSeen = Date.now();
+    if (!mine){ leftRoom(); return; }
+    setRoom(ids);
+    var rd = Array.isArray(d.rd) ? d.rd : [];
+    if (Net.ready && rd.indexOf(Net.id) < 0) sendNet({t:'ready', f: myPickId()}, [from]);
+    else if (!Net.ready && rd.indexOf(Net.id) >= 0) sendNet({t:'unready'}, [from]);
+    // the host is past the fight this page is in (it missed the result, or a start that went on without it)
+    var fn = d.fn | 0;
+    if (guestFight() && (fn > Net.fightNo || (fn === Net.fightNo && !d.on))){ if (G.over && fn === Net.fightNo) showResult(); else fightLost(); }
+    return;
+  }
+  if (!mine) return;
+  // a host that counts me in but that I will not follow (mid-fight, or my own host outranks it): tell it so, or it
+  // would wait for me for ever
+  if (scene === 'fight' || (Net.room.length > 1 && !(from < cur))){ sendTo({t:'nofollow', host: cur}, [from]); return; }
+  var old = Net.host ? netOthers() : [], oldHost = Net.room.length > 1 ? cur : null;
+  if (oldHost && oldHost !== Net.id && ids.indexOf(oldHost) < 0) sendTo({t:'bye'}, [oldHost]);   // leaving my old room for this one
+  setRoom(ids); Net.hostSeq = seq; Net.hostSeen = Date.now();
+  // members of the room I hosted that did not come along: tell them it is gone (they go back to saying hello)
+  var dropped = old.filter(function(id){ return ids.indexOf(id) < 0; });
+  if (dropped.length) sendTo({t:'room', ids: [Net.id], seq: Net.seq}, dropped);
+}
+// a member left (bye, or its connection did not come back): the host plays on without it, the next in line takes over
+// a room whose host left, and a fight the departed host was running is over for everybody
+function memberGone(id){
+  clearLost(id); delete Net.picks[id]; Net.left[id] = Date.now();
+  if (Net.room.indexOf(id) < 0) return;
+  if (id === netHostId()) Net.benched = false;
+  if (scene === 'fight' && G && Net.ids && Net.fightG === G){
+    var fi = Net.ids.indexOf(id);
+    if (fi === 0 && Net.ids[0] !== Net.id) fightLost();
+    else if (fi > 0 && Net.ids[0] === Net.id) playerLeft(fi);
+  }
+  delete Net.inputs[id];
+  setRoom(Net.room.filter(function(x){ return x !== id; }));
+  sendRoom();
+}
+// the host: fighter i's player has left the room
+function playerLeft(i){
+  var e = G ? (G.vs ? G.sides[i] : G.players[i]) : null;
+  if (!e || e.gone) return;
+  e.gone = true; e.leftEarly = !G.over; e.inp = {keys: {}, pressed: {}};
+  if (e.grabbed && e.grabbed.isRhino && (e.grabbed.state === 'thrown' || e.grabbed.state === 'choked')){ e.grabbed.state = 'stagger'; e.grabbed.st = 0; e.grabbed.jump = 0; e.grabbed.tilt = 0; }   // let go of a rhino mid-throw or mid-headlock
+  e.grabbed = null; e.vx = 0; e.vy = 0; e.scale = 1; e.y = 0;
+  if (G.vs){ vsSideOut(e); return; }
+  if (e.state !== 'ko'){ e.state = 'idle'; e.st = 0; }   // parked: a special frozen half-way (Suvam's desert) must not stay on screen
+  if (G.comp && !G.over) compDrop(e);
+  if (!G.over && !G.push && !alivePlayers().length){ G.over = true; G.won = false; fightTimeout(showResult, 1800); }
+}
+// a transport dropped a member: in the lobby that is goodbye; in a fight give the connection 8 s to come back
+function peerLost(id){
+  if (Net.room.indexOf(id) < 0) return;
+  if (scene !== 'fight'){ memberGone(id); return; }
+  Net.lostIds[id] = true; Net.lost = true;
+  if (Net.inputs[id]) Net.inputs[id].keys = {};   // nothing stays held down while it is away
+  updateCoopLine();
+  if (!Net.lostTimers[id]) Net.lostTimers[id] = setTimeout(function(){ delete Net.lostTimers[id]; if (Net.lostIds[id]) memberGone(id); }, 8000);
+}
+function clearLost(id){ if (Net.lostTimers[id]){ clearTimeout(Net.lostTimers[id]); delete Net.lostTimers[id]; } delete Net.lostIds[id]; Net.lost = false; for (var k in Net.lostIds) Net.lost = true; }
+function peerBack(id){ if (Net.lostIds[id]){ clearLost(id); updateCoopLine(); } }
+function rtcPeerJoin(id){ sendVia(helloMsg(), 'rtc', id); updateCoopLine(); }
+function rtcPeerLeave(id){
   id = String(id);
-  if (Net.peer === id) return;
-  if (Net.peer) return;                              // two is company; a third player is told the room is full
-  Net.peer = id; Net.host = Net.id < Net.peer; Net.me = Net.host ? 0 : 1; Net.full = false;
-  sfx('chime', {f: 1318});
-  if (Net.ready) sendNet({t:'ready', f: myPickId()});
+  for (var m in Net.rtcIds){ if (Net.rtcIds[m] !== id) continue; delete Net.rtcIds[m]; if (Net.room.indexOf(m) >= 0 && !Net.relayIds[m]) peerLost(m); }
   updateCoopLine();
 }
-function peerGone(){
-  if (Net.lostTimer){ clearTimeout(Net.lostTimer); Net.lostTimer = null; }
-  Net.peer = null; Net.peerReady = null; Net.rtcPeer = null; Net.rtcUp = false; Net.relayPeer = false; Net.lost = false;
-  Net.guestInp = {keys:{}, pressed:{}};
-  if (scene === 'fight' && !Net.host){ G = null; show('select'); scene = 'select'; }
-  if (scene === 'fight' && Net.host && G && G.p2) G.p2.gone = true;   // the host plays on alone
-  updateCoopLine();
-}
-// a transport dropped the partner: in the lobby that is goodbye; in a fight give the connection 8 s to come back
-function peerLost(){
-  if (!Net.peer) return;
-  if (scene !== 'fight'){ peerGone(); return; }
-  Net.lost = true; updateCoopLine();
-  if (!Net.lostTimer) Net.lostTimer = setTimeout(function(){ Net.lostTimer = null; if (Net.lost) peerGone(); }, 8000);
-}
-function peerBack(){ if (Net.lost){ Net.lost = false; if (Net.lostTimer){ clearTimeout(Net.lostTimer); Net.lostTimer = null; } updateCoopLine(); } }
-function rtcPeerJoin(id){ sendVia({t:'hello', paired: Net.peer || null}, 'rtc', id); updateCoopLine(); }
-function rtcPeerLeave(id){ if (String(id) !== Net.rtcPeer) return; Net.rtcUp = false; Net.rtcPeer = null; if (Net.peer && !Net.relayPeer) peerLost(); else updateCoopLine(); }
-function relayPeerJoin(id){
-  if (Net.peer && Net.peer !== id){ sendVia({t:'busy', to: id}, 'relay'); return; }
-  Net.relayPeer = true; setPeer(id); peerBack(); sendVia({t:'hello', to: id, paired: Net.peer}, 'relay');
-}
-function relayPeerLeave(id){ if (Net.peer !== id) return; Net.relayPeer = false; if (!Net.rtcUp) peerLost(); else updateCoopLine(); }
+function relayPeerJoin(id){ Net.relayIds[id] = true; peerBack(id); var h = helloMsg(); h.to = id; sendVia(h, 'relay'); }
+function relayPeerLeave(id){ delete Net.relayIds[id]; if (Net.room.indexOf(id) >= 0 && !Net.rtcIds[id]) peerLost(id); else updateCoopLine(); }
 function netData(d, tid, via){
   if (!d || typeof d !== 'object' || !d.from) return;
-  if (d.to && d.to !== Net.id) return;                       // addressed to somebody else in the room
-  // busy, or a hello from someone who is already with somebody else: this room is taken
-  if (d.t === 'busy' || (d.t === 'hello' && d.paired && d.paired !== Net.id)){ if (!Net.peer){ Net.full = true; Net.err = 'that room already has two players — try another code'; updateCoopLine(); } return; }
-  if (d.t === 'mid'){ if (!Net.peer){ Net.err = 'your friend is mid-fight — you pair as soon as it ends'; updateCoopLine(); } return; }
-  if (!Net.peer){
-    if (scene === 'fight'){ if (d.t === 'hello') sendVia({t:'mid', to: d.from}, via, tid); return; }   // never re-pair mid-fight, but say so
-    setPeer(d.from); Net.err = '';
+  var from = String(d.from);
+  if (from === Net.id) return;
+  if (d.to && d.to !== Net.id && !(Array.isArray(d.to) && d.to.indexOf(Net.id) >= 0)) return;   // addressed to somebody else in the room
+  if (via === 'rtc' && tid != null) Net.rtcIds[from] = String(tid);         // it came over the data channel, so that channel is open
+  if (via === 'relay') Net.relayIds[from] = true;
+  var member = Net.room.indexOf(from) >= 0;
+  if (member) Net.seen[from] = Date.now();
+  if (d.t === 'hello'){
+    if (member){
+      var theirs = Array.isArray(d.room) ? d.room : [];
+      if (theirs.indexOf(Net.id) < 0){
+        if (Net.host){ peerBack(from); sendRoom([from]); return; }           // a member that missed the room: tell it again
+        if (from !== netHostId() || (d.seq | 0) < Net.hostSeq) return;       // not my host, or an old hello overtaken since
+        leftRoom();                                                          // my host has moved on without me
+      }
+      else { peerBack(from); updateCoopLine(); return; }
+    }
+    helloFrom(d, from, tid, via); return;
   }
-  else if (Net.peer !== d.from){ if (d.t === 'hello') sendVia({t:'busy', to: d.from}, via, tid); return; }
-  if (via === 'rtc'){ Net.rtcPeer = String(tid); Net.rtcUp = true; }
-  if (via === 'relay') Net.relayPeer = true;
-  peerBack();
-  if (d.t === 'hello'){ updateCoopLine(); }
-  else if (d.t === 'ready'){ Net.peerReady = d.f; updateCoopLine(); if (Net.host && Net.ready && scene === 'select') coopStart(clampLevel($('startLevel').value)); }
-  else if (d.t === 'unready'){ Net.peerReady = null; updateCoopLine(); }
-  else if (d.t === 'start'){ if (!Net.host){ LEVEL = d.vs ? clampVsLevel(d.level) : clampLevel(d.level); Net.f = d.f; Net.mode = d.vs ? 'vs' : 'coop'; beginCoopRound(); } }
-  else if (d.t === 'in'){ if (Net.host){ var ko = {}; (d.k || []).forEach(function(k){ ko[k] = true; }); Net.guestInp.keys = ko; (d.p || []).forEach(function(k){ Net.guestInp.pressed[k] = true; });
-    // round 7: letters keep their order and their index, so a late, doubled or lost message never scrambles the repeat
-    if (d.q && d.q.length && G && G.push && Net.gq){ var i0 = d.i | 0, from = Math.max(0, (Net.gNext || 0) - i0);
-      for (var qi = from; qi < d.q.length && Net.gq.length < 64; qi++){ var ql = String(d.q[qi]).charAt(0); if ('ACGT'.indexOf(ql) >= 0) Net.gq.push({l: ql, i: i0 + qi}); }
-      Net.gNext = Math.max(Net.gNext || 0, i0 + d.q.length); } } }
-  else if (d.t === 's'){ if (!Net.host && scene === 'fight') applySnap(d); }
-  else if (d.t === 'result'){ if (!Net.host) showResult(); }
-  else if (d.t === 'bye'){ peerGone(); }
+  if (d.t === 'room'){ roomFrom(d, from); return; }
+  if (d.t === 'busy'){ if (Net.room.length <= 1){ Net.full = true; Net.err = 'that room already has ' + NET_MAX + ' players — try another code'; updateCoopLine(); } return; }
+  if (d.t === 'mid'){
+    // somebody I counted as in my room is fighting without me: my host (I am out of its room, and out of its fight) or a member
+    if (member){ if (from === netHostId()) leftRoom(); else if (Net.host){ setRoom(Net.room.filter(function(x){ return x !== from; })); sendRoom(); } }
+    if (Net.room.length <= 1){ Net.err = 'your friend is mid-fight — you pair as soon as it ends'; updateCoopLine(); }
+    return;
+  }
+  if (d.t === 'ready' && !member){ Net.picks[from] = String(d.f); return; }   // it paired a moment before this page did
+  if (!member) return;                                                       // the rest only ever comes from the room
+  peerBack(from);
+  if (from === netHostId()) Net.hostSeen = Date.now();
+  if (d.t === 'ready'){ Net.picks[from] = String(d.f); updateCoopLine(); maybeStart(); }
+  else if (d.t === 'unready'){ delete Net.picks[from]; if (from === netHostId()) Net.benched = false; updateCoopLine(); }
+  else if (d.t === 'start'){ if (from === netHostId() && !Net.host) startFrom(d); }
+  else if (d.t === 'in'){ if (Net.host) inputFrom(from, d); }
+  else if (d.t === 's'){ if (!Net.host && scene === 'fight' && Net.ids && Net.ids[0] === from) applySnap(d); }
+  else if (d.t === 'result'){ if (!Net.host && scene === 'fight' && Net.ids && Net.ids[0] === from) showResult(); }
+  else if (d.t === 'bye'){ memberGone(from); }
+  // a member that follows another host: let it go, unless that host is one I have just seen leave (it will catch up)
+  else if (d.t === 'nofollow'){ var h = String(d.host || ''); if (Net.host && h !== Net.id && !(Net.left[h] && Date.now() - Net.left[h] < 30000)) memberGone(from); }
 }
+function inputFrom(from, d){
+  var inp = Net.inputs[from]; if (!inp) return;                              // not in this fight
+  var ko = {}; (d.k || []).forEach(function(k){ ko[k] = true; }); inp.keys = ko; (d.p || []).forEach(function(k){ inp.pressed[k] = true; });
+  // round 7: letters keep their order and their index, so a late, doubled or lost message never scrambles the repeat
+  if (d.q && d.q.length && G && G.push){ var i0 = d.i | 0, skip = Math.max(0, inp.gNext - i0);
+    for (var qi = skip; qi < d.q.length && inp.gq.length < 64; qi++){ var ql = String(d.q[qi]).charAt(0); if ('ACGT'.indexOf(ql) >= 0) inp.gq.push({l: ql, i: i0 + qi}); }
+    inp.gNext = Math.max(inp.gNext, i0 + d.q.length); }
+}
+function startFrom(d){
+  var ids = Array.isArray(d.ids) ? d.ids.map(String) : null, f = Array.isArray(d.f) ? d.f.map(String) : null;
+  if (!ids || !f || ids.length !== f.length || ids.length < 2 || ids.length > NET_MAX || ids[0] !== netHostId()) return;
+  if (ids.indexOf(Net.id) < 0){ Net.benched = true; updateCoopLine(); return; }   // a round without you (you were not ready): you are in the next one
+  LEVEL = d.vs ? clampVsLevel(d.level) : clampLevel(d.level); Net.ids = ids; Net.f = f; Net.fightNo = d.n | 0; Net.mode = d.vs ? 'vs' : 'coop'; beginCoopRound();
+}
+function pickName(id){ var pk = id === Net.id ? (Net.ready ? myPickId() : null) : Net.picks[id]; return pk ? sideDefById(pk).name.toUpperCase() : null; }
 function updateCoopLine(){
   var el = $('selCoop'); el.hidden = !Net.on; if (!Net.on) return;
   var room = (Net.mode === 'vs' ? 'Versus room ' : 'Room ') + Net.code.toUpperCase();
   var diag = ((Net.rtc && Net.rtc.relays) ? ' · nostr ' + Net.rtc.relays() : '') + ' · relay ' + (Net.relay ? (Net.relay.ok() ? 'on' : 'connecting…') : 'off');
-  var via = ' · via ' + (Net.rtcUp ? 'P2P' : 'relay');
-  if (Net.full) el.textContent = room + ' · already has two players — pick another code and both type it.';
-  else if (!Net.peer) el.textContent = room + ' · waiting for your friend to type the same code… pick your fighter meanwhile.' + diag + (Net.err ? ' · ' + Net.err : '') + ' · your id ' + Net.id.slice(0, 6);
-  else if (Net.lost) el.textContent = room + ' · connection to your friend lost — waiting up to 8 s for it to come back…';
-  else if (Net.ready && !Net.peerReady) el.textContent = room + ' · you are ready — waiting for your friend to press FIGHT…' + via;
-  else if (Net.ready && Net.peerReady) el.textContent = room + ' · starting…' + via;
-  else if (!Net.ready && Net.peerReady) el.textContent = room + ' · your friend is ready as ' + sideDefById(Net.peerReady).name.toUpperCase() + ' — press FIGHT to start' + via;
-  else el.textContent = room + ' · friend connected' + via + (Net.host ? ' · you are the host and pick the round' : ' · the host picks the round') + ' · press FIGHT when ready.';
+  var others = netOthers(), n = others.length, via = ' · via ' + netVia(), peerPick = n === 1 ? Net.picks[others[0]] : null;
+  var readyN = others.filter(function(id){ return !!Net.picks[id]; }).length, who = (n + 1) + ' players';
+  var hostNote = Net.host ? ' · you are the host and pick the round' : ' · the host picks the round';
+  if (Net.full) el.textContent = room + ' · already has ' + NET_MAX + ' players — pick another code and type it together.';
+  else if (!n) el.textContent = room + ' · waiting for your friends to type the same code (up to ' + NET_MAX + ' players)… pick your fighter meanwhile.' + diag + (Net.err ? ' · ' + Net.err : '') + ' · your id ' + Net.id.slice(0, 6);
+  else if (Net.lost) el.textContent = room + ' · connection to ' + (n > 1 ? 'a player' : 'your friend') + ' lost — waiting up to 8 s for it to come back…';
+  else if (Net.benched) el.textContent = room + ' · ' + who + ' · a round is on without you — press FIGHT and you are in the next one' + via;
+  else if (n === 1){
+    if (Net.ready && !peerPick) el.textContent = room + ' · you are ready — waiting for your friend to press FIGHT…' + via;
+    else if (Net.ready && peerPick) el.textContent = room + ' · starting…' + via;
+    else if (peerPick) el.textContent = room + ' · your friend is ready as ' + sideDefById(peerPick).name.toUpperCase() + ' — press FIGHT to start' + via;
+    else el.textContent = room + ' · friend connected' + via + hostNote + ' · press FIGHT when ready.';
+  }
+  else {
+    var names = others.map(pickName).filter(Boolean).join(', ');
+    if (Net.ready && readyN === n) el.textContent = room + ' · ' + who + ' · starting…' + via;
+    else if (Net.ready) el.textContent = room + ' · ' + who + ' · you are ready — waiting for ' + (n - readyN) + ' more to press FIGHT…' + (names ? ' (ready: ' + names + ')' : '') + via;
+    else el.textContent = room + ' · ' + who + ' · ' + readyN + ' of ' + n + ' ready' + (names ? ' (' + names + ')' : '') + via + hostNote + ' · press FIGHT when ready.';
+  }
   $('fightVerb').textContent = Net.on ? 'READY AS' : 'FIGHT AS';
   var guest = !!(Net.on && Net.peer && !Net.host); $('startLevel').disabled = guest; $('startLevel').title = guest ? 'the host picks the round' : '';
 }
-// a new pick after READY has to reach the partner, or you play the fighter you changed your mind about
+// a new pick after READY has to reach the others, or you play the fighter you changed your mind about
 function repickReady(){ if (Net.on && Net.peer && Net.ready){ sendNet({t:'ready', f: myPickId()}); updateCoopLine(); } }
 function coopReady(){
   Net.ready = true; sendNet({t:'ready', f: myPickId()}); updateCoopLine();
-  if (Net.host && Net.peerReady) coopStart(clampLevel($('startLevel').value));
+  maybeStart();
 }
+// the host starts as soon as everybody in the room is ready
+function maybeStart(){ if (Net.host && Net.ready && scene === 'select' && netOthers().every(function(id){ return !!Net.picks[id]; })) coopStart(clampLevel($('startLevel').value)); }
 function coopStart(level){
-  // host only: same fighters again (rematch / next round) or the freshly picked pair
+  // host only: the same fighters again (rematch / next round) plus anybody who has pressed FIGHT since, or the fresh picks
   if (!Net.host || !Net.peer) return;
-  LEVEL = Net.mode === 'vs' ? clampVsLevel(level) : clampLevel(level); Net.f = [myPickId(), Net.peerReady || (Net.f && Net.f[1]) || ROSTER[0].id];
-  sendNet({t:'start', f: Net.f, level: LEVEL, vs: Net.mode === 'vs' ? 1 : 0}); beginCoopRound();
+  LEVEL = Net.mode === 'vs' ? clampVsLevel(level) : clampLevel(level);
+  var prev = {}; if (Net.ids && Net.f) Net.ids.forEach(function(id, i){ prev[id] = Net.f[i]; });
+  var ids = [Net.id], f = [myPickId()], others = netOthers();
+  others.forEach(function(id){ var pk = Net.picks[id] || prev[id]; if (pk){ ids.push(id); f.push(String(pk)); } });
+  if (ids.length < 2) others.forEach(function(id){ ids.push(id); f.push(ROSTER[0].id); });   // nobody has picked: take them all rather than start alone
+  Net.ids = ids; Net.f = f; Net.fightNo++;
+  sendNet({t:'start', ids: ids, f: f, level: LEVEL, vs: Net.mode === 'vs' ? 1 : 0, n: Net.fightNo}); beginCoopRound();
 }
 function clampLevel(v){ v = parseInt(v, 10); return (v >= 0 && v < LEVELS.length) ? v : 0; }
-// versus arenas are rounds 1-5 only: an online duel takes its arena from the round picker, which also lists rounds 6-8
+// versus arenas are rounds 1-5 only: an online duel takes its arena from the round picker, which lists every round
 var VS_ARENAS = 5;
 function clampVsLevel(v){ v = clampLevel(v); return v < VS_ARENAS ? v : 0; }
 function defById(id){ for (var i = 0; i < ROSTER.length; i++) if (ROSTER[i].id === id) return ROSTER[i]; return ROSTER[0]; }
 function beginCoopRound(){
-  if (Net.mode === 'vs'){ vsLocal = false; newVsFight(Net.f[0], Net.f[1]); }
-  else newFight(defById(Net.f[0]), defById(Net.f[1]));
-  scene = 'fight'; show(null);
-  Net.guestInp = {keys:{}, pressed:{}}; Net.sfxQ = []; Net.crumbQ = []; Net.frame = 0; Net.lastKeys = ''; Net.gq = []; Net.gNext = 0; Net.sent = [];
+  Net.me = Math.max(0, Net.ids.indexOf(Net.id)); Net.benched = false;
+  if (Net.mode === 'vs'){ vsLocal = false; newVsFight(Net.f); }
+  else newFight(Net.f.map(defById));
+  scene = 'fight'; show(null); Net.fightG = G; Net.hostSeen = Date.now();
+  Net.inputs = {}; if (Net.host) Net.ids.forEach(function(id){ if (id !== Net.id) Net.inputs[id] = {keys: {}, pressed: {}, gq: [], gNext: 0}; });
+  Net.sfxQ = []; Net.crumbQ = []; Net.frame = 0; Net.lastKeys = ''; Net.sent = [];
   $('startLevel').value = String(LEVEL);   // CHANGE FIGHTER after NEXT ROUND starts the round just reached, like solo
   if (!Net.host && G.push) G.push.pred = {stage: 0, pos: 0, lock: 0};
   unlockAudio(); sfx('gong', {f: LEVEL ? 70 : 96, v: .6}); fightTimeout(function(){ sfx('drum'); }, 800);
 }
+// the host runs everybody: each guest's latest keys drive its fighter, and every 2nd (P2P) or 3rd (relay) frame the
+// snapshot goes back out to everybody in the fight
 function hostTick(dt){
-  var guest = G ? (G.vs ? G.sides[1] : G.p2) : null;
-  if (guest && Net.peer){ guest.inp.keys = Net.guestInp.keys; guest.inp.pressed = Net.guestInp.pressed; guest.inp.typed = Net.gq; }
+  var any = false;
+  if (G && Net.on && Net.ids && Net.host) Net.ids.forEach(function(id, i){
+    if (id === Net.id) return;
+    var e = G.vs ? G.sides[i] : G.players[i], inp = Net.inputs[id];
+    if (!e || !inp || e.gone) return;
+    any = true; e.inp.keys = inp.keys; e.inp.pressed = inp.pressed; e.inp.typed = inp.gq;
+  });
   update(dt);
-  if (guest){ Net.guestInp.pressed = {}; Net.frame++; if (Net.peer && Net.frame % (Net.rtcUp ? 2 : 3) === 0) sendSnap(); }   // 30 Hz P2P, 20 Hz over the relay
+  if (any){ for (var k in Net.inputs) Net.inputs[k].pressed = {}; Net.frame++; if (Net.frame % (netRtcAll() ? 2 : 3) === 0) sendSnap(); }   // 30 Hz P2P, 20 Hz over the relay
 }
 function guestTick(dt){
   if (!G) return;
   tickAmbient(dt);
-  G.rhinos.forEach(function(r){ if (r.state === 'charge' && Math.random() < .6) puffs.push({x: r.x - r.dir * rnd(60, 150), y: GROUND - rnd(0, 30), t: 0, r: rnd(6, 14)}); });
+  G.rhinos.forEach(function(r){ if (r.state === 'charge' && Math.random() < .6) puffs.push({x: r.x - r.dir * rnd(60, 150), y: GROUND - rnd(0, 30), t: 0, r: rnd(6, 14)});
+    if (r.state === 'morph' && r.st > .3 && Math.random() < .7) puffs.push({x: r.x + rnd(-150, 150), y: GROUND - rnd(0, 170), t: 0, r: rnd(14, 30)}); });   // the reveal cloud
   updateCamera(dt);
   var kl = [], pl = [], k;
   for (k in keys) if (keys[k]) kl.push(k);
@@ -3670,7 +4063,7 @@ function guestTick(dt){
   if (pl.length || tq || sig !== Net.lastKeys || Net.frame % 6 === 0){
     Net.lastKeys = sig; var im = {t:'in', k: kl, p: pl};
     if (tq){ im.q = tq; im.i = Net.sent.length; Net.sent = Net.sent.concat(tq); }
-    sendNet(im);
+    sendNet(im, [Net.ids[0]]);   // inputs go to the host only
   }
   pressed = {};
 }
@@ -3678,10 +4071,10 @@ var POSE_KEYS = ['crouch', 'lean', 'lh', 'lk', 'rh', 'rk', 'la', 'le', 'ra', 're
 function r1(v){ return Math.round((v || 0) * 10) / 10; }
 function r2(v){ return Math.round((v || 0) * 100) / 100; }
 function r3(v){ return v == null ? null : Math.round(v * 1000) / 1000; }
-function packP(p){ return [r1(p.x), r1(p.y), p.facing, r1(p.hp), p.meter | 0, p.state, r2(p.st), r2(p.inv), r2(p.flash), r2(p.scale || 1), p.ducking ? 1 : 0, POSE_KEYS.map(function(k){ return r2(p.pose[k]); }), p.alt ? 1 : 0, p.hitsLanded, r3(p.share), r1(p.z || 0)]; }
-function unpackP(p, a){ p.x = a[0]; p.y = a[1]; p.facing = a[2]; p.hp = a[3]; p.meter = a[4]; p.state = a[5]; p.st = a[6]; p.inv = a[7]; p.flash = a[8]; p.scale = a[9]; p.ducking = !!a[10]; var o = {}; POSE_KEYS.forEach(function(k, i){ o[k] = a[11][i]; }); p.pose = o; p.alt = !!a[12]; p.hitsLanded = a[13]; if (a[14] != null){ p.share = a[14]; p.size = sizeOf(a[14]); } p.z = a[15] || 0; }
-function packR(r){ return [r1(r.x), r.facing, r.hp, r.state, r2(r.st), r1(r.jump), r2(r.tilt), r2(r.head), r2(r.squash), r2(r.run), r2(r.phase), r2(r.tail), r2(r.flash), r2(r.glow), r.angry ? 1 : 0, r.dir, r1(r.targetX), r.morph || '', r.revealed ? 1 : 0, r.willFeint ? 1 : 0, r3(r.share), r.meter | 0, r.hitsLanded | 0, r1(r.z || 0)]; }
-function unpackR(r, a){ r.x = a[0]; r.facing = a[1]; r.hp = a[2]; r.state = a[3]; r.st = a[4]; r.jump = a[5]; r.tilt = a[6]; r.head = a[7]; r.squash = a[8]; r.run = a[9]; r.phase = a[10]; r.tail = a[11]; r.flash = a[12]; r.glow = a[13]; r.angry = !!a[14]; r.dir = a[15]; r.targetX = a[16]; r.morph = a[17] || null; r.revealed = !!a[18]; r.willFeint = !!a[19]; if (a[20] != null){ r.share = a[20]; r.size = sizeOf(a[20]); } if (a[21] != null) r.meter = a[21]; if (a[22] != null) r.hitsLanded = a[22]; r.z = a[23] || 0; }
+function packP(p){ return [r1(p.x), r1(p.y), p.facing, r1(p.hp), p.meter | 0, p.state, r2(p.st), r2(p.inv), r2(p.flash), r2(p.scale || 1), p.ducking ? 1 : 0, POSE_KEYS.map(function(k){ return r2(p.pose[k]); }), p.alt ? 1 : 0, p.hitsLanded, r3(p.share), r1(p.z || 0), p.gone ? (p.leftEarly ? 2 : 1) : 0]; }
+function unpackP(p, a){ p.x = a[0]; p.y = a[1]; p.facing = a[2]; p.hp = a[3]; p.meter = a[4]; p.state = a[5]; p.st = a[6]; p.inv = a[7]; p.flash = a[8]; p.scale = a[9]; p.ducking = !!a[10]; var o = {}; POSE_KEYS.forEach(function(k, i){ o[k] = a[11][i]; }); p.pose = o; p.alt = !!a[12]; p.hitsLanded = a[13]; if (a[14] != null){ p.share = a[14]; p.size = sizeOf(a[14]); } p.z = a[15] || 0; p.gone = !!a[16]; p.leftEarly = a[16] === 2; }
+function packR(r){ return [r1(r.x), r.facing, r.hp, r.state, r2(r.st), r1(r.jump), r2(r.tilt), r2(r.head), r2(r.squash), r2(r.run), r2(r.phase), r2(r.tail), r2(r.flash), r2(r.glow), r.angry ? 1 : 0, r.dir, r1(r.targetX), r.morph || '', r.revealed ? 1 : 0, r.willFeint ? 1 : 0, r3(r.share), r.meter | 0, r.hitsLanded | 0, r1(r.z || 0), r.gone ? (r.leftEarly ? 2 : 1) : 0, r.paint | 0]; }
+function unpackR(r, a){ r.x = a[0]; r.facing = a[1]; r.hp = a[2]; r.state = a[3]; r.st = a[4]; r.jump = a[5]; r.tilt = a[6]; r.head = a[7]; r.squash = a[8]; r.run = a[9]; r.phase = a[10]; r.tail = a[11]; r.flash = a[12]; r.glow = a[13]; r.angry = !!a[14]; r.dir = a[15]; r.targetX = a[16]; r.morph = a[17] || null; r.revealed = !!a[18]; r.willFeint = !!a[19]; if (a[20] != null){ r.share = a[20]; r.size = sizeOf(a[20]); } if (a[21] != null) r.meter = a[21]; if (a[22] != null) r.hitsLanded = a[22]; r.z = a[23] || 0; r.gone = !!a[24]; r.leftEarly = a[24] === 2; r.paint = a[25] | 0; }
 function sendSnap(){
   var snap = {t:'s', T: r2(G.t), e: r2(G.elapsed), o: G.over ? 1 : 0, w: G.won ? 1 : 0, pf: G.pacifist ? 1 : 0,
     P: G.players.map(packP), R: G.rhinos.map(packR),
@@ -3695,7 +4088,7 @@ function sendSnap(){
     bs: G.buns ? [G.bunStats.thrown, G.bunStats.hit, G.bunStats.eaten, G.bunStats.picked] : null, cr: Net.crumbQ.splice(0, Net.crumbQ.length),
     bu: G.buns ? G.bunsFly.map(function(b){ return [r1(b.x), r1(b.h), r2(b.spin)]; }) : null, gb: G.buns ? G.bunsGround.map(function(g){ return r1(g.x); }) : null,
     pu: G.push ? [r1(G.push.x), r2(G.push.pressure), G.players.map(function(q){ var u = q.pu; return [u.stage, u.pos, r2(u.lock), r2(u.slipT), r2(u.okT), u.slips, u.units, u.letters, u.ack | 0]; })] : null};
-  Net.sfxQ = []; sendNet(snap);
+  Net.sfxQ = []; sendNet(snap, Net.ids);
 }
 function applySnap(d){
   if (!G || !d.P) return;
@@ -3704,8 +4097,10 @@ function applySnap(d){
   G.t = d.T; G.elapsed = d.e; G.over = !!d.o; G.won = !!d.w; G.pacifist = !!d.pf; if (d.vw != null) G.vsWin = d.vw; if (d.vt != null) G.vsTime = !!d.vt;
   for (var i = 0; i < G.players.length && i < d.P.length; i++) unpackP(G.players[i], d.P[i]);
   for (var ri = 0; ri < G.rhinos.length && ri < d.R.length; ri++){
-    var r = G.rhinos[ri], wasGone = r.state === 'gone'; unpackR(r, d.R[ri]);
-    if (r.state === 'gone' && !wasGone){ r.state = 'ko'; explodeRhino(r); }   // the DNA burst is local
+    var r = G.rhinos[ri], wasGone = r.state === 'gone', wasPaint = r.paint | 0; unpackR(r, d.R[ri]);
+    var np = (r.paint | 0) - wasPaint;   // round 12: the overspray is local too, one burst per new panel
+    if (np > 0 && np < PAINT_N) for (var pn = 0; pn < np; pn++) paintSpray(r, null);
+    if (r.state === 'gone' && !wasGone && !r.morph){ r.state = 'ko'; explodeRhino(r); }   // the DNA burst is local (a revealed animal just trots off)
   }
   fx = d.fx.map(function(a){ return {x: a[0], y: a[1], t: a[2], life: a[3], r: a[4], label: a[5], big: !!a[6], red: !!a[7], z: a[8] == null ? undefined : a[8], say: !!a[9], dir: a[9] || 1, spark: !!a[10]}; });
   hot = d.hot.map(function(a){ return {x: a[0], r: a[1], t: a[2], life: a[3]}; });
@@ -3794,7 +4189,7 @@ function beginRound(){
   unlockAudio(); sfx('gong', {f: LEVEL ? 70 : 96, v: .6}); fightTimeout(function(){ sfx('drum'); }, 800);
   if (LEVEL && !LEVELS[LEVEL].calm) fightTimeout(function(){ sfx('geiger'); }, 300);
 }
-var termTimer = null, CARD_STYLES = ['rad', 'blue', 'museum', 'lab', 'cafe'];
+var termTimer = null, CARD_STYLES = ['rad', 'blue', 'museum', 'lab', 'cafe', 'garage'];
 function showLevelCard(){
   var lv = LEVELS[LEVEL]; G = null; show('levelCard'); scene = 'card';   // no stale fight drawn behind the card
   $('startLevel').value = String(LEVEL);   // BACK must not throw away the round you just unlocked
@@ -3820,16 +4215,13 @@ function startFight(){
 }
 function showResult(){
   if (!G || scene !== 'fight') return;   // the fight was abandoned via the menu
-  if (Net.on && Net.host && Net.peer) sendNet({t:'result'});
+  if (Net.on && Net.host && Net.peer && Net.ids) sendNet({t:'result'}, Net.ids);
   if (G.vs){ showVsResult(); return; }
-  var p = G.players[(Net.on && Net.peer) ? Net.me : 0] || G.p, r = G.r, coop = G.players.length > 1 && !(G.p2 && G.p2.gone);
-  $('resCoop').hidden = !coop;
-  var nx = (G.won && LEVEL < LEVELS.length - 1) ? ' or NEXT ROUND' : '';
-  if (coop){ $('resCoop').textContent = Net.host ? 'Co-op: you are the host — REMATCH' + nx + ' starts it for both of you.' : 'Co-op: waiting for the host to pick REMATCH' + nx + '…'; }
+  var p = G.players[myIdx()] || G.p, r = G.r;
   $('scoreLine').hidden = !G.won; $('nameBox').hidden = !G.won; $('btnSave').disabled = false; $('btnSave').textContent = 'SAVE SCORE';
   var hasNext = G.won && LEVEL < LEVELS.length - 1;
-  $('btnNext').hidden = !hasNext || (coop && !Net.host); $('btnNext').textContent = hasNext ? LEVELS[LEVEL + 1].next : '';
-  $('btnAgain').hidden = coop && !Net.host;
+  $('btnNext').textContent = hasNext ? LEVELS[LEVEL + 1].next : '';
+  resultNetBits();
   if (G.won){
     var sc = scoreFor(G); $('scoreLine').textContent = 'SCORE ' + sc.toLocaleString();
     $('playerName').value = p.def.name;
@@ -3885,12 +4277,25 @@ function showResult(){
     var pt = G.push ? pushTotals() : null;
     $('resReadout').innerHTML = G.push ? ('> read: <b>' + LEVELS[LEVEL].read + '</b> — status: <b>still there</b><br>> fighter: <b>' + teamName(G) + '</b> · held on <b>' + G.elapsed.toFixed(1) + ' s</b> · right letters: <b>' + pt.letters + '</b> · slips: <b>' + pt.slips + '</b> · repeat units: <b>' + pt.units + '</b><br>> tip: ' + lz.tip)
       : G.comp ? ('> reads: <b>Rhinoceros + Zebra (relative abundance)</b> — status: <b>' + G.rhinos.map(function(r0){ return Math.round((r0.share || 0) * 100) + ' %'; }).join(' + ') + '</b><br>> fighter: <b>' + teamName(G) + '</b> · survived <b>' + G.elapsed.toFixed(1) + ' s</b> · your share fell below the <b>detection limit</b><br>> tip: every hit you take makes both of them bigger. Land hits and keep the share coming your way.')
-      : ('> read: <b>' + LEVELS[LEVEL].read + '</b> — status: <b>' + stillThere() + '</b><br>> fighter: <b>' + teamName(G) + '</b> · survived <b>' + G.elapsed.toFixed(1) + ' s</b> · rhino HP left: <b>' + G.rhinos.map(function(r0){ return r0.state === 'gone' || r0.state === 'ko' ? 'removed' : Math.round(r0.hp) + '/' + r0.maxhp; }).join(' + ') + '</b><br>> tip: ' + (rads ? 'the green patches keep burning while you stand in them — jump out, or stay off the ground the rhino skidded over.' : (LEVELS[LEVEL].tip || 'jump the charge when you see the <b>!</b>, duck the horn sweep, and hit it while it skids (or sleeps).')));
+      : ('> read: <b>' + LEVELS[LEVEL].read + '</b> — status: <b>' + stillThere() + '</b><br>> fighter: <b>' + teamName(G) + '</b> · survived <b>' + G.elapsed.toFixed(1) + ' s</b> · ' + (G.paint ? 'panels resprayed: <b>' + (G.r.paint | 0) + '/' + PAINT_N : 'rhino HP left: <b>' + G.rhinos.map(function(r0){ return r0.state === 'gone' || r0.state === 'ko' ? 'removed' : Math.round(r0.hp) + '/' + r0.maxhp; }).join(' + ')) + '</b><br>> tip: ' + (rads ? 'the green patches keep burning while you stand in them — jump out, or stay off the ground the rhino skidded over.' : (LEVELS[LEVEL].tip || 'jump the charge when you see the <b>!</b>, duck the horn sweep, and hit it while it skids (or sleeps).')));
   }
   show('result'); scene = 'result';
 }
+// who may start the next round from the result screen: the room's host, or a page that is on its own now (then it is
+// a solo round); recomputed when the host changes while everybody is looking at the result
+function resultNetBits(){
+  if (!G) return;
+  var waiting = !!(Net.on && Net.peer && !Net.host);
+  if (G.vs){ $('btnAgain').hidden = waiting && !vsLocal; return; }
+  var coop = !!(Net.on && Net.peer) && G.players.filter(function(q){ return !q.gone; }).length > 1;
+  var hasNext = G.won && LEVEL < LEVELS.length - 1, nx = hasNext ? ' or NEXT ROUND' : '';
+  $('resCoop').hidden = !coop;
+  if (coop) $('resCoop').textContent = waiting ? 'Co-op: waiting for the host to pick REMATCH' + nx + '…' : 'Co-op: you are the host — REMATCH' + nx + ' starts it for ' + (netOthers().length > 1 ? 'everybody' : 'both of you') + '.';
+  $('btnNext').hidden = !hasNext || waiting; $('btnAgain').hidden = waiting;
+}
 function pushTotals(){ var t = {letters: 0, slips: 0, units: 0}; G.players.forEach(function(q){ if (q.pu){ t.letters += q.pu.letters; t.slips += q.pu.slips; t.units += q.pu.units; } }); return t; }
 function winStats(p){
+  if (G.paint) return 'panels resprayed: <b>' + PAINT_N + '/' + PAINT_N + '</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b>';
   if (G.buns){ var bs = G.bunStats; return 'HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b> · buns: <b>' + bs.thrown + '</b> thrown, <b>' + bs.hit + '</b> on target, <b>' + bs.eaten + '</b> eaten by the rhino'; }
   if (G.push){ var t = pushTotals(); return 'repeat units: <b>' + t.units + '</b> · slips: <b>' + t.slips + '</b>'; }
   return 'HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b>';
@@ -3902,27 +4307,32 @@ function stillThere(){
   return n > 1 ? (live + ' of ' + n + ' still there') : 'still there';
 }
 function showVsResult(){
-  var online = Net.on && Net.peer, me = online ? Net.me : 0, win = G.vsWin, a = G.sides[0], b = G.sides[1];
+  // an online fight stays online on the result screen even when everybody else has left the room
+  var online = !vsLocal && Net.on && !!Net.ids, me = online ? Net.me : 0, win = G.vsWin, n = G.sides.length;
   $('resCoop').hidden = true; $('scoreLine').hidden = true; $('nameBox').hidden = true;
-  $('btnNext').hidden = true; $('btnAgain').hidden = online && !Net.host;
-  if (win === -1){ $('resBig').textContent = 'DRAW'; $('resTitle').textContent = 'TIME UP — NOBODY IS REMOVED'; }
+  $('btnNext').hidden = true; resultNetBits();
+  if (win === -1){ $('resBig').textContent = 'DRAW'; $('resTitle').textContent = n > 2 ? 'TIME UP — LEVEL AT THE TOP' : 'TIME UP — NOBODY IS REMOVED'; }
   else {
-    var w = G.sides[win], l = G.sides[1 - win];
+    var w = G.sides[win], rest = G.sides.filter(function(e){ return e !== w; });
+    // the runner-up on the clock: the best of the rest
+    var l = rest.slice().sort(function(a, b){ return vsFrac(b) - vsFrac(a); })[0];
     $('resBig').textContent = online ? (win === me ? 'YOU WIN' : 'YOU LOSE') : ('PLAYER ' + (win + 1) + ' WINS');
     // a clock decision compares each side's share of ITS OWN pool, which the absolute numbers below can contradict
-    $('resTitle').textContent = G.vsTime ? (vsLabel(w) + ' LEADS ON ' + (G.comp ? 'SIZE' : 'HEALTH') + ' — ' + vsPct(w) + ' % TO ' + vsPct(l) + ' %')
-                                         : (vsLabel(w) + ' BEATS ' + vsLabel(l));
+    var walk = rest.every(function(e){ return e.leftEarly; });   // won because everybody else left the room (not a K.O. they walked away from)
+    $('resTitle').textContent = walk ? (vsLabel(w) + ' WINS — ' + (n > 2 ? 'EVERYBODY ELSE LEFT' : 'THE OPPONENT LEFT'))
+                              : G.vsTime ? (vsLabel(w) + ' LEADS ON ' + (G.comp ? 'SIZE' : 'HEALTH') + ' — ' + vsPct(w) + ' % TO ' + vsPct(l) + ' %')
+                              : (n > 2 ? vsLabel(w) + ' IS THE LAST ONE STANDING' : vsLabel(w) + ' BEATS ' + vsLabel(l));
   }
   function sideLine(e){
-    return '> ' + vsLabel(e) + ': <b>' + (G.comp ? (vsPct(e) + ' % of the ring')
+    return '> ' + vsLabel(e) + ': <b>' + (e.gone ? 'left the room' : G.comp ? (vsPct(e) + ' % of the ring')
                                                  : (Math.max(0, Math.round(e.hp)) + '/' + e.maxhp + ' HP (' + vsPct(e) + ' %)')) +
            '</b> · hits landed: <b>' + (e.hitsLanded || 0) + '</b>';
   }
   $('resReadout').innerHTML = '> versus (beta) — <b>not saved to the leaderboard</b><br>' +
-    sideLine(a) + '<br>' + sideLine(b) + '<br>' +
+    G.sides.map(sideLine).join('<br>') + '<br>' +
     '> time: <b>' + G.elapsed.toFixed(1) + ' s</b> of ' + VS_TIME + ' s' +
-    (G.vsWin === -1 ? ' — the clock decides nothing when the two are level.'
-                    : (G.vsTime ? ' — nobody was knocked out, so the bigger share of your own ' + (G.comp ? 'ring' : 'health bar') + ' takes it.' : ''));
+    (G.vsWin === -1 ? ' — the clock decides nothing when the ' + (n > 2 ? 'leaders' : 'two') + ' are level.'
+                    : (G.vsTime ? (n > 2 ? ' — the clock ran out, so the biggest share of your own ' : ' — nobody was knocked out, so the bigger share of your own ') + (G.comp ? 'ring' : 'health bar') + ' takes it.' : ''));
   show('result'); scene = 'result';
 }
 var VIDEOS = {"mode": "files", "base": "assets/videos/"}, videoURLs = {};   // just 'intro' (the menu clip; there are no per-fighter videos): {mode:'files', base:'assets/videos/'} or {mode:'inline', data:{key: base64}}
@@ -3955,7 +4365,7 @@ $('btnCredits').addEventListener('click', function(){ unlockAudio(); openCredits
 $('btnCreditsBack').addEventListener('click', function(){ show('title'); scene = 'title'; });
 $('btnSave').addEventListener('click', function(){
   if (!G || !G.won || G.vs || $('nameBox').hidden) return;   // versus never reaches the leaderboard, and a hidden box saves nothing
-  var mine = G.players[(Net.on && Net.peer) ? Net.me : 0] || G.p;
+  var mine = G.players[myIdx()] || G.p;
   var name = ($('playerName').value || mine.def.name).replace(/[\u0000-\u001f\u007f]/g, '').replace(/\s+/g, ' ').trim().slice(0, 16) || mine.def.name;
   lastEntry = {name: name, fighter: teamName(G).slice(0, 48), score: scoreFor(G), time: Math.round(G.elapsed * 10) / 10, level: LEVEL + 1, t: Date.now()};
   $('btnSave').disabled = true; $('btnSave').textContent = 'SAVING…';
@@ -3967,14 +4377,14 @@ $('btnStart').addEventListener('click', function(){ unlockAudio(); sfx('gong', {
 $('btnFight').addEventListener('click', startFight);
 $('btnAgain').addEventListener('click', function(){
   if (Net.on && Net.peer){ coopStart(LEVEL); return; }
-  if (vsLocal){ beginVsLocal(); return; }
-  if (G && G.vs){ leaveVersus('Your opponent left the room. Start another duel, or play on the same keyboard.'); return; }   // never fall through into the campaign
+  if (vsLocal){ beginVsLocal(vsPicks, LEVEL); return; }
+  if (G && G.vs){ leaveVersus('Your opponent left the room. Start another fight, or play on the same keyboard.'); return; }   // never fall through into the campaign
   if (LEVELS[LEVEL].card) showLevelCard(); else beginRound();
 });
 // an online duel whose partner is gone: back to the versus screen, not into round 1
 function leaveVersus(msg){ G = null; netLeave(); openVersus(); $('vsStatus').textContent = msg || ''; }
 $('btnVersus').addEventListener('click', function(){ unlockAudio(); openVersus(); });
-$('btnVsFight').addEventListener('click', function(){ unlockAudio(); beginVsLocal(); });
+$('btnVsFight').addEventListener('click', function(){ unlockAudio(); beginVsLocal([$('vsP1').value, $('vsP2').value], $('vsArena').value); });
 $('btnVsJoin').addEventListener('click', function(){ unlockAudio(); Net.mode = 'vs'; pickRhino = false; coopJoin(); });
 $('vsCode').addEventListener('keydown', function(e){ if (e.key === 'Enter'){ Net.mode = 'vs'; coopJoin(); } });
 $('btnVsBack').addEventListener('click', function(){ netLeave(); show('title'); scene = 'title'; });
@@ -3999,7 +4409,8 @@ refreshBoard();
 var last = performance.now();
 function frame(now){
   var dt = Math.min(.05, (now - last) / 1000); last = now;
-  if (scene === 'fight'){ if (Net.on && Net.peer && !Net.host) guestTick(dt); else hostTick(dt); } else { pressed = {}; pressed2 = {}; typedQ.length = 0; }
+  // a guest draws the host's fight; everything else (solo, the host, a host playing on alone) simulates it
+  if (scene === 'fight'){ if (guestFight()) guestTick(dt); else hostTick(dt); } else { pressed = {}; pressed2 = {}; typedQ.length = 0; }
   draw();
   requestAnimationFrame(frame);
 }
