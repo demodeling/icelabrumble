@@ -91,7 +91,7 @@ async function vsLocal(page, ids, arena) {
   await page.waitForTimeout(400);
 }
 
-test('versus (beta): the same-keyboard duel runs, the rhino is playable and nothing reaches the leaderboard', async ({ page }) => {
+test('versus: online only, no beta label, no same-keyboard option; a duel runs, the rhino is playable and nothing reaches the leaderboard', async ({ page }) => {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(URL);
@@ -99,12 +99,11 @@ test('versus (beta): the same-keyboard duel runs, the rhino is playable and noth
   await expect(page.locator('#versus')).toBeVisible();
   await expect(page.locator('#btnVsJoin')).toBeVisible();                  // online, two to four players
   await expect(page.locator('#versus')).toContainText('two to four players');
-  // player 2 defaults to the rhino; the roster plus the rhino are both offered
-  expect(await page.locator('#vsP1 option').count()).toBe(await page.locator('#vsP2 option').count());
-  await page.selectOption('#vsP1', 'anton');
-  await page.selectOption('#vsP2', 'rhino');
-  await page.click('#btnVsFight');
-  await page.waitForTimeout(600);
+  await expect(page.locator('#versus select')).toHaveCount(0);            // no same-keyboard pickers
+  await expect(page.locator('#versus')).not.toContainText(/same keyboard|beta/i);
+  await expect(page.locator('#btnVersus')).toHaveText('VERSUS');
+  await page.click('#btnVsBack');
+  await vsLocal(page, ['anton', 'rhino']);   // the fight rules, on one page via the test hook
   const setup = await page.evaluate(() => { const g = window.__fight(); return { vs: g.vs, sides: g.sides.length, players: g.players.length, rhinos: g.rhinos.length, human: g.rhinos[0].human, hp: g.sides.map(s => s.hp) }; });
   expect(setup).toMatchObject({ vs: true, sides: 2, players: 1, rhinos: 1, human: true });
   // the two keyboard halves drive the two sides
@@ -125,7 +124,7 @@ test('versus (beta): the same-keyboard duel runs, the rhino is playable and noth
   expect(errors).toEqual([]);
 });
 
-test('versus (beta): a player-controlled rhino charges and hurts the other side', async ({ page }) => {
+test('versus: a player-controlled rhino charges and hurts the other side', async ({ page }) => {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(URL);
@@ -671,7 +670,7 @@ test('co-op: two pages fight the rhino through a room', async ({ browser }) => {
   await ctx.close();
 });
 
-test('versus (beta): two pages duel through a room, one of them as the rhino', async ({ browser }) => {
+test('versus: two pages duel through a room, one of them as the rhino', async ({ browser }) => {
   const ctx = await browser.newContext({ viewport: { width: 1100, height: 720 } });
   const A = await ctx.newPage(), B = await ctx.newPage();
   const errors = []; [A, B].forEach(p => p.on('pageerror', e => errors.push(e.message)));

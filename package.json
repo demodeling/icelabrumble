@@ -1,6 +1,6 @@
 {
   "name": "icelab-rumble",
-  "version": "2.6.0",
+  "version": "2.6.1",
   "private": true,
   "description": "IceLab Rumble \u2014 pick an IceLab member, remove the false-positive rhino.",
   "scripts": {

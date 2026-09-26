@@ -202,11 +202,11 @@
     <div id="title" class="overlay"><div class="panel">
       <h1>ICELAB<br>RUMBLE</h1>
       <p class="sub">An airborne eDNA sampler in Kiruna reported a rhino. One read, 98.7% match. Somebody has to remove it from the dataset by hand.</p>
-      <div class="row"><button class="btn" id="btnStart">CHOOSE YOUR FIGHTER</button><button class="btn secondary" id="btnScores">HIGH SCORES</button><button class="btn secondary" id="btnCoop">CO-OP</button><button class="btn secondary" id="btnVersus">VERSUS <b>BETA</b></button><button class="btn secondary" id="btnIntro">▶ FALSE POSITIVE?</button><button class="btn secondary" id="btnCredits">CREDITS</button></div>
+      <div class="row"><button class="btn" id="btnStart">CHOOSE YOUR FIGHTER</button><button class="btn secondary" id="btnScores">HIGH SCORES</button><button class="btn secondary" id="btnCoop">CO-OP</button><button class="btn secondary" id="btnVersus">VERSUS</button><button class="btn secondary" id="btnIntro">▶ FALSE POSITIVE?</button><button class="btn secondary" id="btnCredits">CREDITS</button></div>
       <p class="small" id="titleBest"></p>
       <p class="small">Sound on for the full kung-fu experience. Works on Safari, iPhone and iPad — tap ⛶ FULLSCREEN for a widescreen arena on your phone.</p>
       <p class="small" id="iosHint" hidden>iPhone: for a real full screen, tap Share → <b>Add to Home Screen</b> and open the game from there (no Safari bars at all).</p>
-      <p class="small ver" id="verLine">v2.6.0 · build e9f129c</p>
+      <p class="small ver" id="verLine">v2.6.1 · build 7c42374</p>
     </div></div>
 
     <div id="select" class="overlay" hidden><div class="panel">
@@ -236,20 +236,10 @@
     </div></div>
 
     <div id="versus" class="overlay" hidden><div class="panel">
-      <h2>VERSUS — BETA</h2>
-      <p class="small">Everybody against everybody, and anyone can play <b>THE RHINO</b>: the false positive fights back. Versus fights are never saved to the leaderboard.</p>
-      <p class="small"><b>Two players, one keyboard</b> — the classic duel:</p>
-      <div class="row" style="align-items:center">
-        <label class="check">Player 1 <select id="vsP1"></select></label>
-        <label class="check">Player 2 <select id="vsP2"></select></label>
-        <label class="check">Arena <select id="vsArena"><option value="0">Kiruna</option><option value="1">The Wasteland</option><option value="2">The Asteroid — low gravity</option><option value="3">The Wide Field — twice as wide</option><option value="4">Compositional — sizes sum to one</option></select></label>
-      </div>
-      <div class="row"><button class="btn" id="btnVsFight">FIGHT — SAME KEYBOARD</button></div>
-      <div class="controls">P1 <kbd>&larr;</kbd><kbd>&rarr;</kbd> move · <kbd>&uarr;</kbd> jump · <kbd>&darr;</kbd> duck · <kbd>J</kbd> punch · <kbd>K</kbd> kick · <kbd>L</kbd> special &nbsp;·&nbsp; P2 <kbd>A</kbd><kbd>D</kbd> move · <kbd>W</kbd> jump · <kbd>S</kbd> duck · <kbd>F</kbd> punch · <kbd>G</kbd> kick · <kbd>H</kbd> special</div>
-      <p class="small">As the rhino: punch is the horn sweep, kick paws the ground and charges, the special is a jet stomp.</p>
+      <h2>VERSUS</h2>
+      <p class="small">Played online: two to four players, each on their own device, type the <b>same room code</b>, then pick on the fighter screen (the host picks the arena). Two players is a one-on-one duel; three or four is everybody against everybody, and the last one standing wins. Anyone can play <b>THE RHINO</b>: punch is the horn sweep, kick paws the ground and charges, the special is a jet stomp. Versus fights are never saved to the leaderboard.</p>
       <p class="small">On <b>Compositional</b> everybody shares one ring: your sizes always add up to one, every hit moves size from the one who takes it to everybody else, and a side below the <b>6 % detection limit</b> is out.</p>
-      <p class="small"><b>Online, two to four players</b>: everybody types the <b>same room code</b> on their own device, then picks on the fighter screen (the host picks the arena). Two is the duel again; three or four is a free-for-all, and the last one standing wins.</p>
-      <div class="namebox"><label for="vsCode" class="small">Room code</label><input id="vsCode" maxlength="24" autocomplete="off" autocapitalize="off" placeholder="kiruna"><button class="btn secondary" id="btnVsJoin">PLAY ONLINE</button></div>
+      <div class="namebox"><label for="vsCode" class="small">Room code</label><input id="vsCode" maxlength="24" autocomplete="off" autocapitalize="off" placeholder="kiruna"><button class="btn" id="btnVsJoin">PLAY ONLINE</button></div>
       <p class="small" id="vsStatus"></p>
       <div class="row"><button class="btn secondary" id="btnVsBack">BACK</button></div>
     </div></div>
@@ -274,7 +264,7 @@
       <p class="small">Every face is drawn by the game itself: a paper-cutout avatar, not a portrait, and no photograph of anyone is stored or shipped anywhere in this project.</p>
       <p class="small">Rounds 1–8 come from the sister game, <b>Swebits Rumble</b>; rounds 9–11 were IceLab’s own.</p>
       <p class="small">The rhino is a false positive. No rhinos were harmed; it was one short read that looked like a horse.</p>
-      <p class="small ver">Built with Claude · v2.6.0 · <a href="https://www.umu.se/en/icelab/" target="_blank" rel="noopener">umu.se/en/icelab</a></p>
+      <p class="small ver">Built with Claude · v2.6.1 · <a href="https://www.umu.se/en/icelab/" target="_blank" rel="noopener">umu.se/en/icelab</a></p>
       <div class="row"><button class="btn secondary" id="btnCreditsBack">BACK</button></div>
     </div></div>
 
@@ -1817,7 +1807,7 @@ var curR = null;   // the rhino being updated right now, so its damage can be ga
 var bolts = [];
 var LEVEL = 0, hot = [], rings = [];
 
-// ------------------------------------------------------------ versus (beta)
+// ------------------------------------------------------------ versus
 // Two humans on one keyboard, or two to four in an online room: one arena, everybody against everybody. A side is a
 // fighter from the ROSTER or THE RHINO itself. Sides are stored in the same arrays a round uses (G.players / G.rhinos),
 // so drawing, the hit code and the co-op snapshots all work unchanged; G.sides[i] is side i's entity.
@@ -1895,7 +1885,7 @@ function newVsFight(ids){
   particles = []; fx = []; dna = []; puffs = []; hot = []; rings = []; bolts = []; spikes = []; shake = 0; flashA = 0; slowmo = 0; impactFrame = 0;
   clearKeys(); blurFocus();
 }
-// the same-keyboard duel: arrows + J K L against W A S D + F G H (also window.__vsLocal for tests)
+// versus is played online; a local fight on one keyboard (arrows + J K L against W A S D + F G H) is only the test hook window.__vsLocal
 function beginVsLocal(ids, arena){
   vsLocal = true; LEVEL = clampVsLevel(arena);
   newVsFight(ids); scene = 'fight'; show(null);
@@ -4328,7 +4318,7 @@ function showVsResult(){
                                                  : (Math.max(0, Math.round(e.hp)) + '/' + e.maxhp + ' HP (' + vsPct(e) + ' %)')) +
            '</b> · hits landed: <b>' + (e.hitsLanded || 0) + '</b>';
   }
-  $('resReadout').innerHTML = '> versus (beta) — <b>not saved to the leaderboard</b><br>' +
+  $('resReadout').innerHTML = '> versus — <b>not saved to the leaderboard</b><br>' +
     G.sides.map(sideLine).join('<br>') + '<br>' +
     '> time: <b>' + G.elapsed.toFixed(1) + ' s</b> of ' + VS_TIME + ' s' +
     (G.vsWin === -1 ? ' — the clock decides nothing when the ' + (n > 2 ? 'leaders' : 'two') + ' are level.'
@@ -4378,20 +4368,17 @@ $('btnFight').addEventListener('click', startFight);
 $('btnAgain').addEventListener('click', function(){
   if (Net.on && Net.peer){ coopStart(LEVEL); return; }
   if (vsLocal){ beginVsLocal(vsPicks, LEVEL); return; }
-  if (G && G.vs){ leaveVersus('Your opponent left the room. Start another fight, or play on the same keyboard.'); return; }   // never fall through into the campaign
+  if (G && G.vs){ leaveVersus('Your opponent left the room. Type a room code to start another fight.'); return; }   // never fall through into the campaign
   if (LEVELS[LEVEL].card) showLevelCard(); else beginRound();
 });
 // an online duel whose partner is gone: back to the versus screen, not into round 1
 function leaveVersus(msg){ G = null; netLeave(); openVersus(); $('vsStatus').textContent = msg || ''; }
 $('btnVersus').addEventListener('click', function(){ unlockAudio(); openVersus(); });
-$('btnVsFight').addEventListener('click', function(){ unlockAudio(); beginVsLocal([$('vsP1').value, $('vsP2').value], $('vsArena').value); });
 $('btnVsJoin').addEventListener('click', function(){ unlockAudio(); Net.mode = 'vs'; pickRhino = false; coopJoin(); });
 $('vsCode').addEventListener('keydown', function(e){ if (e.key === 'Enter'){ Net.mode = 'vs'; coopJoin(); } });
 $('btnVsBack').addEventListener('click', function(){ netLeave(); show('title'); scene = 'title'; });
 function openVersus(){
   show('versus'); scene = 'versus'; vsLocal = false; $('vsStatus').textContent = '';
-  var opts = ROSTER.map(function(d){ return '<option value="' + d.id + '">' + d.name + '</option>'; }).join('') + '<option value="rhino">THE RHINO</option>';
-  ['vsP1', 'vsP2'].forEach(function(id, i){ var el = $(id); if (el.options.length !== ROSTER.length + 1){ el.innerHTML = opts; el.value = i ? 'rhino' : ROSTER[0].id; } });
   try { $('vsCode').value = localStorage.getItem('swebits_room') || ''; } catch (e) {}
 }
 $('btnNext').addEventListener('click', function(){ unlockAudio(); LEVEL = Math.min(LEVELS.length - 1, LEVEL + 1); if (Net.on && Net.peer){ coopStart(LEVEL); return; } showLevelCard(); });
