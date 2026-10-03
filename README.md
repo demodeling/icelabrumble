@@ -38,6 +38,8 @@ npm test                          # builds dist/ and runs the smoke tests
 npm run serve                     # http://localhost:8000
 ```
 
+`npm run playtest` runs the ten play-test agents in `tools/playtest/` — bots that play the built game in headless browsers at three times real speed: one brawler per fighter through all thirteen rounds, one that never lands a hit (the pacifist endings) and one that mashes keys and menus at random. They watch for page errors and broken invariants and print win rates per round, which is how round 13 was balanced. The network is cut for them, so nothing they do reaches the leaderboard. `tools/playtest/hpc2n.sbatch` runs the same ten as a Slurm array on a cluster.
+
 Edit `src/index.html` — everything (CSS, JS, fighters, rhino AI, sound) is in that one file. `CLAUDE.md` has the map and the house rules for working on it with Claude Code: open the folder in Claude Code, describe the change, let it edit/test/commit, push, and Pages redeploys.
 
 ## Rounds
@@ -50,7 +52,9 @@ Rounds 9–11 are IceLab Rumble's own. Round 9 is the Rerun: the classifier repo
 
 Round 12 is the Paint Shop: the read is a PCR chimera — one read glued together from two templates — and a chimera check takes it apart piece by piece. So the rhino is booked into a body shop, and every hit you land (a jab counts as much as a special) resprays one of its sixteen panels in its true colours: a slim leg, a short white-tipped tail, big ears, a cream belly, white spots, and last of all the horn comes off. Respray all sixteen and it was a fawn all along.
 
-Use *Start at* on the fighter screen to jump straight to any round.
+Round 13 has no rhino at all. The dataset is clean, so the lab settles the other open question: **Anton against Henrik**, one on one. Whoever you picked, this round you are Anton (the other cards grey out), and it is solo only — a co-op room stops at round 12. Henrik comes out of his corner at 140 % of normal speed, faster than you, and then slows all the way through the round: 30 % forty seconds later, with his *tempo* written on his health bar. Everything about him runs on that clock — his legs, his swings, how late he sees yours coming, and how long a hit keeps him down — which is the round's lesson, **critical slowing down**: a system drifting towards a tipping point recovers more and more slowly from every knock. Go in at the bell and you mostly lose; keep out of reach for fifteen seconds and you mostly win. A win is a score like any other round's.
+
+Use *Start at* on the fighter screen to jump straight to any round, or **RANDOM LEVEL** next to the *FIGHT AS* button to be dropped into one picked at random (in a versus room: one of the five arenas; in a room only the host can roll).
 
 **Versus.** *VERSUS* on the title screen is played online: two to four players type the same room code on their own devices and pick on the fighter screen, where an extra card appears for **the rhino** — punch is the horn sweep, kick paws the ground and charges, the special is a jet stomp. Two players is a one-on-one duel; three or four is everybody against everybody, and the last one standing wins. Five arenas (in a versus room the round picker only offers these): Kiruna, the Wasteland, the Asteroid (low gravity), the Wide Field (twice as wide, the camera follows) and Compositional, where you all share one ring, your sizes always add up to one, every hit moves size from whoever takes it to everybody else, and a side below the 6 % detection limit is out. A fight is 99 seconds; if it goes the distance, whoever holds the biggest share of their own bar wins. A player who leaves the room is out. Versus results are never saved to the leaderboard.
 
@@ -67,6 +71,8 @@ Keyboard: ← → / A D move · ↑ / W / space jump · ↓ / S duck · **J** pu
 The game ships one clip: `assets/videos/intro.mp4`, the menu clip behind the ▶ FALSE POSITIVE? button (someone looks back, walks on, touches the rhino and it turns out to be a zebra), rendered by `tools/video/render_intro.sh` (Python 3 + Pillow + numpy + ffmpeg; the face sprites come from the game's own drawing code via `export_sprites.js`, which needs Playwright). `assets/trailer/trailer.mp4` is the 20-second trailer. There are no per-fighter videos.
 
 ## High scores
+
+Every row of the HIGH SCORES table carries the day the score was set (`created_at`, shown as year-month-day in your own time zone; a score saved on the device before dates were kept shows a dash).
 
 Shared leaderboard in a free Supabase table (`scores`: name, fighter, score, time_s, level, created_at). The page inserts with the project's publishable key and reads the top 25; row-level security allows nothing else, and a **report** button next to each entry hides it for everyone (`report_score()`). The schema is in `supabase/migrations/`; the project URL and key are the `SUPA` constants at the top of the `Scores` adapter in `src/index.html`. If the table cannot be reached the page falls back to this device's localStorage.
 

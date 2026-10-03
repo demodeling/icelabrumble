@@ -80,6 +80,12 @@
            display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--snow);transition:transform .1s,border-color .1s;}
   .fighter:hover,.fighter:focus-visible{transform:translateY(-3px);border-color:var(--aurora);outline:none;}
   .fighter.sel{border-color:var(--gold);background:#2a2b48;}
+  .fighter:disabled{opacity:.3;cursor:default;transform:none;border-color:transparent;}
+  #btnRandom:disabled{opacity:.45;cursor:default;}
+  table.scores td.date{white-space:nowrap;color:var(--muted);}
+  table.scores .sub{display:none;font-size:.85em;color:var(--muted);white-space:nowrap;}
+  /* a phone has no room for a seventh column: there the date goes under the name */
+  @media (max-width:640px){ table.scores .date{display:none;} table.scores .sub{display:block;} }
   .fighter img{height:clamp(40px,6vw,66px);width:auto;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5));}
   .fighter .best:empty{display:none;}
   .fighter .name{font-family:var(--display);font-size:clamp(15px,2.2vw,22px);letter-spacing:.05em;}
@@ -213,11 +219,12 @@
       <h2>CHOOSE YOUR FIGHTER</h2>
       <div class="row" style="align-items:center">
         <button class="btn" id="btnFight"><span id="fightVerb">FIGHT AS</span> <span id="selName">ANTON</span>!</button>
+        <button class="btn secondary" id="btnRandom" title="Start a round picked at random">RANDOM LEVEL</button>
       </div>
       <p class="small" id="selMove"></p>
       <p class="small">Tap a fighter to select — tap again to fight.</p>
       <p class="small coop" id="selCoop" hidden></p>
-      <label class="check">Start at <select id="startLevel"><option value="0">Round 1 — Kiruna</option><option value="1">Round 2 — The Wasteland</option><option value="2">Round 3 — The Asteroid</option><option value="3">Round 4 — The Duplicates</option><option value="4">Round 5 — Compositional</option><option value="5">Round 6 — The Square</option><option value="6">Round 7 — The Push</option><option value="7">Round 8 — Cinnamon Bun Day</option><option value="8">Round 9 — The Rerun</option><option value="9">Round 10 — The Third Dimension</option><option value="10">Round 11 — The Island</option><option value="11">Round 12 — The Paint Shop</option></select></label>
+      <label class="check">Start at <select id="startLevel"><option value="0">Round 1 — Kiruna</option><option value="1">Round 2 — The Wasteland</option><option value="2">Round 3 — The Asteroid</option><option value="3">Round 4 — The Duplicates</option><option value="4">Round 5 — Compositional</option><option value="5">Round 6 — The Square</option><option value="6">Round 7 — The Push</option><option value="7">Round 8 — Cinnamon Bun Day</option><option value="8">Round 9 — The Rerun</option><option value="9">Round 10 — The Third Dimension</option><option value="10">Round 11 — The Island</option><option value="11">Round 12 — The Paint Shop</option><option value="12">Round 13 — Anton vs Henrik</option></select></label>
       <div class="roster" id="roster"></div>
       <div class="controls" id="ctrlHelp"><kbd>←</kbd><kbd>→</kbd> move · <kbd>↑</kbd>/<kbd>space</kbd> jump · <kbd>↓</kbd> duck · <kbd>J</kbd> punch · <kbd>K</kbd> kick · <kbd>L</kbd> special (when the meter is full) · <kbd>Esc</kbd> menu · round 11: <kbd>↑</kbd><kbd>↓</kbd> walk in depth, <kbd>space</kbd> jump, <kbd>V</kbd> zoom</div>
     </div></div>
@@ -248,7 +255,7 @@
       <h2>HIGH SCORES</h2>
       <p class="small" id="scoresMode"></p>
       <label class="check">Show <select id="scoresRound"><option value="0">All rounds</option></select></label>
-      <table class="scores" id="scoresTable"><thead><tr><th class="num">#</th><th>NAME</th><th>FIGHTER</th><th class="num">TIME</th><th class="num">SCORE</th><th></th></tr></thead><tbody></tbody></table>
+      <table class="scores" id="scoresTable"><thead><tr><th class="num">#</th><th>NAME</th><th>FIGHTER</th><th class="num">TIME</th><th class="num">SCORE</th><th class="num date">DATE</th><th></th></tr></thead><tbody></tbody></table>
       <div class="row"><button class="btn secondary" id="btnScoresBack">BACK</button></div>
     </div></div>
 
@@ -323,7 +330,9 @@ var LOOK = {
   abigail: {skin:'#f2d0b4', hair:{type:'long', color:'#8a6a48'}, beard:null, glasses:false, mouth:'smile'},
   // Sasha looks like a cactus — a maroon one: maroon skin, a crew cut of spines and a flower on top (the flower is drawn in the rig), in a darker maroon hoodie
   suvam: {skin:'#c08b62', hair:{type:'short', color:'#2b2320'}, beard:{type:'stubble', color:'#2b2320'}, glasses:false, mouth:'smile'},
-  sasha: {skin:'#8a4550', hair:{type:'buzz', color:'#3e1a20'}, beard:null, glasses:false, mouth:'smile'}
+  sasha: {skin:'#8a4550', hair:{type:'buzz', color:'#3e1a20'}, beard:null, glasses:false, mouth:'smile'},
+  // Henrik is not on the bench: he is the other corner of round 13 (HENRIK)
+  henrik: {skin:'#f3c8b0', hair:{type:'bald'}, beard:{type:'full', color:'#a86f45', big:true}, glasses:false, mouth:'flat'}
 };
 function drawCutoutFace(c, cx, cy, S, look, fac, opt){
   // S = head width. Big round head, big oval eyes, thick paper-cut outline.
@@ -892,8 +901,21 @@ function drawLab(t){
   ctx.fillStyle = '#26303c'; roundRect(mx - 10, my - 10, mw + 20, mh + 34, 8); ctx.fill();
   ctx.fillStyle = '#0b1320'; ctx.fillRect(mx, my, mw, mh);
   ctx.strokeStyle = 'rgba(140,170,210,.14)'; ctx.lineWidth = 1; ctx.beginPath(); for (var gx = mx; gx <= mx + mw; gx += 30){ ctx.moveTo(gx, my); ctx.lineTo(gx, my + mh); } for (var gy = my; gy <= my + mh; gy += 30){ ctx.moveTo(mx, gy); ctx.lineTo(mx + mw, gy); } ctx.stroke();
-  var peaks = [['A', 40, .35], ['T', 62, .9], ['A', 104, .3], ['T', 126, .95], ['A', 168, .28], ['T', 190, .85], ['C', 236, .5], ['G', 262, .7], ['A', 300, .4], ['T', 330, .6]];
-  ['A', 'C', 'G', 'T'].forEach(function(b){
+  var dl = !!LEVELS[LEVEL].duel;   // round 13 borrows the lab: the screen and the poster are about slowing down, not stutter
+  if (dl){
+    // the same knock again and again, and a recovery that takes about twice as long every time
+    ctx.strokeStyle = '#6fe3a0'; ctx.lineWidth = 2; ctx.beginPath();
+    for (var sx = 0, yv = 0; sx <= mw; sx += 2){
+      var kn = Math.floor(sx / 58); yv *= Math.exp(-.32 * Math.pow(.55, kn));
+      if (sx % 58 === 12) yv = Math.min(1, yv + .5);
+      var sy = my + mh - 14 - yv * (mh - 40); if (sx === 0) ctx.moveTo(mx + sx, sy); else ctx.lineTo(mx + sx, sy);
+    }
+    ctx.stroke();
+    if (G && G.duel){ var cxl = mx + mw * clamp(G.elapsed / DUEL.over, 0, 1); ctx.strokeStyle = 'rgba(255,209,102,.8)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cxl, my + 6); ctx.lineTo(cxl, my + mh - 6); ctx.stroke(); }   // where the round is on it
+    ctx.fillStyle = '#c9d3e6'; ctx.font = '900 11px Nunito, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('RECOVERY AFTER EACH KNOCK · SLOWER EVERY TIME', mx + mw / 2, my + mh + 14);
+  }
+  var peaks = dl ? [] : [['A', 40, .35], ['T', 62, .9], ['A', 104, .3], ['T', 126, .95], ['A', 168, .28], ['T', 190, .85], ['C', 236, .5], ['G', 262, .7], ['A', 300, .4], ['T', 330, .6]];
+  if (!dl) ['A', 'C', 'G', 'T'].forEach(function(b){
     ctx.strokeStyle = LAB_TRACE[b]; ctx.lineWidth = 2; ctx.beginPath();
     for (var x = 0; x <= mw; x += 3){
       var y = 0; peaks.forEach(function(pk){ if (pk[0] === b){ var d = (x - pk[1]) / 7; y += pk[2] * Math.exp(-d * d); } });
@@ -901,17 +923,25 @@ function drawLab(t){
     }
     ctx.stroke();
   });
+  if (!dl){
   ctx.fillStyle = '#ffd166'; ctx.font = '900 10px Nunito, sans-serif'; ctx.textAlign = 'center';
   [40, 104, 168].forEach(function(px){ ctx.fillText('stutter', mx + px, my + mh - 8 - .42 * (mh - 24) - 6); });
   ctx.fillStyle = '#c9d3e6'; ctx.font = '900 11px Nunito, sans-serif'; ctx.fillText('READ 7 · (AT)n · REPEAT COUNT: ?', mx + mw / 2, my + mh + 14);
+  }
   // blinking cursor on the screen
   if (Math.floor(t * 2) % 2 === 0){ ctx.fillStyle = '#6fe3a0'; ctx.fillRect(mx + mw - 18, my + 8, 8, 12); }
   ctx.textAlign = 'left';
   // a poster by the door
   ctx.fillStyle = '#fbfcfe'; ctx.fillRect(62, 150, 150, 104); ctx.strokeStyle = '#8a98aa'; ctx.lineWidth = 2; ctx.strokeRect(62, 150, 150, 104);
-  ctx.fillStyle = '#c8262c'; ctx.font = '900 14px Nunito, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('MIND THE REPEAT', 137, 172);
+  ctx.fillStyle = '#c8262c'; ctx.font = '900 14px Nunito, sans-serif'; ctx.textAlign = 'center';
+  if (dl){
+    ctx.fillText('CRITICAL', 137, 172); ctx.fillText('SLOWING DOWN', 137, 190);
+    ctx.fillStyle = '#3a4a5e'; ctx.font = '700 10px Nunito, sans-serif'; ctx.fillText('near a tipping point', 137, 214); ctx.fillText('every knock takes longer', 137, 228); ctx.fillText('to recover from', 137, 242);
+  } else {
+  ctx.fillText('MIND THE REPEAT', 137, 172);
   ctx.font = '900 13px "Courier New", monospace'; var rep7 = 'ATATATATAT'; for (var ri = 0; ri < rep7.length; ri++){ ctx.fillStyle = LAB_TRACE[rep7[ri]]; ctx.fillText(rep7[ri], 88 + ri * 11, 196); }
   ctx.fillStyle = '#3a4a5e'; ctx.font = '700 10px Nunito, sans-serif'; ctx.fillText('the polymerase loses count', 137, 218); ctx.fillText('one unit more, one unit less', 137, 232); ctx.fillText('= a variant that is not there', 137, 246);
+  }
   ctx.textAlign = 'left';
   // the bench along the back wall
   ctx.fillStyle = '#eef2f7'; ctx.fillRect(0, 356, LW, 12); ctx.fillStyle = '#7d8a9a'; ctx.fillRect(0, 368, LW, 6);
@@ -1408,8 +1438,16 @@ var LEVELS = [
    lose: {title: 'STILL HALF RHINO'},
    win: {big: 'RESPRAYED', title: 'IT WAS A FAWN ALL ALONG', status: 'CHIMERA SPLIT',
          lesson: 'a PCR chimera is one read built from two templates. Classify it whole and you can get a rhino out of a deer; classify it piece by piece, the way a chimera check does, and every piece says fawn.',
+         next: 'the dataset is clean. One thing left to settle: <b>Anton against Henrik</b>. Round 13.'},
+   card: "> ROUND 12 — THE PAINT SHOP\n> read: <b>CHIMERA</b>\n\nIn a PCR cycle a half-copied strand can come loose and finish on a different template. The product is a <b>chimera</b>: one read, two sources, glued together — and classified whole it can match something that was never in the sample.\n\nA chimera check takes the read apart and classifies it piece by piece. So this is a body shop: every hit resprays one panel of the rhino in its true colours.\n\n> every hit resprays one panel, big or small\n> sixteen panels\n> respray all of it and see what it really was"},
+  // round 13: no rhino at all — Anton against Henrik, one on one, whoever was picked (solo only; see "round 13: the duel")
+  {name: 'ROUND 13', theme: 'lab', calm: true, duel: {as: 'anton'}, hud: 'HENRIK', read: 'none — the dataset is clean',
+   next: 'NEXT ROUND: ANTON VS HENRIK', cardStyle: 'lab', puff: '#e8edf3',
+   lose: {title: 'HENRIK TAKES THE ROUND', tip: 'he is quickest at the bell and slows all the way through the round. Keep out of reach for the first fifteen seconds, then go in while he is still getting up.'},
+   win: {big: 'K.O.!', title: 'ANTON TAKES THE ROUND', status: 'SETTLED',
+         lesson: 'close to a tipping point a system recovers more and more slowly from every small knock — <b>critical slowing down</b>. In a time series it shows up as rising variance and autocorrelation: an early warning, if you are watching for it.',
          next: ''},
-   card: "> ROUND 12 — THE PAINT SHOP\n> read: <b>CHIMERA</b>\n\nIn a PCR cycle a half-copied strand can come loose and finish on a different template. The product is a <b>chimera</b>: one read, two sources, glued together — and classified whole it can match something that was never in the sample.\n\nA chimera check takes the read apart and classifies it piece by piece. So this is a body shop: every hit resprays one panel of the rhino in its true colours.\n\n> every hit resprays one panel, big or small\n> sixteen panels\n> respray all of it and see what it really was"}
+   card: "> ROUND 13 — ANTON VS HENRIK\n> rhino: <b>NONE</b> — the dataset is clean\n\nSo the lab settles the other open question. One on one, no false positive anywhere: <b>Anton</b> on the board against <b>Henrik</b>. Nobody else gets in — whoever you picked, this round you are Anton.\n\nHenrik comes out of his corner <b>faster than you</b>. It does not last. A system drifting towards a tipping point takes longer and longer to recover from every knock — <b>critical slowing down</b> — and half a minute in he is wading through syrup.\n\n> his <b>TEMPO</b> is on his health bar: 140 % at the bell, 30 % forty seconds later\n> early on, stay out of reach: jump, roll away, pick your moment\n> the slower he gets, the longer every hit keeps him down"}
 ];
 // ------------------------------------------------------------ round 6: the square
 // The four sides of the room are one flat track, unrolled. Every entity keeps its logical x (distance along the track)
@@ -1914,6 +1952,7 @@ function foeAt(p, pt, pad){
 function hitFoe(t, p, pt, dmg, big, label, o){
   if (!t || G.over) return;   // after the bell (or the knockout) nothing lands, and nothing is counted
   if (t.isRhino){ hitRhino(t, p, pt, dmg, big, label, o); return; }
+  if (G.duel && (t.inv > 0 || t.state === 'ko')) return;   // round 13: a swing at somebody still blinking is no hit — no star, no meter, nothing on the score
   p.hitsLanded++;
   if (p.state !== 'special' && !(o && o.noMeter)) p.meter = Math.min(100, p.meter + (big ? 26 : 14));
   fx.push({x: pt[0], y: pt[1], t: 0, life: big ? .6 : .38, r: big ? 95 : 55, label: label || (big ? 'WHAM!' : (Math.random() < .5 ? 'POW!' : 'BAM!')), big: big});
@@ -1958,8 +1997,8 @@ function vsRhinoJump(r, dt){
 }
 function vsEnd(winSide){
   if (G.over) return;
-  if (winSide < 0){ G.over = true; G.won = true; G.vsWin = -1; G.koT = 0; sfx('gong', {f: 90, v: .6}); fightTimeout(showResult, 2600); return; }
-  G.over = true; G.won = true; G.vsWin = winSide; G.koT = 0;
+  if (winSide < 0){ G.over = true; G.won = !G.duel; G.vsWin = -1; G.koT = 0; sfx('gong', {f: 90, v: .6}); fightTimeout(showResult, 2600); return; }
+  G.over = true; G.won = !G.duel || winSide === 0; G.vsWin = winSide; G.koT = 0;   // round 13: only your own knockout of Henrik is a win
   var w = G.sides[winSide];
   if (w && !w.isRhino){ w.state = 'win'; w.st = 0; }
   sfx('gong', {f: 70, v: .7});
@@ -1997,7 +2036,7 @@ function drawVsHUD(){
     var mine = (!Net.on || !Net.peer) ? (vsLocal ? false : i === 0) : i === Net.me;
     var tag = vsLocal ? 'P' + (i + 1) + ' · ' : (mine ? 'YOU · ' : (many ? 'P' + (i + 1) + ' · ' : ''));
     var used = bar(x, yy, w, 20, Math.max(0, e.hp) / e.maxhp, e.state === 'ko' ? '#8a8fa3' : cols[i % cols.length], '#c8262c',
-        tag + vsName(e) + (e.gone ? ' · LEFT' : '') + (pcts ? ' · ' + pcts[i] + ' %' : ''), al, G.comp ? COMP_LIMIT : 0);
+        tag + vsName(e) + (e.gone ? ' · LEFT' : '') + (pcts ? ' · ' + pcts[i] + ' %' : '') + (e.tempo ? ' · TEMPO ' + Math.round(e.tempo * 100) + ' %' : ''), al, G.comp ? COMP_LIMIT : 0);
     var mx = c ? LW - 24 - 200 : 24, my = compact ? yy + used + 5 : yy + 44, mh = compact ? hudPx(6) : 10;
     meterBar(mx, my, 200, mh, e.meter, al, e.meter >= 100 ? 'SPECIAL READY — ' + e.def.special.name : 'SPECIAL ' + Math.floor(e.meter) + '%', compact, true);
     colY[c] = my + mh + (compact ? hudPx(8) : 28);   // room for the caption under the meter
@@ -2008,7 +2047,67 @@ function drawVsHUD(){
     ctx.fillStyle = '#c9d3e6'; ctx.font = '900 ' + (compact ? hudPx(9) : 11) + 'px Nunito, sans-serif'; ctx.textAlign = 'center';
     ctx.fillText(compact ? 'SUM = 1 · LIMIT ' + Math.round(COMP_LIMIT * 100) + ' %' : 'ONE RING · SUMS TO 1 · LIMIT ' + Math.round(COMP_LIMIT * 100) + ' %', LW / 2, compact ? yEnd + hudPx(8) : (many ? yEnd + 8 : 130)); ctx.textAlign = 'left';
   }
-  hudTimer(Math.max(0, Math.ceil(VS_TIME - G.elapsed)));
+  hudTimer(G.duel ? Math.floor(G.elapsed) : Math.max(0, Math.ceil(VS_TIME - G.elapsed)));   // round 13 counts up like a round: no clock decision
+}
+
+// ------------------------------------------------------------ round 13: the duel (Anton against Henrik)
+// A campaign round on the versus arena: G.vs with two fighter sides, so the hit code, the bars and the knockout are
+// the versus ones — plus G.duel, which makes it a round again (side 0 is you, a win counts and can be saved, REMATCH
+// restarts it, there is no clock decision). Side 1 is Henrik, driven by duelAI() instead of a keyboard, and everything
+// he does runs on his own clock: update() hands his updatePlayer() dt * tempo, and duelTempo() falls from DUEL.t0 to
+// DUEL.t1 over DUEL.over seconds — he starts faster than Anton and ends up in slow motion. Solo only (soloOnly()).
+var HENRIK = {id:'henrik', name:'Henrik', face:'henrik', shirt:'#2f3a5a', pants:'#3b3f55', hp:140, speed:1.05, power:1.0, jump:1.0,
+  special:{name:'Adaptive Dynamics', kind:'dash', dmg:30, desc:'Evolves straight through whoever is in the way.'}};
+// near / close: the band he tries to stand in; reach: how far his swings get; react: how long (on his clock) before he
+// notices an attack; dodge: how often he then ducks the punch or jumps the kick. Tuned with the play-test bots
+// (tools/playtest): the one that keeps away until he is slower than Anton won 12 rounds of 15, the one that goes in
+// at the bell 9 of 19.
+var DUEL = {t0: 1.4, t1: .3, over: 40, bell: 1.2, near: 104, close: 58, reach: 126, react: .1, dodge: .55};
+var DUEL_GEARS = ['', 'PHEW…', 'SLOWING… DOWN…', 'CRITICAL… SLOWING… DOWN…'];
+function duelTempo(){ return (G && G.duel) ? lerp(DUEL.t0, DUEL.t1, clamp(G.elapsed / DUEL.over, 0, 1)) : 1; }
+function soloOnly(lvl){ return !!(LEVELS[lvl] && LEVELS[lvl].duel); }
+function newDuelFight(){
+  var lv = LEVELS[LEVEL]; setPadLabels(null);
+  AW = lv.width || LW;
+  var a = mkPlayer(defById(lv.duel.as), AW * .26), h = mkPlayer(HENRIK, AW * .74);
+  a.vsSide = 0; h.vsSide = 1; h.facing = -1;
+  h.tempo = DUEL.t0; h.ai = {think: .5, back: 0, duck: 0, seen: 0, dodged: false};
+  G = {fid: ++fightSeq, vs: true, duel: true, sides: [a, h], p: a, p2: null, players: [a, h], r: null, rhinos: [],
+       t: 0, over: false, won: false, elapsed: 0, stageT: 0, spawns: 0, koT: 0, pacifist: false, comp: false, compN: 0, vsWin: -2, vsTime: false, gear: 0};
+  camX = 0;
+  particles = []; fx = []; dna = []; puffs = []; hot = []; rings = []; bolts = []; spikes = []; shake = 0; flashA = 0; slowmo = 0; impactFrame = 0;
+  clearKeys(); blurFocus();
+}
+// Henrik's pad for this frame: walk into range, swing, sometimes step out, and try to read Anton's attack. dt is his own
+// (already slowed) time, so the slower he is the later every decision comes — late enough, in the end, to dodge nothing.
+function duelAI(h, dt){
+  var a = h.ai, foe = G.sides[0], k = {}, pr = {};
+  h.inp = {keys: k, pressed: pr};
+  if (G.over || h.state === 'ko' || G.elapsed < DUEL.bell) return;
+  var d = foe.x - h.x, dist = Math.abs(d), toward = d > 0 ? 'right' : 'left', away = d > 0 ? 'left' : 'right';
+  a.think -= dt; a.back -= dt; a.duck -= dt;
+  var atk = foe.state === 'punch' || foe.state === 'kick' || foe.state === 'special';
+  if (atk && dist < 200) a.seen += dt; else { a.seen = 0; a.dodged = false; }
+  if (atk && !a.dodged && a.seen > DUEL.react){
+    a.dodged = true;
+    if (Math.random() < DUEL.dodge){ if (foe.state === 'punch') a.duck = .3; else pr.jump = true; }
+  }
+  if (a.duck > 0){ k.down = true; return; }
+  if (a.back > 0) k[away] = true;
+  else if (dist > DUEL.near) k[toward] = true;
+  else if (dist < DUEL.close) k[away] = true;
+  if (a.think <= 0 && dist < DUEL.reach && foe.state !== 'ko'){
+    if (h.meter >= 100) pr.special = true; else if (Math.random() < .4) pr.kick = true; else pr.punch = true;
+    a.think = rnd(.35, .8);
+    if (Math.random() < .35) a.back = rnd(.2, .45);
+  }
+}
+// once a frame, before the fighters move: this frame's tempo, Henrik's pad, and a word from him when he drops a gear
+function duelTick(dt){
+  var h = G.sides[1], tp = duelTempo(), gear = tp > 1 ? 0 : tp > .75 ? 1 : tp > .5 ? 2 : 3;
+  h.tempo = tp;
+  if (gear !== G.gear && !G.over && h.state !== 'ko'){ G.gear = gear; sayLine(h, {x: h.headPt[0], y: h.headPt[1] - 50, t: 0, life: 1.8, label: DUEL_GEARS[gear], say: true, dir: h.facing}); }
+  duelAI(h, dt * tp);
 }
 
 var G = null;   // current fight
@@ -2227,8 +2326,9 @@ function paintDone(r){
 // pacifist ending: never land a hit and outlast the rhino (60 s in round 1, +30 s per round) and the read turns out to be something else
 var LOCAL_BUILD = /^(localhost|127\.0\.0\.1|)$/.test(location.hostname);   // file:// or a dev server: debug hooks allowed
 var PACIFIST_DEBUG = LOCAL_BUILD ? parseFloat((location.hash.match(/pacifist=([0-9]*\.?[0-9]+(?:e[+-]?[0-9]+)?)/i) || [])[1]) : NaN;
-if (LOCAL_BUILD){ window.__fight = function(){ return G; }; window.__pct100 = function(v){ return pct100(v); }; window.__sq = function(){ return {P: SQ.P, base: sqBase, pt: sqPt, wrap: wrapDelta}; }; window.__level = function(){ return LEVEL; }; window.__flash = function(){ return flashA; }; window.__push = function(){ return {win: PUSH.win, lose: pushLoseX()}; }; window.__levels = function(){ return LEVELS; }; window.__zoom = function(){ return isleZoom(); }; window.__fx = function(){ return fx; }; window.__spikes = function(){ return spikes; }; window.__desert = function(){ return desertAmount(); };
+if (LOCAL_BUILD){ window.__fight = function(){ return G; }; window.__pct100 = function(v){ return pct100(v); }; window.__sq = function(){ return {P: SQ.P, base: sqBase, pt: sqPt, wrap: wrapDelta}; }; window.__level = function(){ return LEVEL; }; window.__flash = function(){ return flashA; }; window.__push = function(){ return {win: PUSH.win, lose: pushLoseX(), seq: pushSeq}; }; window.__levels = function(){ return LEVELS; }; window.__zoom = function(){ return isleZoom(); }; window.__fx = function(){ return fx; }; window.__spikes = function(){ return spikes; }; window.__desert = function(){ return desertAmount(); };
   window.__vsLocal = function(ids, arena){ clearKeys(); beginVsLocal(ids, arena || 0); };   // a local fight with any sides (the UI offers two), for tests
+  window.__duel = function(){ return {tempo: duelTempo(), cfg: DUEL, def: HENRIK}; };
 }   // tests peek at the fight state
 function pacifistTime(){ return PACIFIST_DEBUG > 0 ? PACIFIST_DEBUG : (LEVELS[LEVEL].pacifist || 60 + 30 * LEVEL); }
 // Round 9 chains the reveal: every 30 s (G.stageT, per pass) the classifier reports again, and a species that does not
@@ -2364,7 +2464,7 @@ function updatePlayer(p, dt){
       var kick = want ? Math.max(0, Math.sin(G.t * 9)) : 0; p.state = moving ? 'walk' : 'idle';
       pose = {crouch:.28, lean:.18 + .05 * Math.sign(p.vx * p.facing), lh:18, lk:34, rh:-14 - 34 * kick, rk:26 + 30 * kick, la:70, le:96, ra:40, re:110};
     } else if (moving && onGround){
-      var ph = G.t * 11 * def.speed; p.state = 'walk';
+      var ph = p.tempo ? (p.walkPh = (p.walkPh || 0) + dt * 11 * def.speed) : G.t * 11 * def.speed; p.state = 'walk';   // Henrik's stride slows with him
       pose = {crouch:.05, lean:.1, lh: 26 * Math.sin(ph), lk: 46 * Math.max(0, Math.cos(ph)), rh: 26 * Math.sin(ph + 3.14), rk: 46 * Math.max(0, Math.cos(ph + 3.14)), la: 55 + 20 * Math.sin(ph + 3.14), le: 115, ra: 45 + 20 * Math.sin(ph), re: 120};
     } else if (!onGround) pose = POSE.jump;
     else if (keys.down) { pose = POSE.duck; p.state = 'duck'; }
@@ -3047,14 +3147,19 @@ function update(dt){
     if (vsLocal && G.sides[1]){ G.sides[1].inp.keys = keys2; G.sides[1].inp.pressed = pressed2; }   // the test-only local duel: side 2 is the other half of the keyboard
   }
   else { G.p.inp.keys = keys; G.p.inp.pressed = pressed; G.p.inp.typed = typedQ; }   // player 1 is always the local keyboard / touch pads
-  G.players.forEach(function(q){ if (!q.gone || G.vs) updatePlayer(q, dt * ts); }); G.rhinos.forEach(function(r){ if (!G.push || r.state === 'ko' || r.state === 'gone') updateRhino(r, dt * ts); });
+  if (G.duel) duelTick(dt * ts);
+  G.players.forEach(function(q){
+    if (q.gone && !G.vs) return;
+    var k = q.tempo || 1; updatePlayer(q, dt * ts * k);   // round 13: Henrik lives on his own clock…
+    if (k !== 1 && q.inv > 0) q.inv -= dt * ts * (1 - k);   // …except the blink after a hit, which lasts as long as anybody's
+  }); G.rhinos.forEach(function(r){ if (!G.push || r.state === 'ko' || r.state === 'gone') updateRhino(r, dt * ts); });
   if (G.push) updatePush(dt * ts);
   if (G.square && G.r) G.players.forEach(function(q){ q.x = G.r.x + wrapDelta(q.x - G.r.x); });
   updateCamera(dt);
   if (G.comp) G.players.concat(G.rhinos).forEach(function(c){ c.size = lerp(c.size || 1, sizeOf(c.share), Math.min(1, dt * 5)); });
   var hitsTotal = 0; G.players.forEach(function(q){ hitsTotal += q.hitsLanded; });
   if (!G.vs && !G.push && !G.over && hitsTotal === 0 && G.stageT >= pacifistTime() && !G.rhinos.some(function(r0){ return r0.state === 'morph' || r0.state === 'graze'; })) rhinoReveal();
-  if (G.vs && !G.over && G.elapsed >= VS_TIME) vsTimeUp();
+  if (G.vs && !G.duel && !G.over && G.elapsed >= VS_TIME) vsTimeUp();
   // effects
   for (var i = fx.length - 1; i >= 0; i--){ fx[i].t += dt; if (fx[i].t > fx[i].life) fx.splice(i, 1); }
   tickAmbient(dt);
@@ -3456,8 +3561,9 @@ function draw(){
     var allGone = G.rhinos.every(function(r0){ return r0.state === 'gone'; });
     if (G.vs){
       var walkover = G.vsWin >= 0 && G.sides.every(function(e, i){ return i === G.vsWin || e.leftEarly; });
-      if (G.over) bigText(G.vsTime ? 'TIME!' : (walkover ? (G.sides.length > 2 ? 'THEY ALL LEFT' : 'OPPONENT LEFT') : 'K.O.!'), LW / 2, 200, walkover ? 80 : 120);
-      if (!G.over && G.elapsed < 1.6){ var va = 1 - smooth(1.1, 1.6, G.elapsed); ctx.globalAlpha = va; bigText(G.elapsed < .8 ? 'VERSUS' : 'FIGHT!', LW / 2, 220, 96); ctx.globalAlpha = 1; }
+      if (G.over && G.duel && !G.won) bigText(lossWord(G.p), LW / 2, 200, 100);
+      else if (G.over) bigText(G.vsTime ? 'TIME!' : (walkover ? (G.sides.length > 2 ? 'THEY ALL LEFT' : 'OPPONENT LEFT') : 'K.O.!'), LW / 2, 200, walkover ? 80 : 120);
+      if (!G.over && G.elapsed < 1.6){ var va = 1 - smooth(1.1, 1.6, G.elapsed); ctx.globalAlpha = va; bigText(G.elapsed < .8 ? (G.duel ? LEVELS[LEVEL].name : 'VERSUS') : 'FIGHT!', LW / 2, 220, 96); ctx.globalAlpha = 1; }
     }
     else if (!G.over && G.rhinos.some(function(r0){ return r0.morph && (r0.state === 'morph' || r0.state === 'graze'); })){
       // round 9: a pass that called something that does not belong — the pipeline runs again
@@ -3547,22 +3653,25 @@ var Scores = (function(){
   return {load: load, add: add, report: report, mode: function(){ return mode; }, savedRemote: function(){ return lastRemote; }};
 })();
 // over the players who stayed to the end (the same ones teamName names)
-function scoreFor(g){ var hp = 0, hits = 0, st = g.players.filter(function(q){ return !q.gone; }); if (!st.length) st = g.players; st.forEach(function(q){ hp += q.hp; hits += q.hitsLanded; }); hp /= st.length;
+function scoreFor(g){ var hp = 0, hits = 0, st = g.duel ? [g.p] : g.players.filter(function(q){ return !q.gone; }); if (!st.length) st = g.players; st.forEach(function(q){ hp += q.hp; hits += q.hitsLanded; }); hp /= st.length;
   // the push: nobody loses health and letters are cheap, so accuracy stands in for health and repeat units for hits
   if (g.push){ var L = 0, S = 0, U = 0; g.players.forEach(function(q){ L += q.pu.letters; S += q.pu.slips; U += q.pu.units; }); hp = 100 * L / Math.max(1, L + S); hits = Math.min(U, 16) * 5; } return Math.round(1000 + hp * 10 + Math.max(0, 120 - g.elapsed) * 20 + hits * 5 + LEVEL * 1500 + (g.pacifist ? 2500 : 0)); }
-function teamName(g){ return g.players.filter(function(q){ return !q.gone; }).map(function(q){ return q.def.name; }).join(' + '); }
+function teamName(g){ return g.duel ? g.p.def.name : g.players.filter(function(q){ return !q.gone; }).map(function(q){ return q.def.name; }).join(' + '); }   // round 13: Henrik is the other corner, not the team
 var lastEntry = null, board = [];   // board: the last leaderboard we saw, for the title screen and roster cards
 function isMine(e){ return !!lastEntry && ((lastEntry.id && e.id === lastEntry.id) || (e.name === lastEntry.name && e.score === lastEntry.score && e.t === lastEntry.t)); }
 function fmtScore(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+// the day a score was set, in the viewer's own time zone (year-month-day); entries without a time stamp show a dash
+function fmtDate(t){ if (!t) return '—'; var d = new Date(t), z = function(n){ return (n < 10 ? '0' : '') + n; }; return isNaN(d.getTime()) ? '—' : d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()); }
 var scoresRound = 0;   // the round the HIGH SCORES screen shows (0 = all rounds)
 function renderScores(list){
   if (!scoresRound) board = list;   // the title best and the fighter cards are always the all-rounds board
   var tb = document.querySelector('#scoresTable tbody'); tb.innerHTML = '';
   var shared = Scores.mode() === 'shared';
-  if (!list.length){ var tr0 = document.createElement('tr'); var td0 = document.createElement('td'); td0.colSpan = 6; td0.textContent = scoresRound ? 'Nobody has a score on this round yet. Be the first.' : 'No rhinos removed yet. Be the first.'; tr0.appendChild(td0); tb.appendChild(tr0); }
+  if (!list.length){ var tr0 = document.createElement('tr'); var td0 = document.createElement('td'); td0.colSpan = 7; td0.textContent = scoresRound ? 'Nobody has a score on this round yet. Be the first.' : 'No rhinos removed yet. Be the first.'; tr0.appendChild(td0); tb.appendChild(tr0); }
   list.forEach(function(e, i){
     var tr = document.createElement('tr'); if (isMine(e)) tr.className = 'me';
-    [[i + 1, 'num'], [e.name, ''], [e.fighter + (e.level ? ' · R' + e.level : ''), ''], [(e.time || 0).toFixed(1) + ' s', 'num'], [fmtScore(e.score), 'num']].forEach(function(cell){ var td = document.createElement('td'); td.textContent = cell[0]; td.className = cell[1]; tr.appendChild(td); });
+    [[i + 1, 'num'], [e.name, ''], [e.fighter + (e.level ? ' · R' + e.level : ''), ''], [(e.time || 0).toFixed(1) + ' s', 'num'], [fmtScore(e.score), 'num'], [fmtDate(e.t), 'num date']].forEach(function(cell){ var td = document.createElement('td'); td.textContent = cell[0]; td.className = cell[1]; tr.appendChild(td); });
+    var sub = document.createElement('span'); sub.className = 'sub'; sub.textContent = fmtDate(e.t); tr.children[1].appendChild(sub);   // the phone's copy of the date
     var tdr = document.createElement('td'); tdr.className = 'rep';
     if (shared && e.id){
       var rb = document.createElement('button'); rb.type = 'button'; rb.className = 'report'; rb.textContent = 'report'; rb.title = 'Hide this entry for everyone';
@@ -3759,6 +3868,7 @@ function netLeave(){
   Net.lost = false; Net.lostIds = {}; Net.lostTimers = {}; Net.joining = false; Net.benched = false; Net.inputs = {}; Net.seen = {}; Net.hostSeq = 0; Net.fightG = null; Net.left = {};
   Net.mode = 'coop';
   $('selCoop').hidden = true; $('fightVerb').textContent = 'FIGHT AS'; $('startLevel').disabled = false; $('startLevel').title = '';
+  $('btnRandom').disabled = false; $('btnRandom').title = 'Start a round picked at random';
 }
 // the room as its host says it is (host first); Net.peer stays "somebody else is here" for the rest of the game
 function setRoom(ids){
@@ -3951,7 +4061,7 @@ function startFrom(d){
   var ids = Array.isArray(d.ids) ? d.ids.map(String) : null, f = Array.isArray(d.f) ? d.f.map(String) : null;
   if (!ids || !f || ids.length !== f.length || ids.length < 2 || ids.length > NET_MAX || ids[0] !== netHostId()) return;
   if (ids.indexOf(Net.id) < 0){ Net.benched = true; updateCoopLine(); return; }   // a round without you (you were not ready): you are in the next one
-  LEVEL = d.vs ? clampVsLevel(d.level) : clampLevel(d.level); Net.ids = ids; Net.f = f; Net.fightNo = d.n | 0; Net.mode = d.vs ? 'vs' : 'coop'; beginCoopRound();
+  LEVEL = d.vs ? clampVsLevel(d.level) : clampCoopLevel(d.level); Net.ids = ids; Net.f = f; Net.fightNo = d.n | 0; Net.mode = d.vs ? 'vs' : 'coop'; beginCoopRound();
 }
 function pickName(id){ var pk = id === Net.id ? (Net.ready ? myPickId() : null) : Net.picks[id]; return pk ? sideDefById(pk).name.toUpperCase() : null; }
 function updateCoopLine(){
@@ -3979,6 +4089,7 @@ function updateCoopLine(){
   }
   $('fightVerb').textContent = Net.on ? 'READY AS' : 'FIGHT AS';
   var guest = !!(Net.on && Net.peer && !Net.host); $('startLevel').disabled = guest; $('startLevel').title = guest ? 'the host picks the round' : '';
+  $('btnRandom').disabled = guest; $('btnRandom').title = guest ? 'the host picks the round' : 'Start a round picked at random';
 }
 // a new pick after READY has to reach the others, or you play the fighter you changed your mind about
 function repickReady(){ if (Net.on && Net.peer && Net.ready){ sendNet({t:'ready', f: myPickId()}); updateCoopLine(); } }
@@ -3991,7 +4102,7 @@ function maybeStart(){ if (Net.host && Net.ready && scene === 'select' && netOth
 function coopStart(level){
   // host only: the same fighters again (rematch / next round) plus anybody who has pressed FIGHT since, or the fresh picks
   if (!Net.host || !Net.peer) return;
-  LEVEL = Net.mode === 'vs' ? clampVsLevel(level) : clampLevel(level);
+  LEVEL = Net.mode === 'vs' ? clampVsLevel(level) : clampCoopLevel(level);
   var prev = {}; if (Net.ids && Net.f) Net.ids.forEach(function(id, i){ prev[id] = Net.f[i]; });
   var ids = [Net.id], f = [myPickId()], others = netOthers();
   others.forEach(function(id){ var pk = Net.picks[id] || prev[id]; if (pk){ ids.push(id); f.push(String(pk)); } });
@@ -4000,6 +4111,10 @@ function coopStart(level){
   sendNet({t:'start', ids: ids, f: f, level: LEVEL, vs: Net.mode === 'vs' ? 1 : 0, n: Net.fightNo}); beginCoopRound();
 }
 function clampLevel(v){ v = parseInt(v, 10); return (v >= 0 && v < LEVELS.length) ? v : 0; }
+// a room (co-op) plays every round but the solo-only one: round 13 is Anton against Henrik and nobody else
+function clampCoopLevel(v){ v = clampLevel(v); return soloOnly(v) ? 0 : v; }
+// the round NEXT ROUND leads to, or -1: the last round has none, and a room never goes on into a solo-only round
+function nextLevel(){ var n = LEVEL + 1; return (n < LEVELS.length && !(soloOnly(n) && Net.on && Net.peer)) ? n : -1; }
 // versus arenas are rounds 1-5 only: an online duel takes its arena from the round picker, which lists every round
 var VS_ARENAS = 5;
 function clampVsLevel(v){ v = clampLevel(v); return v < VS_ARENAS ? v : 0; }
@@ -4134,22 +4249,24 @@ function buildRoster(){
   var host = $('roster'); host.innerHTML = '';
   var vsPick = Net.on && Net.mode === 'vs';
   if (!vsPick) pickRhino = false;
-  Array.prototype.forEach.call($('startLevel').options, function(o){ o.disabled = vsPick && +o.value >= VS_ARENAS; });
-  if (vsPick && +$('startLevel').value >= VS_ARENAS) $('startLevel').value = '0';
+  Array.prototype.forEach.call($('startLevel').options, function(o){ o.disabled = levelOff(+o.value); });
+  if (levelOff(+$('startLevel').value)) $('startLevel').value = '0';
+  var only = onlyPick(); if (only) pickRhino = false;
   setPickName();
   ROSTER.forEach(function(d, i){
-    var el = document.createElement('button'); el.className = 'fighter' + (i === selected ? ' sel' : ''); el.type = 'button'; el.setAttribute('aria-label', d.name);
+    var el = document.createElement('button'); el.className = 'fighter'; el.type = 'button'; el.setAttribute('aria-label', d.name);
+    el.disabled = !!only && d.id !== only;   // round 13: Anton against Henrik, and nobody else
     el.innerHTML = '<img alt="" src="' + FACES[d.face] + '"><div class="name">' + d.name + '</div><div class="move">' + d.special.name + '</div>' +
       '<div class="best"></div>' +
       '<div class="stats"><span>PWR</span><div class="bar"><i style="width:' + Math.min(100, Math.round(d.power * 70)) + '%"></i></div><span>SPD</span><div class="bar"><i style="width:' + Math.min(100, Math.round(d.speed * 70)) + '%"></i></div><span>HP</span><div class="bar"><i style="width:' + Math.min(100, Math.round(d.hp / 1.4)) + '%"></i></div></div>';
     el.addEventListener('click', function(){
       unlockAudio();
-      if (selected === i && !pickRhino && el.classList.contains('sel')){ startFight(); return; }
+      if ((only || selected === i) && !pickRhino && el.classList.contains('sel')){ startFight(); return; }   // with a round's own fighter the pick you came with is kept for the next round
       selected = i; pickRhino = false; sfx('chime', {f: 1318}); setPickName(); repickReady();
       Array.prototype.forEach.call(host.children, function(c, k){ c.classList.toggle('sel', k === i && !pickRhino); });
     });
     var bb = bestFor(d.name); el.querySelector('.best').textContent = bb ? 'BEST ' + fmtScore(bb.score) + ' · ' + bb.name : '';   // leaderboard names are untrusted text, never markup
-    el.classList.toggle('sel', i === selected && !pickRhino);
+    el.classList.toggle('sel', only ? d.id === only : (i === selected && !pickRhino));
     host.appendChild(el);
   });
   if (vsPick){
@@ -4167,15 +4284,29 @@ function buildRoster(){
     host.appendChild(rel);
   }
 }
+// a round that is off in the current mode: a versus room has the five duel arenas, and no room has the solo-only round
+function levelOff(v){ return (Net.on && Net.mode === 'vs' && v >= VS_ARENAS) || (Net.on && soloOnly(v)); }
+// the one fighter the round in the picker allows (round 13: Anton), or null
+function onlyPick(){ var lv = LEVELS[clampLevel($('startLevel').value)]; return (lv.duel && !Net.on) ? lv.duel.as : null; }
 function setPickName(){
-  var n = pickRhino ? 'THE RHINO' : ROSTER[selected].name.toUpperCase();
+  var only = onlyPick(), def = only ? defById(only) : ROSTER[selected];
+  var n = pickRhino ? 'THE RHINO' : def.name.toUpperCase();
   $('selName').textContent = n;
-  var sp = pickRhino ? {name: 'Jet Stomp', desc: 'Horn sweep on punch, a charge on kick, and a jet stomp when the meter is full.'} : ROSTER[selected].special;
-  $('selMove').textContent = 'Special: ' + sp.name + ' — ' + sp.desc;
+  var sp = pickRhino ? {name: 'Jet Stomp', desc: 'Horn sweep on punch, a charge on kick, and a jet stomp when the meter is full.'} : def.special;
+  $('selMove').textContent = (only ? 'Round 13 is ' + def.name + ' against Henrik, one on one — nobody else gets in. ' : '') + 'Special: ' + sp.name + ' — ' + sp.desc;
+}
+// RANDOM LEVEL: any round this mode allows (the same list the picker offers), then straight into it like FIGHT
+function randomLevel(){
+  var ok = []; Array.prototype.forEach.call($('startLevel').options, function(o){ if (!o.disabled) ok.push(o.value); });
+  if (!ok.length || $('startLevel').disabled) return;
+  $('startLevel').value = ok[Math.floor(Math.random() * ok.length)];
+  buildRoster();   // the round may bring its own fighter
+  startFight();
 }
 function beginRound(){
   $('startLevel').value = String(LEVEL);
-  newFight(ROSTER[selected]); scene = 'fight'; show(null);
+  if (LEVELS[LEVEL].duel) newDuelFight(); else newFight(ROSTER[selected]);
+  scene = 'fight'; show(null);
   unlockAudio(); sfx('gong', {f: LEVEL ? 70 : 96, v: .6}); fightTimeout(function(){ sfx('drum'); }, 800);
   if (LEVEL && !LEVELS[LEVEL].calm) fightTimeout(function(){ sfx('geiger'); }, 300);
 }
@@ -4206,16 +4337,23 @@ function startFight(){
 function showResult(){
   if (!G || scene !== 'fight') return;   // the fight was abandoned via the menu
   if (Net.on && Net.host && Net.peer && Net.ids) sendNet({t:'result'}, Net.ids);
-  if (G.vs){ showVsResult(); return; }
+  if (G.vs && !G.duel){ showVsResult(); return; }   // round 13 is a round: its result is the campaign's
   var p = G.players[myIdx()] || G.p, r = G.r;
   $('scoreLine').hidden = !G.won; $('nameBox').hidden = !G.won; $('btnSave').disabled = false; $('btnSave').textContent = 'SAVE SCORE';
-  var hasNext = G.won && LEVEL < LEVELS.length - 1;
+  var hasNext = G.won && nextLevel() >= 0;
   $('btnNext').textContent = hasNext ? LEVELS[LEVEL + 1].next : '';
   resultNetBits();
   if (G.won){
     var sc = scoreFor(G); $('scoreLine').textContent = 'SCORE ' + sc.toLocaleString();
     $('playerName').value = p.def.name;
-    if (G.pacifist && LEVELS[LEVEL].reruns){
+    if (G.duel){
+      var wd = LEVELS[LEVEL].win;
+      $('resBig').textContent = wd.big; $('resTitle').textContent = wd.title;
+      $('resReadout').innerHTML = '> opponent: <b>Henrik</b> — status: <b>' + wd.status + '</b> · his tempo at the end: <b>' + Math.round(duelTempo() * 100) + ' %</b>'
+        + '<br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b>'
+        + '<br>> hits landed: <b>' + p.hitsLanded + '</b> · round bonus: <b>+' + fmtScore(LEVEL * 1500) + '</b><br>> lesson: ' + wd.lesson
+        + '<br>> no colleagues were harmed. Henrik is buying the fika.';
+    } else if (G.pacifist && LEVELS[LEVEL].reruns){
       var spc = ANIMALS[G.r.morph], passes = G.spawns;
       $('resBig').textContent = G.identified ? 'IDENTIFIED' : 'CALL IT';
       $('resTitle').textContent = G.identified ? 'TRUE POSITIVE' : 'FLAGGED FOR MANUAL REVIEW';
@@ -4226,7 +4364,7 @@ function showResult(){
            ? '<br>> a ' + spc.name + ' belongs in a Kiruna sample. The read was real all along — it was the reference database that kept calling it a rhinoceros.'
            : '<br>> ' + passes + ' passes, ' + passes + ' species, not one of them within 8,000 km of Kiruna. The read stays unassigned and goes to a human. That is a result too.')
         + '<br>> lesson: a classifier always returns its best match. Whether that match belongs in your sample is your problem, not its.'
-        + (LEVEL < LEVELS.length - 1 ? '<br>> next: round ' + (LEVEL + 2) + '.' : '');
+        + (nextLevel() >= 0 ? '<br>> next: round ' + (LEVEL + 2) + '.' : '');
     } else if (G.pacifist){
       var animals = G.rhinos.filter(function(r0){ return r0.morph; }).map(function(r0){ return ANIMALS[r0.morph].name; }).join(' + '), readLabel = LEVELS[LEVEL].read;
       $('resBig').textContent = 'PEACE'; $('resTitle').textContent = 'FALSE POSITIVE RECLASSIFIED';
@@ -4237,7 +4375,7 @@ function showResult(){
         (G.comp ? 'share of the ring: <b>' + Math.round((p.share || 0) * 100) + ' %</b>' : 'HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b>') +
         '<br>> hits landed: <b>0</b> · pacifist bonus: <b>+2500</b><br>> lesson: you never had to hit ' + (many ? 'them' : 'it') + '. Look at the alignment long enough and ' + whoWas + ' ' + whatNow + ' — ' +
         (many ? 'related sequences that scored high, not rhinos' : 'a related sequence that scored high, not a rhino') + '. Never ' + (many ? 'were' : 'was') + '.' +
-        (LEVEL < LEVELS.length - 1 ? '<br>> next: round ' + (LEVEL + 2) + '.' : '<br>> dataset clean. The crew can go home.');
+        (nextLevel() >= 0 ? '<br>> next: round ' + (LEVEL + 2) + '.' : '<br>> dataset clean. The crew can go home.');
     } else if (LEVEL === 0){
       $('resBig').textContent = 'K.O.!'; $('resTitle').textContent = 'FALSE POSITIVE REMOVED';
       $('resReadout').innerHTML = '> read: <b>Rhinoceros (98.7%)</b> — status: <b>REMOVED</b><br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · finisher: <b>' + (p.lastMove || p.def.special.name) + '</b><br>> no rhinos were harmed. It was one short read that looked like a horse.<br>> next: the reference genome itself is <b>contaminated</b>. Round 2.';
@@ -4255,7 +4393,7 @@ function showResult(){
       $('resBig').textContent = wv.big; $('resTitle').textContent = wv.title;
       $('resReadout').innerHTML = '> read: <b>' + LEVELS[LEVEL].read + '</b> — status: <b>' + wv.status + '</b><br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · ' + winStats(p) +
         '<br>> ' + (G.push ? 'right letters: <b>' + pushTotals().letters : 'hits landed: <b>' + p.hitsLanded) + '</b> · round bonus: <b>+' + fmtScore(LEVEL * 1500) + '</b><br>> lesson: ' + wv.lesson +
-        (LEVEL < LEVELS.length - 1 ? '<br>> next: ' + wv.next : '<br>> dataset clean. The crew can go home.');
+        (nextLevel() >= 0 ? '<br>> next: ' + wv.next : '<br>> dataset clean. The crew can go home.');
     } else {
       $('resBig').textContent = 'CLEAN'; $('resTitle').textContent = 'REFERENCE DECONTAMINATED';
       $('resReadout').innerHTML = '> mutant read: <b>Rhinoceros (contaminant match)</b> — status: <b>REMOVED</b><br>> fighter: <b>' + teamName(G) + '</b> · time: <b>' + G.elapsed.toFixed(1) + ' s</b> · HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b><br>> hits landed: <b>' + p.hitsLanded + '</b> · round bonus: <b>+1500</b><br>> lesson: a read can match a contaminant inside a reference genome, not the species the genome is named after.<br>> next: the read is on the move. Round 3.';
@@ -4265,7 +4403,9 @@ function showResult(){
     var lz = LEVELS[LEVEL].lose;
     $('resBig').textContent = lossWord(p); $('resTitle').textContent = lz ? lz.title : G.comp ? 'THE FALSE POSITIVES DOMINATE THE SAMPLE' : rads ? 'THE CONTAMINATED GROUND GOT YOU' : 'THE RHINO STAYS IN THE DATASET';
     var pt = G.push ? pushTotals() : null;
-    $('resReadout').innerHTML = G.push ? ('> read: <b>' + LEVELS[LEVEL].read + '</b> — status: <b>still there</b><br>> fighter: <b>' + teamName(G) + '</b> · held on <b>' + G.elapsed.toFixed(1) + ' s</b> · right letters: <b>' + pt.letters + '</b> · slips: <b>' + pt.slips + '</b> · repeat units: <b>' + pt.units + '</b><br>> tip: ' + lz.tip)
+    var hk = G.duel ? G.sides[1] : null;
+    $('resReadout').innerHTML = G.duel ? ('> opponent: <b>Henrik</b> — HP left: <b>' + Math.round(hk.hp) + '/' + hk.maxhp + '</b> · his tempo at the end: <b>' + Math.round(duelTempo() * 100) + ' %</b><br>> fighter: <b>' + teamName(G) + '</b> · lasted <b>' + G.elapsed.toFixed(1) + ' s</b> · hits landed: <b>' + p.hitsLanded + '</b><br>> tip: ' + lz.tip)
+      : G.push ? ('> read: <b>' + LEVELS[LEVEL].read + '</b> — status: <b>still there</b><br>> fighter: <b>' + teamName(G) + '</b> · held on <b>' + G.elapsed.toFixed(1) + ' s</b> · right letters: <b>' + pt.letters + '</b> · slips: <b>' + pt.slips + '</b> · repeat units: <b>' + pt.units + '</b><br>> tip: ' + lz.tip)
       : G.comp ? ('> reads: <b>Rhinoceros + Zebra (relative abundance)</b> — status: <b>' + G.rhinos.map(function(r0){ return Math.round((r0.share || 0) * 100) + ' %'; }).join(' + ') + '</b><br>> fighter: <b>' + teamName(G) + '</b> · survived <b>' + G.elapsed.toFixed(1) + ' s</b> · your share fell below the <b>detection limit</b><br>> tip: every hit you take makes both of them bigger. Land hits and keep the share coming your way.')
       : ('> read: <b>' + LEVELS[LEVEL].read + '</b> — status: <b>' + stillThere() + '</b><br>> fighter: <b>' + teamName(G) + '</b> · survived <b>' + G.elapsed.toFixed(1) + ' s</b> · ' + (G.paint ? 'panels resprayed: <b>' + (G.r.paint | 0) + '/' + PAINT_N : 'rhino HP left: <b>' + G.rhinos.map(function(r0){ return r0.state === 'gone' || r0.state === 'ko' ? 'removed' : Math.round(r0.hp) + '/' + r0.maxhp; }).join(' + ')) + '</b><br>> tip: ' + (rads ? 'the green patches keep burning while you stand in them — jump out, or stay off the ground the rhino skidded over.' : (LEVELS[LEVEL].tip || 'jump the charge when you see the <b>!</b>, duck the horn sweep, and hit it while it skids (or sleeps).')));
   }
@@ -4276,9 +4416,9 @@ function showResult(){
 function resultNetBits(){
   if (!G) return;
   var waiting = !!(Net.on && Net.peer && !Net.host);
-  if (G.vs){ $('btnAgain').hidden = waiting && !vsLocal; return; }
+  if (G.vs && !G.duel){ $('btnAgain').hidden = waiting && !vsLocal; return; }
   var coop = !!(Net.on && Net.peer) && G.players.filter(function(q){ return !q.gone; }).length > 1;
-  var hasNext = G.won && LEVEL < LEVELS.length - 1, nx = hasNext ? ' or NEXT ROUND' : '';
+  var hasNext = G.won && nextLevel() >= 0, nx = hasNext ? ' or NEXT ROUND' : '';
   $('resCoop').hidden = !coop;
   if (coop) $('resCoop').textContent = waiting ? 'Co-op: waiting for the host to pick REMATCH' + nx + '…' : 'Co-op: you are the host — REMATCH' + nx + ' starts it for ' + (netOthers().length > 1 ? 'everybody' : 'both of you') + '.';
   $('btnNext').hidden = !hasNext || waiting; $('btnAgain').hidden = waiting;
@@ -4291,7 +4431,7 @@ function winStats(p){
   return 'HP left: <b>' + Math.round(p.hp) + '/' + p.maxhp + '</b>';
 }
 // the word for a lost round, shared by the canvas banner and the result panel so they can never disagree
-function lossWord(p){ return G.push ? 'PUSHED OUT' : G.comp ? 'OUTCOMPETED' : (p && p.killedBy === 'rads') ? 'IRRADIATED' : 'TRAMPLED'; }
+function lossWord(p){ return G.duel ? 'OUTPACED' : G.push ? 'PUSHED OUT' : G.comp ? 'OUTCOMPETED' : (p && p.killedBy === 'rads') ? 'IRRADIATED' : 'TRAMPLED'; }
 function stillThere(){
   var n = G.rhinos.length, live = liveRhinos().length;
   return n > 1 ? (live + ' of ' + n + ' still there') : 'still there';
@@ -4354,7 +4494,7 @@ $('zoomBtn').addEventListener('click', function(e){ e.preventDefault(); unlockAu
 $('btnCredits').addEventListener('click', function(){ unlockAudio(); openCredits(); });
 $('btnCreditsBack').addEventListener('click', function(){ show('title'); scene = 'title'; });
 $('btnSave').addEventListener('click', function(){
-  if (!G || !G.won || G.vs || $('nameBox').hidden) return;   // versus never reaches the leaderboard, and a hidden box saves nothing
+  if (!G || !G.won || (G.vs && !G.duel) || $('nameBox').hidden) return;   // versus never reaches the leaderboard (round 13 is a round, not versus), and a hidden box saves nothing
   var mine = G.players[myIdx()] || G.p;
   var name = ($('playerName').value || mine.def.name).replace(/[\u0000-\u001f\u007f]/g, '').replace(/\s+/g, ' ').trim().slice(0, 16) || mine.def.name;
   lastEntry = {name: name, fighter: teamName(G).slice(0, 48), score: scoreFor(G), time: Math.round(G.elapsed * 10) / 10, level: LEVEL + 1, t: Date.now()};
@@ -4365,10 +4505,12 @@ $('btnSave').addEventListener('click', function(){
 });
 $('btnStart').addEventListener('click', function(){ unlockAudio(); sfx('gong', {f: 120, v: .4}); buildRoster(); show('select'); scene = 'select'; });
 $('btnFight').addEventListener('click', startFight);
+$('btnRandom').addEventListener('click', function(){ unlockAudio(); randomLevel(); });
+$('startLevel').addEventListener('change', function(){ if (scene === 'select') buildRoster(); });
 $('btnAgain').addEventListener('click', function(){
   if (Net.on && Net.peer){ coopStart(LEVEL); return; }
   if (vsLocal){ beginVsLocal(vsPicks, LEVEL); return; }
-  if (G && G.vs){ leaveVersus('Your opponent left the room. Type a room code to start another fight.'); return; }   // never fall through into the campaign
+  if (G && G.vs && !G.duel){ leaveVersus('Your opponent left the room. Type a room code to start another fight.'); return; }   // never fall through into the campaign
   if (LEVELS[LEVEL].card) showLevelCard(); else beginRound();
 });
 // an online duel whose partner is gone: back to the versus screen, not into round 1
@@ -4381,14 +4523,14 @@ function openVersus(){
   show('versus'); scene = 'versus'; vsLocal = false; $('vsStatus').textContent = '';
   try { $('vsCode').value = localStorage.getItem('swebits_room') || ''; } catch (e) {}
 }
-$('btnNext').addEventListener('click', function(){ unlockAudio(); LEVEL = Math.min(LEVELS.length - 1, LEVEL + 1); if (Net.on && Net.peer){ coopStart(LEVEL); return; } showLevelCard(); });
+$('btnNext').addEventListener('click', function(){ unlockAudio(); var nx = nextLevel(); if (nx < 0) return; LEVEL = nx; if (Net.on && Net.peer){ coopStart(LEVEL); return; } showLevelCard(); });
 $('btnCoop').addEventListener('click', function(){ unlockAudio(); Net.mode = 'coop'; show('coop'); scene = 'coop'; $('coopStatus').textContent = ''; try { $('coopCode').value = localStorage.getItem('swebits_room') || ''; } catch (e) {} });
 $('btnCoopJoin').addEventListener('click', function(){ unlockAudio(); coopJoin(); });
 $('coopCode').addEventListener('keydown', function(e){ if (e.key === 'Enter') coopJoin(); });
 $('btnCoopBack').addEventListener('click', function(){ netLeave(); show('title'); scene = 'title'; });
 $('btnLevelGo').addEventListener('click', function(){ unlockAudio(); if (termTimer){ clearInterval(termTimer); termTimer = null; } beginRound(); });
 $('btnLevelBack').addEventListener('click', function(){ if (termTimer){ clearInterval(termTimer); termTimer = null; } buildRoster(); show('select'); scene = 'select'; });
-$('btnChoose').addEventListener('click', function(){ if (vsLocal){ G = null; openVersus(); return; } if (G && G.vs && !(Net.on && Net.peer)){ leaveVersus(''); return; } buildRoster(); show('select'); scene = 'select'; G = null; if (Net.on){ Net.ready = false; sendNet({t:'unready'}); updateCoopLine(); } });
+$('btnChoose').addEventListener('click', function(){ if (vsLocal){ G = null; openVersus(); return; } if (G && G.vs && !G.duel && !(Net.on && Net.peer)){ leaveVersus(''); return; } buildRoster(); show('select'); scene = 'select'; G = null; if (Net.on){ Net.ready = false; sendNet({t:'unready'}); updateCoopLine(); } });
 
 refreshBoard();
 

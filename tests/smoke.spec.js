@@ -34,21 +34,21 @@ test('the bench: eight fighters, each with a move of their own and no per-fighte
   expect(errors).toEqual([]);
 });
 
-test('all twelve rounds start, each with its own rules switched on', async ({ page }) => {
+test('all thirteen rounds start, each with its own rules switched on', async ({ page }) => {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(URL);
   await page.click('#btnStart');
-  expect(await page.locator('#startLevel option').count()).toBe(12);
-  for (const lvl of ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']) {
+  expect(await page.locator('#startLevel option').count()).toBe(13);
+  for (const lvl of ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']) {
     await page.selectOption('#startLevel', lvl);
     await page.click('#btnFight');
     if (lvl !== '0') { await expect(page.locator('#btnLevelGo')).toBeVisible(); await page.click('#btnLevelGo'); }
     await page.waitForTimeout(1200);
     // a round that silently fell back to the normal rules would still start without an error: check the switch itself
     const mode = await page.evaluate(() => { const g = window.__fight(), lv = window.__levels()[window.__level()];
-      return { square: !!g.square, push: !!g.push, buns: !!g.buns, comp: !!g.comp, reruns: lv.reruns || 0, depth: !!lv.depth, island: !!lv.island, paint: !!g.paint, arena: document.body.getAttribute('data-arena') }; });
-    expect(mode).toEqual({ square: lvl === '5', push: lvl === '6', buns: lvl === '7', comp: lvl === '4', reruns: lvl === '8' ? 4 : 0, depth: lvl === '9', island: lvl === '10', paint: lvl === '11', arena: lvl === '10' ? 'island' : 'flat' });
+      return { square: !!g.square, push: !!g.push, buns: !!g.buns, comp: !!g.comp, reruns: lv.reruns || 0, depth: !!lv.depth, island: !!lv.island, paint: !!g.paint, duel: !!g.duel, arena: document.body.getAttribute('data-arena') }; });
+    expect(mode).toEqual({ square: lvl === '5', push: lvl === '6', buns: lvl === '7', comp: lvl === '4', reruns: lvl === '8' ? 4 : 0, depth: lvl === '9', island: lvl === '10', paint: lvl === '11', duel: lvl === '12', arena: lvl === '10' ? 'island' : 'flat' });
     await page.keyboard.press('ArrowUp'); await page.keyboard.press('j');
     if (lvl === '3' || lvl === '4') { for (let i = 0; i < 12; i++) { await page.keyboard.down('ArrowRight'); await page.waitForTimeout(80); await page.keyboard.up('ArrowRight'); } }   // round 4: walk right so the camera scrolls
     await page.waitForTimeout(400);
@@ -1725,7 +1725,7 @@ test('high scores per round: the picker filters the table, and a save shows the 
   await page.goto(URL);
   await page.click('#btnScores');
   await expect(page.locator('#scoresTable tbody tr')).toHaveCount(3);                    // all rounds
-  expect(await page.locator('#scoresRound option').count()).toBe(13);                     // all + twelve rounds
+  expect(await page.locator('#scoresRound option').count()).toBe(14);                     // all + thirteen rounds
   await page.selectOption('#scoresRound', '11');
   await expect(page.locator('#scoresTable tbody tr')).toHaveCount(1);
   await expect(page.locator('#scoresTable tbody tr').first()).toContainText('Ella');
@@ -1803,7 +1803,11 @@ test('round 12: every hit resprays one panel of the rhino, and the last one show
   await expect(page.locator('#result')).toBeVisible({ timeout: 12000 });
   await expect(page.locator('#resTitle')).toHaveText('IT WAS A FAWN ALL ALONG');
   await expect(page.locator('#resReadout')).toContainText('panels resprayed: 16/16');
-  await expect(page.locator('#btnNext')).toBeHidden();       // the last round
+  // not the last round any more: the dataset is clean, and NEXT ROUND is Anton against Henrik
+  await expect(page.locator('#btnNext')).toHaveText('NEXT ROUND: ANTON VS HENRIK');
+  await expect(page.locator('#resReadout')).toContainText('Round 13');
+  await page.click('#btnNext');
+  await expect(page.locator('#btnLevelGo')).toHaveText('FIGHT ROUND 13');
   expect(errors).toEqual([]);
 });
 
@@ -1815,5 +1819,207 @@ test('round 12: Åke\'s spark resprays the whole rhino at once', async ({ page }
   await page.keyboard.press('l');
   await expect.poll(() => page.evaluate(() => window.__fight().r.morph), { timeout: 6000 }).toBe('fawn');
   expect(await page.evaluate(() => { const g = window.__fight(); return [g.r.paint, g.won, g.r.state === 'gone']; })).toEqual([16, true, false]);
+  expect(errors).toEqual([]);
+});
+
+test('round 13: only Anton against Henrik, and Henrik slows down as the round goes on', async ({ page }) => {
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  await page.route(/\/rest\/v1\//, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+  await page.goto(URL);
+  await page.click('#btnStart');
+  await page.click('.fighter:nth-child(2)');                       // June…
+  await page.selectOption('#startLevel', '12');
+  await expect(page.locator('#selName')).toHaveText('ANTON');      // …but round 13 is Anton's, whoever was picked
+  await expect(page.locator('#selMove')).toContainText('Anton against Henrik');
+  expect(await page.locator('.fighter:disabled').count()).toBe(7);
+  await expect(page.locator('.fighter.sel .name')).toHaveText('Anton');
+  await page.click('#btnFight');
+  await expect(page.locator('#termText')).toContainText('ANTON VS HENRIK');
+  await page.click('#btnLevelGo');
+  await expect.poll(() => page.evaluate(() => window.__fight() ? window.__fight().elapsed : 0), { timeout: 8000 }).toBeGreaterThan(1.75);
+  const who = await page.evaluate(() => { const g = window.__fight(); return { duel: !!g.duel, names: g.players.map(q => q.def.name), rhinos: g.rhinos.length, me: g.p.def.id }; });
+  expect(who).toEqual({ duel: true, names: ['Anton', 'Henrik'], rhinos: 0, me: 'anton' });
+  // his tempo: 140 % at the bell, 30 % from forty seconds on
+  const tempo = await page.evaluate(() => { const g = window.__fight(), e0 = g.elapsed, at = t => { g.elapsed = t; return Math.round(window.__duel().tempo * 100); };
+    const out = [at(0), at(20), at(40), at(200)]; g.elapsed = e0; return out; });
+  expect(tempo).toEqual([140, 85, 30, 30]);
+  // and it is his legs, not just a number: the same walk across the lab, early in the round and late (px per game second)
+  const walk = t => page.evaluate(async t => {
+    const g = window.__fight(), h = g.sides[1], wait = ms => new Promise(r => setTimeout(r, ms));
+    g.elapsed = t; g.p.x = 60; g.p.inv = 1e9; h.x = 900; h.y = 0; h.vy = 0; h.state = 'idle'; h.ai.back = 0; h.ai.duck = 0;
+    await wait(120); const x0 = h.x, t0 = g.t; await wait(500);
+    return Math.abs(h.x - x0) / (g.t - t0);
+  }, t);
+  const early = await walk(2), late = await walk(70);
+  expect(early).toBeGreaterThan(330);                               // 315 px/s × 1.35
+  expect(late).toBeGreaterThan(60); expect(late).toBeLessThan(130); // 315 px/s × 0.3
+  // a hit puts him down for longer too: the same knock, at the bell and late in the round (wall-clock ms until he is on his feet)
+  const down = t => page.evaluate(async t => {
+    const g = window.__fight(), h = g.sides[1], wait = ms => new Promise(r => setTimeout(r, ms));
+    g.elapsed = t; g.p.x = 60; h.x = 700; h.y = 1; h.vy = 260; h.state = 'hurt'; h.st = 0; h.kx = 0;
+    const t0 = performance.now(); while (h.state === 'hurt' && performance.now() - t0 < 4000) await wait(16);
+    return performance.now() - t0;
+  }, t);
+  const upEarly = await down(2), upLate = await down(70);
+  expect(upLate).toBeGreaterThan(upEarly * 2.5);
+  // knock him out: Anton takes the round, it is a score like any other round's, and it is the last round
+  await page.evaluate(() => { const g = window.__fight(), h = g.sides[1]; window.__duel().cfg.dodge = 0; g.elapsed = 40; h.hp = 1; h.inv = 0; h.state = 'idle'; h.y = 0; g.p.x = 400; g.p.facing = 1; h.x = 495; h.ai.think = 1e9; });
+  for (let i = 0; i < 8 && !(await page.evaluate(() => window.__fight().over)); i++) {
+    await page.evaluate(() => { const g = window.__fight(), h = g.sides[1]; if (!g.over){ h.inv = 0; h.x = g.p.x + 95 * g.p.facing; } });
+    await page.keyboard.press('j'); await page.waitForTimeout(350);
+  }
+  expect(await page.evaluate(() => { const g = window.__fight(); return { over: g.over, won: g.won, win: g.vsWin, ko: g.sides[1].state }; })).toEqual({ over: true, won: true, win: 0, ko: 'ko' });
+  await expect(page.locator('#result')).toBeVisible({ timeout: 8000 });
+  await expect(page.locator('#resTitle')).toHaveText('ANTON TAKES THE ROUND');
+  await expect(page.locator('#resReadout')).toContainText('critical slowing down');
+  await expect(page.locator('#resReadout')).toContainText('fighter: Anton ·');   // Henrik is the opponent, not the team
+  await expect(page.locator('#scoreLine')).toBeVisible(); await expect(page.locator('#nameBox')).toBeVisible();
+  await expect(page.locator('#btnNext')).toBeHidden();
+  // REMATCH is the same duel again, from the bell; lose it and Henrik takes the round
+  await page.click('#btnAgain'); await page.click('#btnLevelGo');
+  await expect.poll(() => page.evaluate(() => window.__fight() ? window.__fight().elapsed : 0), { timeout: 8000 }).toBeGreaterThan(1.75);
+  await page.evaluate(() => { const g = window.__fight(), h = g.sides[1]; g.p.hp = 1; g.p.inv = 0; h.x = g.p.x + 95; h.ai.think = 0; h.ai.back = 0; });
+  await expect.poll(() => page.evaluate(() => window.__fight().over), { timeout: 10000 }).toBe(true);
+  expect(await page.evaluate(() => { const g = window.__fight(); return { duel: g.duel, won: g.won, win: g.vsWin }; })).toEqual({ duel: true, won: false, win: 1 });
+  await expect(page.locator('#result')).toBeVisible({ timeout: 8000 });
+  await expect(page.locator('#resBig')).toHaveText('OUTPACED');
+  await expect(page.locator('#resTitle')).toHaveText('HENRIK TAKES THE ROUND');
+  await expect(page.locator('#nameBox')).toBeHidden();
+  // CHANGE FIGHTER: still round 13 and still Anton, until another round is picked — then the pick you came with is back
+  await page.click('#btnChoose');
+  await expect(page.locator('#selName')).toHaveText('ANTON');
+  await page.selectOption('#startLevel', '0');
+  await expect(page.locator('#selName')).toHaveText('JUNE');
+  expect(await page.locator('.fighter:disabled').count()).toBe(0);
+  expect(errors).toEqual([]);
+});
+
+test('round 13 is solo only: a room cannot pick it, start it, or go on into it after round 12', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 1100, height: 720 } });
+  const A = await ctx.newPage(), B = await ctx.newPage();
+  const errors = []; [A, B].forEach(p => p.on('pageerror', e => errors.push(e.message)));
+  await wireCoop(A, 'a', () => B, {}); await wireCoop(B, 'b', () => A, {});
+  for (const p of [A, B]) {
+    await p.route(/\/rest\/v1\//, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await p.goto(URL);
+    await p.click('#btnCoop'); await p.fill('#coopCode', 'pair'); await p.click('#btnCoopJoin');
+    await expect(p.locator('#select')).toBeVisible();
+  }
+  await A.evaluate(() => window.__coopPeer('b')); await B.evaluate(() => window.__coopPeer('a'));
+  expect(await A.evaluate(() => document.querySelector('#startLevel option[value="12"]').disabled)).toBe(true);
+  await A.evaluate(() => { document.getElementById('startLevel').value = '12'; });   // forced anyway
+  await A.click('.fighter:nth-child(2)'); await A.click('#btnFight');
+  await B.click('.fighter:nth-child(3)'); await B.click('#btnFight');
+  await expect(A.locator('#select')).toBeHidden(); await expect(B.locator('#select')).toBeHidden();
+  for (const p of [A, B]) {
+    const s = await p.evaluate(() => { const g = window.__fight(); return { duel: !!g.duel, level: window.__level(), names: g.players.map(q => q.def.name), rhinos: g.rhinos.length }; });
+    expect(s).toEqual({ duel: false, level: 0, names: ['June', 'Sarah'], rhinos: 1 });
+  }
+  // a room that wins round 12 has no NEXT ROUND: the host's result says the crew can go home
+  await A.evaluate(() => { document.getElementById('btnChoose').click(); });
+  await B.evaluate(() => { document.getElementById('btnChoose').click(); });
+  await expect(A.locator('#select')).toBeVisible(); await expect(B.locator('#select')).toBeVisible();
+  await A.selectOption('#startLevel', '11');
+  await A.click('#btnFight'); await B.click('#btnFight');
+  await expect(A.locator('#select')).toBeHidden();
+  await A.bringToFront();   // the host runs the fight: a tab in the background gets a few frames a second at most
+  await expect.poll(() => A.evaluate(() => window.__fight() && window.__level() === 11 ? window.__fight().elapsed : 0), { timeout: 8000 }).toBeGreaterThan(1.75);
+  await A.evaluate(() => { const g = window.__fight(); g.players.forEach(q => { q.inv = 1e9; }); g.r.paint = 15; g.r.hp = 1; g.r.state = 'idle'; g.r.timer = 1e9; g.r.x = g.p.x + 250; g.r.facing = -1; g.p.facing = 1; });
+  for (let i = 0; i < 8 && !(await A.evaluate(() => window.__fight().over)); i++) {
+    await A.evaluate(() => { const g = window.__fight(); if (!g.over){ g.r.state = 'idle'; g.r.x = g.p.x + 250; g.p.facing = 1; } });
+    await A.keyboard.press('j'); await A.waitForTimeout(350);
+  }
+  await expect(A.locator('#result')).toBeVisible({ timeout: 12000 });
+  await expect(A.locator('#btnNext')).toBeHidden();
+  await expect(A.locator('#resReadout')).toContainText('The crew can go home');
+  await expect(A.locator('#resCoop')).not.toContainText('NEXT ROUND');
+  expect(errors).toEqual([]);
+  await ctx.close();
+});
+
+test('RANDOM LEVEL sits next to FIGHT AS and starts a round picked at random, from the rounds the mode allows', async ({ browser }) => {
+  const ctx0 = await browser.newContext({ viewport: { width: 1100, height: 720 } });
+  const page = await ctx0.newPage();
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  await page.route(/\/rest\/v1\//, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+  await page.goto(URL);
+  await page.click('#btnStart');
+  await expect(page.locator('#btnRandom')).toHaveText('RANDOM LEVEL');
+  expect(await page.evaluate(() => document.getElementById('btnFight').nextElementSibling.id)).toBe('btnRandom');
+  const box = await page.evaluate(() => { const a = document.getElementById('btnFight').getBoundingClientRect(), b = document.getElementById('btnRandom').getBoundingClientRect(); return { sameRow: Math.abs(a.top - b.top) < 4, right: b.left >= a.right }; });
+  expect(box).toEqual({ sameRow: true, right: true });
+  // the die is Math.random: pin it for the click only
+  const roll = u => page.evaluate(u => { const r = Math.random; Math.random = () => u; try { document.getElementById('btnRandom').click(); } finally { Math.random = r; } }, u);
+  await page.click('.fighter:nth-child(3)');                        // Sarah
+  await roll(.5);                                                   // 13 rounds: the 7th
+  await expect(page.locator('#btnLevelGo')).toHaveText('FIGHT ROUND 7');
+  expect(await page.evaluate(() => window.__level())).toBe(6);
+  await page.click('#btnLevelBack');
+  await expect(page.locator('#startLevel')).toHaveValue('6');       // the picker shows what was rolled
+  await roll(.999);                                                 // the 13th: Anton against Henrik, whoever was picked
+  await expect(page.locator('#btnLevelGo')).toHaveText('FIGHT ROUND 13');
+  await page.click('#btnLevelGo');
+  await expect.poll(() => page.evaluate(() => { const g = window.__fight(); return g ? g.p.def.name : ''; }), { timeout: 5000 }).toBe('Anton');
+  await page.evaluate(() => { document.getElementById('btnChoose').click(); });
+  await roll(0);                                                    // round 1 has no card: straight into the fight, as Sarah again
+  await expect.poll(() => page.evaluate(() => { const g = window.__fight(); return g ? g.p.def.name + ' ' + window.__level() : ''; }), { timeout: 5000 }).toBe('Sarah 0');
+  // every round can come up, and nothing outside the list
+  const seen = await page.evaluate(() => { const out = new Set(), sel = document.getElementById('startLevel'), ok = Array.from(sel.options).filter(o => !o.disabled).map(o => o.value);
+    for (let i = 0; i < ok.length; i++) out.add(ok[Math.floor((i + .5) / ok.length * ok.length)]); return [...out].length; });
+  expect(seen).toBe(13);
+  expect(errors).toEqual([]);
+  await ctx0.close();
+  // in a versus room the die only has the five arenas, and a guest cannot roll at all (the host picks the round)
+  const { ctx, pages, errors: e2, meet } = await hubRoom(browser, ['a', 'b'], true);
+  await meet('a', 'b');
+  await expect(pages.b.locator('#btnRandom')).toBeDisabled();
+  await expect(pages.a.locator('#btnRandom')).toBeEnabled();
+  await pages.a.evaluate(() => { const r = Math.random; Math.random = () => .999; try { document.getElementById('btnRandom').click(); } finally { Math.random = r; } });
+  await expect(pages.a.locator('#startLevel')).toHaveValue('4');
+  await pages.b.click('.fighter:nth-child(2)'); await pages.b.click('#btnFight');
+  await expect(pages.a.locator('#select')).toBeHidden(); await expect(pages.b.locator('#select')).toBeHidden();
+  expect(await pages.b.evaluate(() => ({ level: window.__level(), vs: !!window.__fight().vs, comp: !!window.__fight().comp }))).toEqual({ level: 4, vs: true, comp: true });
+  expect(e2).toEqual([]);
+  await ctx.close();
+});
+
+test('high scores: every row says the day it was set', async ({ page }) => {
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  await mockSupabase(page, ROWS.map(r => Object.assign({}, r)));
+  await page.goto(URL + '#pacifist=2');
+  await page.click('#btnScores');
+  await expect(page.locator('#scoresTable thead th')).toHaveText(['#', 'NAME', 'FIGHTER', 'TIME', 'SCORE', 'DATE', '']);
+  await expect(page.locator('#scoresTable tbody tr')).toHaveCount(2);
+  await expect(page.locator('#scoresTable tbody tr td.date')).toHaveText(['2026-09-16', '2026-09-16']);
+  await expect(page.locator('#scoresTable tbody tr .sub').first()).toBeHidden();
+  // a phone has no room for a seventh column: the date moves under the name and the table still fits the screen
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator('#scoresTable th.date')).toBeHidden();
+  await expect(page.locator('#scoresTable tbody tr td.date').first()).toBeHidden();
+  await expect(page.locator('#scoresTable tbody tr .sub')).toHaveText(['2026-09-16', '2026-09-16']);
+  await expect(page.locator('#scoresTable tbody tr .sub').first()).toBeVisible();
+  expect(await page.evaluate(() => { const t = document.getElementById('scoresTable'); return t.scrollWidth <= t.clientWidth + 1; })).toBe(true);
+  await page.setViewportSize({ width: 1100, height: 720 });
+  // a new score carries today's date (the viewer's own day), in the table it lands in
+  await page.click('#btnScoresBack');
+  await page.click('#btnStart'); await page.click('.fighter:nth-child(2)'); await page.click('#btnFight');
+  await expect.poll(() => page.evaluate(() => !!window.__fight()), { timeout: 5000 }).toBe(true);
+  await page.evaluate(() => { window.__fight().p.inv = 1e9; });
+  await expect(page.locator('#result')).toBeVisible({ timeout: 20000 });
+  await page.fill('#playerName', 'Dated'); await page.click('#btnSave');
+  await expect(page.locator('#scoresTable tbody tr.me')).toContainText('Dated');
+  const today = await page.evaluate(() => { const d = new Date(), z = n => (n < 10 ? '0' : '') + n; return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()); });
+  await expect(page.locator('#scoresTable tbody tr.me td.date')).toHaveText(today);
+  expect(errors).toEqual([]);
+});
+
+test('high scores: a device-only entry without a time stamp shows a dash, not a wrong date', async ({ page }) => {
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  await page.route(/\/rest\/v1\//, r => r.abort());
+  await page.addInitScript(() => { try { localStorage.setItem('icelab_scores_v1', JSON.stringify([{ name: 'Old', fighter: 'June', score: 4000, time: 50, level: 1 }, { name: 'New', fighter: 'Anton', score: 3000, time: 60, level: 1, t: Date.UTC(2026, 8, 30, 12) }])); } catch (e) {} });
+  await page.goto(URL);
+  await page.click('#btnScores');
+  await expect(page.locator('#scoresTable tbody tr')).toHaveCount(2);
+  await expect(page.locator('#scoresTable tbody tr td.date')).toHaveText(['—', '2026-09-30']);
   expect(errors).toEqual([]);
 });

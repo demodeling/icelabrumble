@@ -6,3 +6,4 @@ tools/video/frames_*/
 .DS_Store
 tools/video/frames_intro/
 node_modules
+slurm-*.out

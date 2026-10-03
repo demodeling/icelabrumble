@@ -1,6 +1,6 @@
 {
   "name": "icelab-rumble",
-  "version": "2.6.1",
+  "version": "2.7.0",
   "private": true,
   "description": "IceLab Rumble \u2014 pick an IceLab member, remove the false-positive rhino.",
   "scripts": {
@@ -8,6 +8,7 @@
     "build:inline": "python3 tools/build.py --inline",
     "test": "python3 tools/build.py && playwright test",
     "serve": "python3 -m http.server 8000 -d dist",
+    "playtest": "tools/playtest/run.sh",
     "vendor": "npm install --no-save trystero@0.25.4 esbuild && esbuild node_modules/trystero/dist/index.mjs --bundle --format=esm --minify --target=es2020 --legal-comments=none --outfile=src/vendor/trystero.js"
   },
   "devDependencies": {
